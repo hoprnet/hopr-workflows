@@ -59,7 +59,11 @@ only action that allows us to access the labels to work out the type of release.
 
 Based on this, we can have a conditional workflow for each type of release.
 
-
+Downsides:
+- We can't protect the master branch from pushes, as the robot needs to push
+  the package.json changes back.
+- We can't protect the master branch from specific status checks for the same
+  reason.
 
 Github warts:
  - No easy way to pass the 'label' parameters into tasks. We instead have to
@@ -74,3 +78,4 @@ Prior Art:
   - [merge release](https://github.com/mikeal/merge-release/blob/master/src/merge-release-run.js)
     doesn't allow for the version to be committed to package.json, therefore
     it's unclear what version is in code.
+
