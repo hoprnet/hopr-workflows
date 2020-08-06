@@ -35,6 +35,16 @@ GitHub workflows helping HOPR automate tasks via github actions
 - That version is pushed to npm
 
 
+## Using these scripts
+
+Because github gives no way of sharing workflow, we are forced to copy paste.
+
+Please make any changes to workflows here first, and then commit to this
+repository.
+
+Then copy the workflow to the other repository and commit with a note of the
+version hash here - this will more easily let us see what outdated workflows
+need to be replaced.
 
 
 
@@ -59,8 +69,6 @@ Github warts:
    on tag creation, rather than as part of the pipeline.
  - No way to share all this work between projects. We instead have to copy/paste
    between projects.
-
-
 
 Prior Art:
   - [merge release](https://github.com/mikeal/merge-release/blob/master/src/merge-release-run.js)
