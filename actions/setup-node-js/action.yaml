@@ -1,0 +1,30 @@
+# hoprnet/hopr-workflows/actions/setup-node-js@master
+name: 'Setup NodeJs'
+description: 'Setup NodeJS repository'
+inputs:
+    node-version:
+        description: 'Node version to use'
+        required: true
+runs:
+    using: 'composite'
+    steps:
+        - name: Setup Node.js
+          uses: actions/setup-node@v4
+          with:
+              node-version: '20'
+
+        - name: Install Yarn
+          shell: bash
+          run: npm install -g yarn
+
+        - name: Setup Node.js with Yarn
+          uses: actions/setup-node@v4
+          with:
+              node-version: '20'
+              cache: 'yarn'
+              cache-dependency-path: ./yarn.lock
+              registry-url: https://europe-west3-npm.pkg.dev/hoprassociation/npm
+
+        - name: Install dependencies
+          shell: bash
+          run: yarn --frozen-lockfile

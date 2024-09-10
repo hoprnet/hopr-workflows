@@ -1,0 +1,26 @@
+# hoprnet/hopr-workflows/actions/setup-gcp@master
+name: 'Setup GCP'
+description: 'Install GCP tools and authenticate'
+inputs:
+    google-credentials:
+        description: 'Google credentials taken from secret GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY'
+        required: true
+outputs:
+    access_token:
+        description: 'GCP Access token'
+        value: ${{ steps.auth.outputs.access_token }}
+runs:
+    using: 'composite'
+    steps:
+        - name: Set up Google Cloud Credentials
+          id: auth
+          uses: google-github-actions/auth@v2
+          with:
+              token_format: 'access_token'
+              credentials_json: ${{ inputs.google-credentials }}
+
+        - name: Set up Google Cloud SDK
+          uses: google-github-actions/setup-gcloud@v2
+          with:
+              project_id: hoprassociation
+              install_components: beta
