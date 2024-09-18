@@ -42,11 +42,17 @@ runs:
               project_id: ${{ inputs.project }}
               install_components: beta
 
+        - name: Set up GCP
+          id: variables
+          run: |
+            CLUSTER_NAME=$(echo "cluster-${{ inputs.project }}" | sed 's/hopr//g')
+            echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
+
         - name: Connect to GKE
           uses: google-github-actions/get-gke-credentials@v2
           if: ${{ inputs.login-gke == 'true' }}
           with:
-            cluster_name: cluster-${{ inputs.project.replace('hopr', '') }}
+            cluster_name: ${{ steps.variables.outputs.cluster_name }}
             location: europe-west3
             project_id: ${{ inputs.project }}
 
