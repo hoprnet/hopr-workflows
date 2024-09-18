@@ -13,6 +13,14 @@ inputs:
         description: 'Authenticate to Artifact Registry'
         required: false
         default: 'false'
+    login-gke:
+        description: 'Authenticate to GKE'
+        required: false
+        default: 'false'
+    project:
+        description: GCP Project name
+        required: false
+        default: hoprassociation
 outputs:
     access_token:
         description: 'GCP Access token'
@@ -31,8 +39,16 @@ runs:
           if: ${{ inputs.install-sdk == 'true' }}
           uses: google-github-actions/setup-gcloud@v2
           with:
-              project_id: hoprassociation
+              project_id: ${{ inputs.project }}
               install_components: beta
+
+        - name: Connect to GKE
+          uses: google-github-actions/get-gke-credentials@v2
+          if: ${{ inputs.login-gke == 'true' }}
+          with:
+            cluster_name: cluster-${{ inputs.project.replace('hopr', '') }}
+            location: europe-west3
+            project_id: ${{ inputs.project }}
 
         - name: Login Google Container Registry
           if: ${{ inputs.login-artifact-registry == 'true' }}
