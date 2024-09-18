@@ -44,6 +44,7 @@ runs:
 
         - name: Set up GCP
           id: variables
+          shell: bash
           run: |
             CLUSTER_NAME=$(echo "cluster-${{ inputs.project }}" | sed 's/hopr//g')
             echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
