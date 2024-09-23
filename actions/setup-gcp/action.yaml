@@ -44,9 +44,10 @@ runs:
 
         - name: Set up GCP
           id: variables
+          if: ${{ inputs.login-gke == 'true' }}
           shell: bash
           run: |
-            CLUSTER_NAME=$(echo "cluster-${{ inputs.project }}" | sed 's/hopr//g')
+            CLUSTER_NAME=$(echo "cluster-${{ inputs.project }}" | sed 's/hopr-//g')
             echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
 
         - name: Connect to GKE
