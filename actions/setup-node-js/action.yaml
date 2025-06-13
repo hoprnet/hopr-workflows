@@ -23,8 +23,9 @@ runs:
               node-version: ${{ inputs.node-version }}
               cache: 'yarn'
               cache-dependency-path: ./yarn.lock
-              registry-url: https://europe-west3-npm.pkg.dev/hoprassociation/npm
 
         - name: Install dependencies
           shell: bash
           run: yarn --frozen-lockfile
+          env:
+            NODE_AUTH_TOKEN: foo
