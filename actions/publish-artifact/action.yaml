@@ -35,6 +35,7 @@ runs:
     steps:
       - name: Create Artifact Signature
         id: signature
+        shell: bash
         run: |
           echo "${{ inputs.gpg-private-key }}" | gpg --batch --import
           gpg --armor --output ${{ inputs.artifact-path }}.sig --detach-sign ${{ inputs.artifact-path }}
@@ -42,6 +43,7 @@ runs:
           gpg --armor --sign ${{ inputs.artifact-path }}.sha256
       - name: Publish Google Artifact registry
         if: ${{ inputs.destination == 'gcp-artifact-registry' }}
+        shell: bash
         run: |
           gcloud artifacts generic upload \
             --project="${{ inputs.gcp-project }}" \
