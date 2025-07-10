@@ -1,0 +1,97 @@
+# hoprnet/hopr-workflows/actions/publish-artifact@master
+name: 'Publish Artifact'
+description: 'Publish an artifact with its signature and hash'
+inputs:
+    destination:
+        description: 'Destination to publish the artifact (gcp-artifact-registry or github-workflow)'
+        required: true
+    gpg-private-key:
+        description: 'GPG private key to sign the artifacts'
+        required: true
+    artifact-path:
+        description: 'Path to the artifact to be published'
+        required: true
+    artifact-name:
+        description: 'Name of the artifact to be published'
+        required: false
+    artifact-version:
+        description: 'GCP Artifact Registry version'
+        required: false
+    gcp-project:
+        description: GCP Project name
+        required: false
+    registry-repository:
+        description: 'GCP Artifact Registry repository name'
+        required: false
+    registry-location:
+        description: 'GCP Artifact Registry location (e.g., europe-west3)'
+        required: false
+    registry-package:
+        description: 'GCP Artifact Registry package name'
+        required: false
+
+runs:
+    using: 'composite'
+    steps:
+      - name: Create Artifact Signature
+        id: signature
+        run: |
+          echo "${{ inputs.gpg-private-key }}" | gpg --batch --import
+          gpg --armor --output ${{ inputs.artifact-path }}.sig --detach-sign ${{ inputs.artifact-path }}
+          shasum -a 256 ${{ inputs.artifact-path }} > ${{ inputs.artifact-path }}.sha256
+          gpg --armor --sign ${{ inputs.artifact-path }}.sha256
+      - name: Publish Google Artifact registry
+        if: ${{ inputs.destination == 'gcp-artifact-registry' }}
+        run: |
+          gcloud artifacts generic upload \
+            --project="${{ inputs.gcp-project }}" \
+            --location="${{ inputs.registry-location }}" \
+            --repository="${{ inputs.registry-repostiory }}" \
+            --version="${{ inputs.artifact-version }}" \
+            --package="${{ inputs.registry-package }}" \
+            --source="${{ inputs.artifact-path }}"
+              gcloud artifacts generic upload \
+                --location="${{ inputs.registry-location }}" \
+                --repository="${{ inputs.registry-repostiory }}" \
+                --version=${{ inputs.artifact-version }} \
+                --package="${{ inputs.registry-package }}" \
+                --source="${{ inputs.artifact-path }}.sig"
+              gcloud artifacts generic upload \
+                --location="${{ inputs.registry-location }}" \
+                --repository="${{ inputs.registry-repostiory }}" \
+                --version=${{ inputs.artifact-version }} \
+                --package="${{ inputs.registry-package }}" \
+                --source="${{ inputs.artifact-path }}.sha256
+              gcloud artifacts generic upload \
+                --location="${{ inputs.registry-location }}" \
+                --repository="${{ inputs.registry-repostiory }}" \
+                --version=${{ inputs.artifact-version }} \
+                --package="${{ inputs.registry-package }}" \
+                --source="${{ inputs.artifact-path }}.sha256.asc""
+      - name: Publish Github Workflow artifact
+        if: ${{ inputs.destination == 'github-workflow' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.artifact-path }}
+
+      - name: Publish Github Workflow artifact signature
+        if: ${{ inputs.destination == 'github-workflow' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ inputs.artifact-name }}.sig
+          path: ${{ inputs.artifact-path }}.sig
+ 
+      - name: Publish Github Workflow artifact hash
+        if: ${{ inputs.destination == 'github-workflow' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ inputs.artifact-name }}.sha256
+          path: ${{ inputs.artifact-path }}.sha256
+
+      - name: Publish Github Workflow artifact hash signature
+        if: ${{ inputs.destination == 'github-workflow' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ inputs.artifact-name }}.sha256.asc
+          path: ${{ inputs.artifact-path }}.sha256.asc
