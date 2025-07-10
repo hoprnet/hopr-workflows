@@ -37,10 +37,11 @@ runs:
         id: signature
         shell: bash
         run: |
-          echo "${{ inputs.gpg-private-key }}" | gpg --batch --import
-          gpg --armor --output ${{ inputs.artifact-path }}.sig --detach-sign ${{ inputs.artifact-path }}
+          set -x
           shasum -a 256 ${{ inputs.artifact-path }} > ${{ inputs.artifact-path }}.sha256
-          gpg --armor --sign ${{ inputs.artifact-path }}.sha256
+          echo "${{ inputs.gpg-private-key }}" | gpg --batch --import
+          nix develop gpg --armor --output ${{ inputs.artifact-path }}.sig --detach-sign ${{ inputs.artifact-path }}
+          nix develop gpg --armor --sign ${{ inputs.artifact-path }}.sha256
       - name: Publish Google Artifact registry
         if: ${{ inputs.destination == 'gcp-artifact-registry' }}
         shell: bash
