@@ -38,10 +38,24 @@ runs:
         shell: bash
         run: |
           set -x
-          shasum -a 256 ${{ inputs.artifact-path }} > ${{ inputs.artifact-path }}.sha256
+
+          # Create a writable temporary directory
+          temp_dir=$(mktemp -d)
+          artifact_name=$(basename "${{ inputs.artifact-path }}")
+          cp "${{ inputs.artifact-path }}" "$temp_dir/$artifact_name"
+
+          # Generate the SHA256 hash for the artifact
+          shasum -a 256 "$temp_dir/$artifact_name" > "$temp_dir/$artifact_name.sha256"
+
+          # Import the GPG private key
           echo "${{ inputs.gpg-private-key }}" | gpg --batch --import
-          nix develop gpg --armor --output ${{ inputs.artifact-path }}.sig --detach-sign ${{ inputs.artifact-path }}
-          nix develop gpg --armor --sign ${{ inputs.artifact-path }}.sha256
+
+          # Sign the artifact and its hash
+          nix develop gpg --armor --output "$temp_dir/${{ inputs.artifact-path }}.sig" --detach-sign "$temp_dir/$artifact_name"
+          nix develop gpg --armor --output "$temp_dir/$artifact_name.sha256.asc" --sign ${{ inputs.artifact-path }}.sha256
+
+          # Output the temporary directory path for use in subsequent steps
+          echo "TEMP_DIR=$temp_dir" >> $GITHUB_ENV
       - name: Publish Google Artifact registry
         if: ${{ inputs.destination == 'gcp-artifact-registry' }}
         shell: bash
@@ -58,19 +72,19 @@ runs:
                 --repository="${{ inputs.registry-repostiory }}" \
                 --version=${{ inputs.artifact-version }} \
                 --package="${{ inputs.registry-package }}" \
-                --source="${{ inputs.artifact-path }}.sig"
+                --source="${{ steps.signature.outputs.TEMP_DIR }}/${{ inputs.artifact-path }}.sig"
               gcloud artifacts generic upload \
                 --location="${{ inputs.registry-location }}" \
                 --repository="${{ inputs.registry-repostiory }}" \
                 --version=${{ inputs.artifact-version }} \
                 --package="${{ inputs.registry-package }}" \
-                --source="${{ inputs.artifact-path }}.sha256
+                --source="${{ steps.signature.outputs.TEMP_DIR }}/${{ inputs.artifact-path }}.sha256
               gcloud artifacts generic upload \
                 --location="${{ inputs.registry-location }}" \
                 --repository="${{ inputs.registry-repostiory }}" \
                 --version=${{ inputs.artifact-version }} \
                 --package="${{ inputs.registry-package }}" \
-                --source="${{ inputs.artifact-path }}.sha256.asc""
+                --source="${{ steps.signature.outputs.TEMP_DIR }}/${{ inputs.artifact-path }}.sha256.asc""
       - name: Publish Github Workflow artifact
         if: ${{ inputs.destination == 'github-workflow' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -83,18 +97,18 @@ runs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ inputs.artifact-name }}.sig
-          path: ${{ inputs.artifact-path }}.sig
+          path: ${{ steps.signature.outputs.TEMP_DIR }}/${{ inputs.artifact-path }}.sig
  
       - name: Publish Github Workflow artifact hash
         if: ${{ inputs.destination == 'github-workflow' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ inputs.artifact-name }}.sha256
-          path: ${{ inputs.artifact-path }}.sha256
+          path: ${{ steps.signature.outputs.TEMP_DIR }}/${{ inputs.artifact-path }}.sha256
 
       - name: Publish Github Workflow artifact hash signature
         if: ${{ inputs.destination == 'github-workflow' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ inputs.artifact-name }}.sha256.asc
-          path: ${{ inputs.artifact-path }}.sha256.asc
+          path: ${{ steps.signature.outputs.TEMP_DIR }}/${{ inputs.artifact-path }}.sha256.asc
