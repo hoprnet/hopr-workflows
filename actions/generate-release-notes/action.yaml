@@ -15,11 +15,15 @@ inputs:
         description: 'Format of the release notes (github, debian, json)'
         required: true
         default: github
+    release_notes_file:
+        description: 'File to output the release notes to'
+        required: false
+        default: release_notes.txt
 runs:
     using: 'composite'
     steps:
       - name: Generate release notes
         shell: bash
-        run: ./generate-release-notes.sh "${{ inputs.branch }}" "${{ inputs.format }}"
+        run: ./generate-release-notes.sh "${{ inputs.branch }}" "${{ inputs.format }}" "${{ inputs.release_notes_file }}"
         env:
           GH_TOKEN: ${{ github.token }}
