@@ -23,10 +23,9 @@ fetch_merged_prs() {
     
     echo "[INFO] Fetching PRs for ${repo_name} (branch: ${branch}) since ${start_datetime}..." >&2
 
-    local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$start_date" --json number,title,author,mergedAt | jq -c '.[] | @base64')
-    local prs_filtered=$(echo "$prs" | jq --arg start "$start_datetime" '[.[] | select(.mergedAt >= $start)]')
+    local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$start_date" --json number,title,author,mergedAt | jq -c --arg start "$start_datetime" '.[] | select(.mergedAt >= $start) | @base64')
     
-    if [[ -z "$prs_filtered" ]]; then
+    if [[ -z "$prs" ]]; then
         echo "[INFO] No PRs found for ${repo_name}" >&2
         return 0
     fi
@@ -34,12 +33,11 @@ fetch_merged_prs() {
     # Process each PR
     for pr_encoded in ${prs}; do
         local pr_decoded=$(jq_decode "${pr_encoded}")
-        
+
         local id=$(echo "${pr_decoded}" | jq -r '.number')
         local title=$(echo "${pr_decoded}" | jq -r '.title')
         local author=$(echo "${pr_decoded}" | jq -r '.author')
 
-        
         # Extract changelog_type from the title
         # Expected format: "type(component): description" or "type: description"
         # If no colon exists, type defaults to "other"
@@ -48,7 +46,7 @@ fetch_merged_prs() {
         else
             local changelog_type="other"
         fi
-        
+
         # Trim whitespace from changelog_type
         changelog_type=${changelog_type## }
         changelog_type=${changelog_type%% }
