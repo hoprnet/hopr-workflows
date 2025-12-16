@@ -188,20 +188,21 @@ get_last_release_date() {
     git fetch --tags --force
     local last_tag=$(git tag --merged origin/${branch} --sort=-creatordate | head -n 1)
     if [ -z "$last_tag" ]; then
-        echo "No tag found."
-        exit 1
+        echo "No tags found on branch ${branch}. Using initial commit date."
+        published_at=$(git rev-list --max-parents=0 origin/${branch} --date=iso --pretty=format:'%ad' | tail -n 1)
     else
         echo "Last tag on branch ${branch} is $last_tag"
+        local release_json=$(gh api repos/${github_repo}/releases/tags/$last_tag)
+        local published_at=$(echo "$release_json" | jq -r .published_at)
+        if [ -z "$published_at" ]; then
+            echo "No release date found."
+            exit 1
+        else
+            echo "Release $last_tag published at $published_at"
+        fi
     fi
     
-    local release_json=$(gh api repos/${github_repo}/releases/tags/$last_tag)
-    local published_at=$(echo "$release_json" | jq -r .published_at)
-    if [ -z "$published_at" ]; then
-        echo "No release date found."
-        exit 1
-    else
-        echo "Release $last_tag published at $published_at"
-    fi
+
     echo "$published_at"
 }
 
