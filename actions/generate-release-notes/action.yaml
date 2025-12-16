@@ -27,3 +27,4 @@ runs:
         run: ${{ github.action_path }}/generate-release-notes.sh "${{ inputs.branch }}" "${{ inputs.format }}" "${{ inputs.release_notes_file }}"
         env:
           GH_TOKEN: ${{ github.token }}
+        working-directory: ${{ github.workspace }}
