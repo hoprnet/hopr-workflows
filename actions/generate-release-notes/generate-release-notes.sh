@@ -13,15 +13,6 @@ jq_decode() {
     echo "${1}" | base64 --decode
 }
 
-# Get the creation date of a release tag
-# Usage: get_release_date <repo> <tag>
-get_release_date() {
-    local repo="$1"
-    local tag="$2"
-    
-    gh_api_call "${repo}" "/releases/tags/${tag}" '.created_at'
-}
-
 # Fetch merged PRs from a repository between two dates
 # Usage: fetch_merged_prs <repo_name> <branch> <start_date> <end_date>
 fetch_merged_prs() {
@@ -34,7 +25,7 @@ fetch_merged_prs() {
     local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$published_at" --json number,title,author | jq -c '.[] | @base64')
     
     if [[ -z "$prs" ]]; then
-        echo "[INFO] No PRs found for ${component}" >&2
+        echo "[INFO] No PRs found for ${repo_name}" >&2
         return 0
     fi
     
@@ -178,17 +169,17 @@ get_last_release_date() {
     git fetch --tags --force
     local last_tag=$(git tag --merged origin/${branch} --sort=-creatordate | head -n 1)
     if [ -z "$last_tag" ]; then
-        echo "No tags found on branch ${branch}. Using initial commit date."
+        echo "No tags found on branch ${branch}. Using initial commit date." >&2
         published_at=$(git rev-list --max-parents=0 origin/${branch} --date=iso --pretty=format:'%ad' | tail -n 1)
     else
-        echo "Last tag on branch ${branch} is $last_tag"
+        echo "Last tag on branch ${branch} is $last_tag" >&2
         local release_json=$(gh api repos/${github_repo}/releases/tags/$last_tag)
         local published_at=$(echo "$release_json" | jq -r .published_at)
         if [ -z "$published_at" ]; then
-            echo "No release date found."
+            echo "No release date found." >&2
             exit 1
         else
-            echo "Release $last_tag published at $published_at"
+            echo "Release $last_tag published at $published_at" >&2
         fi
     fi
     
