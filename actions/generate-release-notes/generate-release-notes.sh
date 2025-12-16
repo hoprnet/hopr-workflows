@@ -23,7 +23,7 @@ fetch_merged_prs() {
     
     echo "[INFO] Fetching PRs for ${repo_name} (branch: ${branch}) since ${start_datetime}..." >&2
 
-    local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$start_date" --json number,title,author,mergedAt | jq -c --arg start "$start_datetime" '.[] | select(.mergedAt >= $start) | @base64')
+    local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$start_date" --json number,title,author,mergedAt | jq -r -c --arg start "$start_datetime" '.[] | select(.mergedAt >= $start) | @base64')
     
     if [[ -z "$prs" ]]; then
         echo "[INFO] No PRs found for ${repo_name}" >&2
