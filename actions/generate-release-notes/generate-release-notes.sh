@@ -14,7 +14,7 @@ jq_decode() {
 }
 
 # Fetch merged PRs from a repository between two dates
-# Usage: fetch_merged_prs <repo_name> <branch> <start_date> <end_date>
+# Usage: fetch_merged_prs <repo_name> <branch> <start_date>
 fetch_merged_prs() {
     local repo_name="$1"
     local branch="$2"
@@ -22,7 +22,7 @@ fetch_merged_prs() {
     
     echo "[INFO] Fetching PRs for ${repo_name} (branch: ${branch}) since ${start_date}..." >&2
 
-    local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$published_at" --json number,title,author | jq -c '.[] | @base64')
+    local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$start_date" --json number,title,author | jq -c '.[] | @base64')
     
     if [[ -z "$prs" ]]; then
         echo "[INFO] No PRs found for ${repo_name}" >&2
