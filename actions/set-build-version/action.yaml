@@ -1,4 +1,4 @@
-# hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v1
+# hoprnet/hopr-workflows/actions/set-build-version@build-version-v1
 ### Requirements
 # - Requires the repository to use Cargo.toml for versioning
 # - Requires the repository to use Nix environment
