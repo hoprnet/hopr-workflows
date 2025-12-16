@@ -82,7 +82,7 @@ github_format_changelog() {
     local change_log_content="## What's Changed\n"
     
     # Add summary header
-    change_log_content+="\nThis release contains the following changes:\n"
+    change_log_content+="\nThis release contains the following changes:\n\n"
     change_log_content+="\n"
 
     
