@@ -146,7 +146,7 @@ check_parameters() {
     fi
     local branch="$1"
     local format="$2"
-    if ! git rev-parse --verify "$branch" >/dev/null 2>&1; then
+    if ! git ls-remote --heads origin "$branch" | grep -q "$branch"; then
         echo "Error: Branch '$branch' does not exist."
         exit 1
     else

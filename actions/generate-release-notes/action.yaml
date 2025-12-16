@@ -1,8 +1,6 @@
 # hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
 ### Requirements
-# - Requires the repository to use Cargo.toml for versioning
-# - Requires the repository to use Nix environment
-# - Requires the generate-lockfile command to be available in the Nix environment
+# - Requires gh CLI to be installed and authenticated
 
 name: Generate Release Notes
 description: Generates release nodes based on PR
@@ -24,12 +22,7 @@ runs:
     steps:
       - name: Generate release notes
         shell: bash
-        run: |
-            echo "Current directory is $(pwd)"
-            echo "Moving to workspace directory ${{ github.workspace }}"
-            cd ${{ github.workspace }}
-            echo "Current directory is $(pwd)"
-            ${{ github.action_path }}/generate-release-notes.sh "${{ inputs.branch }}" "${{ inputs.format }}" "${{ inputs.release_notes_file }}"
+        run: ${{ github.action_path }}/generate-release-notes.sh "${{ inputs.branch }}" "${{ inputs.format }}" "${{ inputs.release_notes_file }}"
         env:
           GH_TOKEN: ${{ github.token }}
         working-directory: ${{ github.workspace }}
