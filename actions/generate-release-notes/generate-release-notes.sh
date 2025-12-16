@@ -36,33 +36,37 @@ fetch_merged_prs() {
 
         local id=$(echo "${pr_decoded}" | jq -r '.number')
         local title=$(echo "${pr_decoded}" | jq -r '.title')
-        local author=$(echo "${pr_decoded}" | jq -r '.author')
+        local author=$(echo "${pr_decoded}" | jq -r '.author.login')
+        local component="general"
+        local type="other"
 
-        # Extract changelog_type from the title
+        # Extract type and component from the title
         # Expected format: "type(component): description" or "type: description"
-        # If no colon exists, type defaults to "other"
         if [[ "$title" == *":"* ]]; then
-            local changelog_type=$(echo "${title}" | awk -F ':' '{print $1}' | awk -F '(' '{print $1}' | tr '[:upper:]' '[:lower:]' | xargs)
-        else
-            local changelog_type="other"
+            type=$(echo "${title}" | awk -F ':' '{print $1}' | awk -F '(' '{print $1}' | tr '[:upper:]' '[:lower:]' | xargs)
+            # Trim whitespace from type
+            type=${type## }
+            type=${type%% }
+            if [[ "$title" == *"("*"):"* ]]; then
+                # Remove type(component): from title
+                component=$(echo "${title}" | awk -F '(' '{print $2}' | awk -F ')' '{print $1}' | xargs)
+            fi
+            title=$(echo "${title}" | awk -F ':' '{print $2}')
+            # Trim whitespace from title
+            title=${title## }
+            title=${title%% }
         fi
 
-        # Trim whitespace from changelog_type
-        changelog_type=${changelog_type## }
-        changelog_type=${changelog_type%% }
-        
-        # Add fallback if still empty
-        changelog_type=${changelog_type:-"other"}
-
         # Assign repository as component prefix to distinguish between repos
-        echo "[DEBUG] Processing PR: id=${id}, title=${title}, author=${author}, type=${changelog_type}" >&2
+        echo "[DEBUG] Processing PR: id=${id}, title=${title}, author=${author}, type=${type}, component=${component}" >&2
         
         # Add to changelog entries array
         changelog_entries+=("$(jq -nc --arg id "$id" \
             --arg title "$title" \
             --arg author "$author" \
-            --arg ctype "$changelog_type" \
-            '{id:$id,title:$title,author:$author,changelog_type:$ctype}')")
+            --arg type "$type" \
+            --arg component "$component" \
+            '{id:$id,title:$title,author:$author,type:$type,component:$component}')")
     done
 }
 
@@ -78,7 +82,7 @@ github_format_changelog() {
     local change_log_content="## What's Changed\n"
     
     # Add summary header
-    change_log_content+="\nThis release contains the following component updates:\n\n"
+    change_log_content+="\nThis release contains the following changes:\n"
     change_log_content+="\n"
 
     
@@ -88,10 +92,10 @@ github_format_changelog() {
         local title=$(echo "$entry" | jq -r '.title')
         local author=$(echo "$entry" | jq -r '.author')
         local component=$(echo "$entry" | jq -r '.component')
-        local changelog_type=$(echo "$entry" | jq -r '.changelog_type')
+        local type=$(echo "$entry" | jq -r '.type')
         
         # Determine which section this entry belongs to
-        case "$changelog_type" in
+        case "$type" in
             feat|feature)
                 section_feature+="- [${component}] ${title} by @${author} in #${id}\n"
                 ;;
@@ -187,7 +191,6 @@ get_last_release_date() {
     echo "$published_at"
 }
 
-set -x
 # Main function
 main() {
     local branch="$1"
