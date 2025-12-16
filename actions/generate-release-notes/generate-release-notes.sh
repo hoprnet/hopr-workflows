@@ -23,7 +23,7 @@ fetch_merged_prs() {
     
     echo "[INFO] Fetching PRs for ${repo_name} (branch: ${branch}) since ${start_datetime}..." >&2
 
-    local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$start_date" --json number,title,author | jq -c '.[] | @base64')
+    local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$start_date" --json number,title,author,mergedAt | jq -c '.[] | @base64')
     local prs_filtered=$(echo "$prs" | jq --arg start "$start_datetime" '[.[] | select(.mergedAt >= $start)]')
     
     if [[ -z "$prs_filtered" ]]; then
