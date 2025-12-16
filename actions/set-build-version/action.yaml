@@ -55,10 +55,9 @@ runs:
           set -x
           echo "Gathering version from ${{ inputs.file }} and setting build version type to '${{ inputs.version_type }}'"
           current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
-          echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
-          echo "commit_version=$current_version+commit.$(git rev-parse --short HEAD)" | tee -a "$GITHUB_OUTPUT"
-          echo "pr_version=$current_version+pr.${{ github.event.pull_request.number }}" | tee -a "$GITHUB_OUTPUT"
-          echo "release_version=$current_version" | tee -a "$GITHUB_OUTPUT"
+          commit_version="$current_version+commit.$(git rev-parse --short HEAD)"
+          pr_version="$current_version+pr.${{ github.event.pull_request.number }}"
+          release_version="$current_version"
           publish_workflow_run=false
           publish_artifact_registry=false
           publish_github_release=false
@@ -84,8 +83,12 @@ runs:
             echo "- 'release': To set version for release"
             exit 1
           fi
+          echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
+          echo "commit_version=${commit_version}" | tee -a "$GITHUB_OUTPUT"
+          echo "pr_version=${pr_version}" | tee -a "$GITHUB_OUTPUT"
+          echo "release_version=${release_version}" | tee -a "$GITHUB_OUTPUT"
           echo "build_version=${build_version}" | tee -a "$GITHUB_OUTPUT"
-          echo "docker_version=${build_version/+/-}}" | tee -a "$GITHUB_OUTPUT"
+          echo "docker_version=${build_version/+/-}" | tee -a "$GITHUB_OUTPUT"
           echo "publish_workflow_run=${publish_workflow_run}" | tee -a "$GITHUB_OUTPUT"
           echo "publish_artifact_registry=${publish_artifact_registry}" | tee -a "$GITHUB_OUTPUT"
           echo "publish_github_release=${publish_github_release}" | tee -a "$GITHUB_OUTPUT"
