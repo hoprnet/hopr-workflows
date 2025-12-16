@@ -18,13 +18,15 @@ jq_decode() {
 fetch_merged_prs() {
     local repo_name="$1"
     local branch="$2"
-    local start_date="$3"
+    local start_datetime="$3"   # Extract YYYY-MM-DD from full ISO timestamp
+    local start_date="${3%%T*}" # Full ISO timestamp
     
-    echo "[INFO] Fetching PRs for ${repo_name} (branch: ${branch}) since ${start_date}..." >&2
+    echo "[INFO] Fetching PRs for ${repo_name} (branch: ${branch}) since ${start_datetime}..." >&2
 
     local prs=$(gh pr list --state merged --base "$branch" --search "merged:>=$start_date" --json number,title,author | jq -c '.[] | @base64')
+    local prs_filtered=$(echo "$prs" | jq --arg start "$start_datetime" '[.[] | select(.mergedAt >= $start)]')
     
-    if [[ -z "$prs" ]]; then
+    if [[ -z "$prs_filtered" ]]; then
         echo "[INFO] No PRs found for ${repo_name}" >&2
         return 0
     fi
