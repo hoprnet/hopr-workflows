@@ -1,0 +1,25 @@
+# hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
+### Requirements
+# - Requires the repository to use Cargo.toml for versioning
+# - Requires the repository to use Nix environment
+# - Requires the generate-lockfile command to be available in the Nix environment
+
+name: Generate Release Notes
+description: Generates release nodes based on PR
+inputs:
+    branch:
+        description: 'Repository branch to generate release notes for'
+        required: true
+        default: main
+    format:
+        description: 'Format of the release notes (github, debian, json)'
+        required: true
+        default: github
+runs:
+    using: 'composite'
+    steps:
+      - name: Generate release notes
+        shell: bash
+        run: ./generate-release-notes.sh "${{ inputs.branch }}" "${{ inputs.format }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
