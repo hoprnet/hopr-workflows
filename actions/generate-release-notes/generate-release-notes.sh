@@ -87,19 +87,9 @@ github_format_changelog() {
     local change_log_content="## What's Changed\n"
     
     # Add summary header
-    if [[ "$previous_cli_version" != "$current_cli_version" ]] || [[ "$previous_app_version" != "$current_app_version" ]]; then
-        change_log_content+="\nThis release contains the following component updates:\n\n"
-        
-        if [[ "$previous_cli_version" != "$current_cli_version" ]]; then
-            change_log_content+="- **[GnosisVPN Client](https://github.com/gnosis/gnosis_vpn-client)**: Updated from [v${previous_cli_version}](https://github.com/gnosis/gnosis_vpn-client/releases/tag/v${previous_cli_version}) to [v${current_cli_version}](https://github.com/gnosis/gnosis_vpn-client/releases/tag/v${current_cli_version})\n"
-        fi
-        
-        if [[ "$previous_app_version" != "$current_app_version" ]]; then
-            change_log_content+="- **[GnosisVPN App](https://github.com/gnosis/gnosis_vpn-app)**: Updated from [v${previous_app_version}](https://github.com/gnosis/gnosis_vpn-app/releases/tag/v${previous_app_version}) to [v${current_app_version}](https://github.com/gnosis/gnosis_vpn-app/releases/tag/v${current_app_version})\n"
-        fi
-        
-        change_log_content+="\n"
-    fi
+    change_log_content+="\nThis release contains the following component updates:\n\n"
+    change_log_content+="\n"
+
     
     # Process each changelog entry
     for entry in "${changelog_entries[@]}"; do
