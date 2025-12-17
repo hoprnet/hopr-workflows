@@ -1,0 +1,28 @@
+# hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
+### Requirements
+# - Requires gh CLI to be installed and authenticated
+
+name: Generate Release Notes
+description: Generates release notes based on PR
+inputs:
+    branch:
+        description: 'Repository branch to generate release notes for'
+        required: true
+        default: main
+    format:
+        description: 'Format of the release notes (github, json)'
+        required: true
+        default: github
+    release_notes_file:
+        description: 'File to output the release notes to'
+        required: false
+        default: ./release-notes.txt
+runs:
+    using: 'composite'
+    steps:
+      - name: Generate release notes
+        shell: bash
+        run: ${{ github.action_path }}/generate-release-notes.sh "${{ inputs.branch }}" "${{ inputs.format }}" "${{ inputs.release_notes_file }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: ${{ github.workspace }}

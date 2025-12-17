@@ -1,0 +1,89 @@
+# hoprnet/hopr-workflows/actions/release-version@release-version-v1
+### Requirements
+# - Requires the repository to use Cargo.toml for versioning
+# - Requires the repository to use Nix environment
+# - Requires the generate-lockfile command to be available in the Nix environment
+
+name: 'Release Version'
+description: 'Release Version'
+inputs:
+    file:
+        description: 'File to update version in'
+        required: true
+        default: Cargo.toml
+    release_type:
+        description: 'Release type to bump (major, minor, patch)'
+        required: false
+        default: patch
+    zulip_api_key:
+        description: 'Zulip API Key for notifications'
+        required: false
+    zulip_email:
+        description: 'Zulip email for notifications'
+        required: false
+    zulip_channel:
+        description: 'Zulip channel for notifications'
+        required: false
+    zulip_topic:
+        description: 'Zulip topic for notifications'
+        required: false
+outputs:
+    current_version:
+        description: 'Current version extracted from file'
+        value: ${{ steps.vars.outputs.current_version }}
+    bump_version:
+        description: 'Version bumped'
+        value: ${{ steps.bump.outputs.bump_version }}
+runs:
+    using: 'composite'
+    steps:
+      - name: Get current version
+        shell: bash
+        id: vars
+        run: |
+          current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
+          echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
+      - name: Generate Release Notes
+        uses: hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
+        with:
+          branch: ${{ github.ref }}
+          format: github
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+            tag_name: "v${{ steps.vars.outputs.current_version }}"
+            name: "v${{ steps.vars.outputs.current_version }}"
+            body_path: ./release-notes.txt
+      - name: Bump version
+        id: bump
+        uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v1
+        with:
+          file: ${{ inputs.file }}
+          release_type: ${{ inputs.release_type }}
+      - name: Prepare notification message
+        shell: bash
+        if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
+        run: |
+          {
+            echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ steps.vars.outputs.current_version }}\` has been released."
+            echo ""
+            cat ./release-notes.txt
+          } > notification_message.txt
+
+          # Store content in environment variable for the Zulip action
+          {
+            echo "NOTIFICATION_CONTENT<<EOF"
+            cat notification_message.txt
+            echo "EOF"
+          } >> $GITHUB_ENV
+      - name: Notify release
+        if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
+        uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
+        with:
+          api-key: ${{ inputs.zulip_api_key }}
+          email: ${{ inputs.zulip_email }}
+          organization-url: "https://hopr.zulipchat.com"
+          type: "stream"
+          to: ${{ inputs.zulip_channel }}
+          topic: ${{ inputs.zulip_topic }}
+          content: ${{ env.NOTIFICATION_CONTENT }}
