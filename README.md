@@ -114,3 +114,17 @@ Creates a gpg signature and sha of the file
           gpg_private_key: ${{ secrets.MY_GPG_PRIVATE_KEY }}
 
 ```
+
+## Publish rust docs
+
+Publishes the rust docs in github pages
+````
+      - name: Publish docs
+        uses: hoprnet/hopr-workflows/actions/publish-rust-docs@publish-rust-docs-v1
+        with:
+          source_repo: ${{ github.repository }}
+          source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+          publish: true
+          nix_cache: my_nix_cache_name
+          nix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+````
