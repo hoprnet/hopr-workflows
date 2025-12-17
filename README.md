@@ -2,6 +2,16 @@
 
 GitHub workflows helping HOPR automate tasks via github actions
 
+## Setup Nix
+
+Setups the installation environment for nix and uses the nix cache
+````
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/setup-version
+        with:
+          cache: my-cache-name
+````
+
 ## Setup Nodejs
 
 Compiles a set of tasks needed to setup a Node js project

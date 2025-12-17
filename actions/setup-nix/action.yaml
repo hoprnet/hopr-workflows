@@ -1,0 +1,19 @@
+# hoprnet/hopr-workflows/actions/setup-nix@nix-v1
+name: 'Setup Nix'
+description: 'Setup Nix environment'
+inputs:
+    cache:
+        description: 'Google credentials taken from secret GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY'
+        required: true
+runs:
+    using: 'composite'
+    steps:
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+      - name: Use Nix Cache
+        uses: cachix/cachix-action@v16
+        with:
+          name: ${{ inputs.cache }}
+        env:
+          USER: runner
+

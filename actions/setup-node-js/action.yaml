@@ -2,7 +2,7 @@
 name: 'Setup NodeJs'
 description: 'Setup NodeJS repository'
 inputs:
-    node-version:
+    node_version:
         description: 'Node version to use'
         required: true
 runs:
@@ -11,7 +11,7 @@ runs:
         - name: Setup Node.js
           uses: actions/setup-node@v4
           with:
-              node-version: ${{ inputs.node-version }}
+              node-version: ${{ inputs.node_version }}
 
         - name: Install Yarn
           shell: bash
@@ -20,7 +20,7 @@ runs:
         - name: Setup Node.js with Yarn
           uses: actions/setup-node@v4
           with:
-              node-version: ${{ inputs.node-version }}
+              node-version: ${{ inputs.node_version }}
               cache: 'yarn'
               cache-dependency-path: ./yarn.lock
 
