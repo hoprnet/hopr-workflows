@@ -8,11 +8,17 @@ inputs:
     authToken:
         description: 'Cachix authentication token'
         required: false
+    nix_path:
+        description: 'Nix path to use'
+        required: false
+        default: 'nixpkgs=channel:nixos-24.05'
 runs:
     using: 'composite'
     steps:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
+        with:
+          nix_path: ${{ inputs.nix_path }}
       - name: Use Nix Cache
         uses: cachix/cachix-action@v16
         with:

@@ -10,6 +10,8 @@ Setups the installation environment for nix and uses the nix cache
         uses: hoprnet/hopr-workflows/actions/setup-nix@nix-v1
         with:
           cache: my-cache-name
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          nix_path: "nixpkgs=channel:nixos-24.05"
 ````
 
 ## Setup Nodejs
