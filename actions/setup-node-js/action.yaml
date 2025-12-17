@@ -5,6 +5,7 @@ inputs:
     node_version:
         description: 'Node version to use'
         required: true
+        default: '20.x'
 runs:
     using: 'composite'
     steps:

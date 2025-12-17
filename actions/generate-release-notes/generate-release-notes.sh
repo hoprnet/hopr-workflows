@@ -18,8 +18,8 @@ jq_decode() {
 fetch_merged_prs() {
     local repo_name="$1"
     local branch="$2"
-    local start_datetime="$3"   # Extract YYYY-MM-DD from full ISO timestamp
-    local start_date="${3%% *}" # Full ISO timestamp
+    local start_datetime="${3}" # Full ISO timestamp
+    local start_date="${3%% *}" # Extract YYYY-MM-DD from full ISO timestamp
     
     echo "[INFO] Fetching PRs for ${repo_name} (branch: ${branch}) since ${start_datetime}..." >&2
 
@@ -135,8 +135,8 @@ json_format_changelog() {
 
 # Validate input parameters
 check_parameters() {
-    if [[ $# -lt 3 ]]; then
-        echo "Usage: $0 <repository> <branch> <format>"
+    if [[ $# -lt 2 ]]; then
+        echo "Usage: $0 <branch> <format> [release_notes_file]"
         exit 1
     fi
     local branch="$1"
@@ -153,7 +153,7 @@ check_parameters() {
             ;;
         *)
             echo "Error: Unsupported format: ${format}"
-            echo "Supported formats: github, debian, json, rpm"
+            echo "Supported formats: github, json"
             exit 1
             ;;
     esac

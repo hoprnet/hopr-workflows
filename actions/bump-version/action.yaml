@@ -30,6 +30,7 @@ runs:
         id: versions
         run: |
           current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
+          echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
           # Extract parts without IFS or read
           IFS='.' read -r major_version minor_version patch_version <<< "${current_version}"
           echo "Current version ${major_version}.${minor_version}.${patch_version}"
@@ -63,10 +64,12 @@ runs:
           sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(\")/\1${bump_version}\3/" ${{ inputs.file }}
           rm ${{ inputs.file }}.bak
           nix develop --command cargo generate-lockfile
-          echo "bump_version=${bump_version}" >> "$GITHUB_OUTPUT"
+          echo "bump_version=${bump_version}" | tee -a "$GITHUB_OUTPUT"
+          lock_file=$(echo "${{ inputs.file }}" | sed 's/toml/lock/')
+          echo "lock_file=${lock_file}" | tee -a "$GITHUB_OUTPUT"
       - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
         with:
-          add: '["${{ inputs.file }}"]'
+          add: '["${{ inputs.file }}", "${{ steps.versions.outputs.lock_file }}"]'
           new_branch: main
           message: "Bump to version ${{ steps.versions.outputs.bump_version }}"
-          pathspec_error_handling: exitImmediately
+          pathspec_error_handling: ignore

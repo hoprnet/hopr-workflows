@@ -7,7 +7,7 @@ GitHub workflows helping HOPR automate tasks via github actions
 Setups the installation environment for nix and uses the nix cache
 ````
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/setup-version
+        uses: hoprnet/hopr-workflows/actions/setup-nix@nix-v1
         with:
           cache: my-cache-name
 ````
@@ -19,7 +19,7 @@ Compiles a set of tasks needed to setup a Node js project
       - name: Setup Node.js
         uses: hoprnet/hopr-workflows/actions/setup-node-js@node-js-v1
         with:
-          node-version: 20.x
+          node_version: 20.x
 ```
 
 ## Setup GCP
@@ -30,10 +30,10 @@ Compiles a set of tasks to install and authenticate against GCP
         id: gcp
         uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
         with:
-          google-credentials: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
-          install-sdk: "true"
-          login-artifact-registry: "true
-          login-gke: true
+          google_credentials: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
+          install_sdk: "true"
+          login_artifact_registry: "true
+          login_gke: true
           project: <gcp-project-name>
 ````
 
@@ -64,7 +64,7 @@ The parameter `release_type` accepts: `patch`, `minor` and `major`.
 ````
       - name: Bump version
         id: bump_version
-        uses: hoprnet/hopr-workflows/actions/bump-version@build-version-v1
+        uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v1
         with:
           file: Cargo.toml
           release_type: patch
@@ -77,7 +77,7 @@ It provides a github (default) and json format.
 
 ````
       - name: Generate Release Notes
-        uses: hoprnet/hopr-workflows/actions/generate-release-notes@bump-version-v1
+        uses: hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
         with:
           branch: ${{ github.ref }}
           format: github

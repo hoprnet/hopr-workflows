@@ -3,7 +3,7 @@ name: 'Setup Nix'
 description: 'Setup Nix environment'
 inputs:
     cache:
-        description: 'Google credentials taken from secret GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY'
+        description: 'Name of the Cachix cache to use'
         required: true
 runs:
     using: 'composite'

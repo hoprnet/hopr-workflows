@@ -3,14 +3,14 @@
 # - Requires gh CLI to be installed and authenticated
 
 name: Generate Release Notes
-description: Generates release nodes based on PR
+description: Generates release notes based on PR
 inputs:
     branch:
         description: 'Repository branch to generate release notes for'
         required: true
         default: main
     format:
-        description: 'Format of the release notes (github, debian, json)'
+        description: 'Format of the release notes (github, json)'
         required: true
         default: github
     release_notes_file:

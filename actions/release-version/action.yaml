@@ -33,7 +33,7 @@ outputs:
         value: ${{ steps.vars.outputs.current_version }}
     bump_version:
         description: 'Version bumped'
-        value: ${{ steps.versions.outputs.bump_version }}
+        value: ${{ steps.bump.outputs.bump_version }}
 runs:
     using: 'composite'
     steps:
@@ -42,7 +42,7 @@ runs:
         id: vars
         run: |
           current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
-          echo "current_version=${current_version}" >> tee -a "$GITHUB_OUTPUT"
+          echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
       - name: Generate Release Notes
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
         with:
@@ -55,12 +55,13 @@ runs:
             name: "v${{ steps.vars.outputs.current_version }}"
             body_path: ./release-notes.txt
       - name: Bump version
-        id: bump_version
+        id: bump
         uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v1
         with:
           file: ${{ inputs.file }}
           release_type: ${{ inputs.release_type }}
       - name: Prepare notification message
+        shell: bash
         if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
         run: |
           {
