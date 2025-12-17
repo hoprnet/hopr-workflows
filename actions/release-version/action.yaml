@@ -1,41 +1,42 @@
 # hoprnet/hopr-workflows/actions/release-version@release-version-v1
 ### Requirements
 # - Requires the repository to use Cargo.toml for versioning
+# - Requires jq to be installed
 # - Requires the repository to use Nix environment
 # - Requires the generate-lockfile command to be available in the Nix environment
 
-name: 'Release Version'
-description: 'Release Version'
+name: Release Version
+description: Release Version
 inputs:
     file:
-        description: 'File to update version in'
+        description: File to update version in
         required: true
         default: Cargo.toml
     release_type:
-        description: 'Release type to bump (major, minor, patch)'
+        description: Release type to bump (major, minor, patch)
         required: false
         default: patch
     zulip_api_key:
-        description: 'Zulip API Key for notifications'
+        description: Zulip API Key for notifications
         required: false
     zulip_email:
-        description: 'Zulip email for notifications'
+        description: Zulip email for notifications
         required: false
     zulip_channel:
-        description: 'Zulip channel for notifications'
+        description: Zulip channel for notifications
         required: false
     zulip_topic:
-        description: 'Zulip topic for notifications'
+        description: Zulip topic for notifications
         required: false
 outputs:
     current_version:
-        description: 'Current version extracted from file'
+        description: Current version extracted from file
         value: ${{ steps.vars.outputs.current_version }}
     bump_version:
-        description: 'Version bumped'
+        description: Version bumped
         value: ${{ steps.bump.outputs.bump_version }}
 runs:
-    using: 'composite'
+    using: composite
     steps:
       - name: Get current version
         shell: bash

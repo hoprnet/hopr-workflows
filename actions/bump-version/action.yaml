@@ -4,26 +4,26 @@
 # - Requires the repository to use Nix environment
 # - Requires the generate-lockfile command to be available in the Nix environment
 
-name: 'Bump Version'
-description: 'Bump Version'
+name: Bump Version
+description: Bump Version
 inputs:
     file:
-        description: 'File to update version in'
+        description: File to update version in
         required: true
         default: Cargo.toml
     release_type:
-        description: 'Release type to bump (major, minor, patch)'
+        description: Release type to bump (major, minor, patch)
         required: false
         default: patch
 outputs:
     current_version:
-        description: 'Current version extracted from file'
+        description: Current version extracted from file
         value: ${{ steps.versions.outputs.current_version }}
     bump_version:
-        description: 'Version bumped'
+        description: Version bumped
         value: ${{ steps.versions.outputs.bump_version }}
 runs:
-    using: 'composite'
+    using: composite
     steps:
       - name: Bump version
         shell: bash
@@ -63,7 +63,9 @@ runs:
           # capture group 3: "
           sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(\")/\1${bump_version}\3/" ${{ inputs.file }}
           rm ${{ inputs.file }}.bak
-          nix develop --command cargo generate-lockfile
+          if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
+            nix develop --command cargo generate-lockfile
+          fi
           echo "bump_version=${bump_version}" | tee -a "$GITHUB_OUTPUT"
           lock_file=$(echo "${{ inputs.file }}" | sed 's/toml/lock/')
           echo "lock_file=${lock_file}" | tee -a "$GITHUB_OUTPUT"

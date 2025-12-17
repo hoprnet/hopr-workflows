@@ -1,0 +1,25 @@
+# hoprnet/hopr-workflows/actions/sign-file@sign-file-v1
+name: Sign File
+description: Signs a file using a GPG private key
+inputs:
+    file:
+        description: File to sign
+        required: true
+    gpg_private_key:
+        description: GPG private key for signing
+        required: true
+
+runs:
+    using: composite
+    steps:
+      - name: Install pacakges
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gpg
+      - name: Sign file
+        shell: bash
+        run: ${{ github.action_path }}/sign-file.sh "${{ inputs.file }}"
+        env:
+          GPG_PRIVATE_KEY: ${{ inputs.gpg_private_key }}
+        working-directory: ${{ github.workspace }}

@@ -102,3 +102,15 @@ The parameter `release_type` accepts: `patch`, `minor` and `major`.
           zulip_topic: "Releases"
 
 ```
+
+## Sign file
+
+Creates a gpg signature and sha of the file 
+```
+      - name: Sign binary
+        uses: hoprnet/hopr-workflows/actions/sign-file@sign-file-v1
+        with:
+          file: ./binary-file
+          gpg_private_key: ${{ secrets.MY_GPG_PRIVATE_KEY }}
+
+```

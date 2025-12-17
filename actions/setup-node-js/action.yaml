@@ -1,13 +1,13 @@
 # hoprnet/hopr-workflows/actions/setup-node-js@node-js-v1
-name: 'Setup NodeJs'
-description: 'Setup NodeJS repository'
+name: Setup NodeJs
+description: Setup NodeJS repository
 inputs:
     node_version:
-        description: 'Node version to use'
+        description: Node version to use
         required: true
-        default: '20.x'
+        default: 20.x
 runs:
-    using: 'composite'
+    using: composite
     steps:
         - name: Setup Node.js
           uses: actions/setup-node@v4
@@ -22,7 +22,7 @@ runs:
           uses: actions/setup-node@v4
           with:
               node-version: ${{ inputs.node_version }}
-              cache: 'yarn'
+              cache: yarn
               cache-dependency-path: ./yarn.lock
 
         - name: Install dependencies

@@ -1,19 +1,19 @@
 # hoprnet/hopr-workflows/actions/setup-nix@nix-v1
-name: 'Setup Nix'
-description: 'Setup Nix environment'
+name: Setup Nix
+description: Setup Nix environment
 inputs:
     cache:
-        description: 'Name of the Cachix cache to use'
+        description: Name of the Cachix cache to use
         required: true
     authToken:
-        description: 'Cachix authentication token'
+        description: Cachix authentication token
         required: false
     nix_path:
-        description: 'Nix path to use'
+        description: Nix path to use
         required: false
-        default: 'nixpkgs=channel:nixos-24.05'
+        default: nixpkgs=channel:nixos-24.05
 runs:
-    using: 'composite'
+    using: composite
     steps:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
