@@ -5,6 +5,9 @@ inputs:
     cache:
         description: 'Name of the Cachix cache to use'
         required: true
+    authToken:
+        description: 'Cachix authentication token'
+        required: false
 runs:
     using: 'composite'
     steps:
@@ -14,6 +17,7 @@ runs:
         uses: cachix/cachix-action@v16
         with:
           name: ${{ inputs.cache }}
+          authToken: ${{ inputs.authToken }}
         env:
           USER: runner
 
