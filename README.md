@@ -86,7 +86,7 @@ The parameter `release_type` accepts: `patch`, `minor` and `major`.
           release_type: patch
           zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
           zulip_email: ${{ secrets.ZULIP_EMAIL }}
-          zulip_stream: "MyChannel"
+          zulip_channel: "MyChannel"
           zulip_topic: "Releases"
 
 ```
