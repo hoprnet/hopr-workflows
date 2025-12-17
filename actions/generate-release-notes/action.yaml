@@ -16,7 +16,7 @@ inputs:
     release_notes_file:
         description: 'File to output the release notes to'
         required: false
-        default: ./release_notes.txt
+        default: ./release-notes.txt
 runs:
     using: 'composite'
     steps:

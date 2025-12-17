@@ -195,7 +195,7 @@ get_last_release_date() {
 main() {
     local branch="$1"
     local format="$2"
-    local release_notes_file="${3:-release_notes.txt}"
+    local release_notes_file="${3:-release-notes.txt}"
 
     local github_repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
     check_parameters "$@"

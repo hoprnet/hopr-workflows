@@ -72,3 +72,21 @@ It provides a github (default) and json format.
           branch: ${{ github.ref }}
           format: github
 ````
+
+## Release Version
+
+Creates a new release in github using internally the `release-notes` and `bump-version` actions
+The parameter `release_type` accepts: `patch`, `minor` and `major`.
+
+```
+      - name: Release version
+        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v1
+        with:
+          file: Cargo.toml
+          release_type: patch
+          zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
+          zulip_email: ${{ secrets.ZULIP_EMAIL }}
+          zulip_stream: "MyChannel"
+          zulip_topic: "Releases"
+
+```
