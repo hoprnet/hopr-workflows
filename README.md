@@ -61,7 +61,7 @@ The parameter `version_type` accepts: `commit`, `pr` and `release`.
 
 Bumps the version of the project for the new release
 Does commit the change on the base branch. 
-The parameter `release_type` accepts: `patch`, `minor` and `major`.
+The parameter `release_type` accepts: `rc`, `patch`, `minor` and `major`.
 
 ````
       - name: Bump version
@@ -88,7 +88,7 @@ It provides a github (default) and json format.
 ## Release Version
 
 Creates a new release in github using internally the `release-notes` and `bump-version` actions
-The parameter `release_type` accepts: `patch`, `minor` and `major`.
+The parameter `release_type` accepts: `rc`, `patch`, `minor` and `major`.
 
 ```
       - name: Release version
@@ -127,4 +127,20 @@ Publishes the rust docs in github pages
           publish: true
           nix_cache: my_nix_cache_name
           nix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+````
+
+## Download Artifact Registry
+
+Download files from artifact registry
+````
+      - name: Download files
+        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
+        with:
+          destination: ./artifacts
+          project: hoprassociation
+          region: europe-west3
+          repository: rust-binaries
+          package: hoprd
+          version: 0.0.1
+
 ````
