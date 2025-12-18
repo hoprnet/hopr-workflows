@@ -13,7 +13,7 @@ inputs:
         required: true
         default: Cargo.toml
     release_type:
-        description: Release type to bump (major, minor, patch)
+        description: Release type to bump (major, minor, patch, rc)
         required: false
         default: patch
     zulip_api_key:
@@ -30,7 +30,7 @@ inputs:
         required: false
 outputs:
     current_version:
-        description: Current version extracted from file
+        description: Current released version
         value: ${{ steps.vars.outputs.current_version }}
     bump_version:
         description: Version bumped
@@ -44,6 +44,11 @@ runs:
         run: |
           current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
           echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
+          if [[ $current_version == *"-rc."* ]]; then
+            echo "prerelease=true" | tee -a $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" | tee -a $GITHUB_OUTPUT
+          fi
       - name: Generate Release Notes
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
         with:
@@ -53,6 +58,7 @@ runs:
         uses: softprops/action-gh-release@v2
         with:
             tag_name: "v${{ steps.vars.outputs.current_version }}"
+            prerelease: ${{ steps.vars.outputs.prerelease }}
             name: "v${{ steps.vars.outputs.current_version }}"
             body_path: ./release-notes.txt
       - name: Bump version

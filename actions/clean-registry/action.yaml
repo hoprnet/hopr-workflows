@@ -1,0 +1,20 @@
+# hoprnet/hopr-workflows/actions/clean-registry@clean-registry-v1
+name: Clean Artifact registry
+description: Cleans the artifact registry by deleting unused artifacts
+inputs:
+    registry:
+        description: Artifact registry to clean
+        required: true
+
+runs:
+    using: composite
+    steps:
+      - name: Install pacakges
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gpg
+      - name: Clean registry
+        shell: bash
+        run: ${{ github.action_path }}/clean-registry.py "${{ inputs.registry }}"
+        working-directory: ${{ github.workspace }}

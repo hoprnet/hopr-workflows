@@ -1,0 +1,56 @@
+# hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
+### Requirements
+# - Requires a GCP setup with Artifact Registry access
+
+name: Download Artifact Registry
+description: Download Artifact Registry artifacts
+inputs:
+    destination:
+        description: Destination folder to download the artifact to
+        required: false
+        default: ./artifacts
+    project:
+        description: GCP Project name
+        required: false
+        default: hoprassociation
+    region:
+        description: GCP region
+        required: false
+        default: europe-west3
+    repository:
+        description: Artifact Registry repository name
+        required: false
+        default: rust-binaries
+    package:
+        description: Artifact Registry package name
+        required: true
+    version:
+        description: Artifact version to download
+        required: true
+
+runs:
+    using: composite
+    steps:
+      - name: Download artifacts
+        shell: bash
+        id: artifacts
+        run: |
+          mkdir -p "${{ inputs.destination }}"
+          files=$(gcloud artifacts files list \
+            --project="${{ inputs.project }}" \
+            --location="${{ inputs.region }}" \
+            --repository="${{ inputs.repository }}" \
+            --package="${{ inputs.package }}" \
+            --version="${{ inputs.version }}" \
+            --format=json 2>/dev/null | jq -r ' .[] | .name')
+          IFS=$'\n' read -rd '' -a files_array <<<"$files"
+          for file in "${files_array[@]}"; do
+            gcloud artifacts generic download \
+              --project="${{ inputs.project }}" \
+              --location="${{ inputs.region }}" \
+              --repository="${{ inputs.repository }}" \
+              --package="${{ inputs.package }}" \
+              --version="${{ inputs.version }}" \
+              --destination="${{ inputs.destination }}" \
+              "${file}";
+          done
