@@ -27,7 +27,6 @@ inputs:
     version:
         description: Artifact version to download
         required: true
-
 runs:
     using: composite
     steps:

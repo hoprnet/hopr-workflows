@@ -144,3 +144,19 @@ Download files from artifact registry
           version: 0.0.1
 
 ````
+
+## Upload Artifact Registry
+
+Upload files from artifact registry
+````
+      - name: Download files
+        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v1
+        with:
+          source: ./artifacts
+          project: hoprassociation
+          region: europe-west3
+          repository: rust-binaries
+          package: hoprd
+          version: 0.0.1
+
+````

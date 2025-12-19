@@ -1,0 +1,45 @@
+# hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v1
+### Requirements
+# - Requires a GCP setup with Artifact Registry access
+
+name: Upload Artifact Registry
+description: Upload Artifact Registry artifacts
+inputs:
+    source:
+        description: Source folder to upload the artifact from
+        required: false
+        default: ./artifacts
+    project:
+        description: GCP Project name
+        required: false
+        default: hoprassociation
+    region:
+        description: GCP region
+        required: false
+        default: europe-west3
+    repository:
+        description: Artifact Registry repository name
+        required: false
+        default: rust-binaries
+    package:
+        description: Artifact Registry package name
+        required: true
+    version:
+        description: Artifact version to upload
+        required: true
+runs:
+    using: composite
+    steps:
+      - name: Upload artifacts
+        shell: bash
+        id: artifacts
+        run: |
+          for artifact in `ls -1 ${{ inputs.source }}`; do
+            gcloud artifacts generic upload \
+              --project="${{ inputs.project }}" \
+              --location="${{ inputs.region }}" \
+              --repository="${{ inputs.repository }}" \
+              --package="${{ inputs.package }}" \
+              --version="${{ inputs.version }}" \
+              --source="${artifact}";
+          done
