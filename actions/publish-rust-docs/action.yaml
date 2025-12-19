@@ -21,6 +21,9 @@ inputs:
         description: 'Command to generate the docs'
         required: false
         default: 'nix build -L .#docs'
+    github_token:
+      description: GitHub token
+      required: true
 runs:
     using: composite
     steps:
@@ -52,6 +55,6 @@ runs:
         if: inputs.publish
         uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ inputs.github_token }}
           publish_dir: ./result/share/doc/
           force_orphan: true
