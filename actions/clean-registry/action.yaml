@@ -9,11 +9,6 @@ inputs:
 runs:
     using: composite
     steps:
-      - name: Install pacakges
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gpg
       - name: Clean registry
         shell: bash
         run: ${{ github.action_path }}/clean-registry.py "${{ inputs.registry }}"

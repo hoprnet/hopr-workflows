@@ -15,8 +15,8 @@ runs:
       - name: Install pacakges
         shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gpg
+          apt-get update
+          apt-get install -y gpg
       - name: Sign file
         shell: bash
         run: ${{ github.action_path }}/sign-file.sh "${{ inputs.file }}"
