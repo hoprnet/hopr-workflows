@@ -12,7 +12,7 @@ inputs:
         required: true
         default: Cargo.toml
     version_type:
-        description: 'Version type to bump (commit, pr, release)'
+        description: 'Version type to bump (commit, pr, release, rc)'
         required: true
 outputs:
     current_version:
