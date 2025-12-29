@@ -61,10 +61,14 @@ permissions:
 
 jobs:
   binary:
-    name: ${{ inputs.architecture }}
+    name: Build binary ${{ inputs.architecture }}
     if: inputs.version_type != 'commit' || contains(github.event.pull_request.labels.*.name, format('binary:{0}', inputs.architecture))
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
+    outputs:
+      publish_artifact: ${{ steps.version.outputs.publish_artifact_registry || steps.version.outputs.publish_github_release }}
+      build_version: ${{ steps.version.outputs.build_version }}
+  
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
@@ -88,45 +92,51 @@ jobs:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
       - name: Build binary ${{ inputs.architecture }}
-        run: |
-          ${{ inputs.build_command }}
-          mkdir -p ${{ github.workspace }}/artifacts
-          cp ./result/bin/${{ inputs.binary }} ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
+        run: ${{ inputs.build_command }}
         env:
           architecture: ${{ inputs.architecture }}
-      - name: Setup GCP
-        if: steps.version.outputs.publish_artifact_registry || steps.version.outputs.publish_github_release
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
+      - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
+        uses: actions/upload-artifact@v4
         with:
-          google_credentials: ${{ secrets.gcp_service_account }}
-          install_sdk: "true"
+          name: ${{ inputs.binary }}-${{ inputs.architecture }}
+          path: ./result/bin/${{ inputs.binary }}
+
+  sign:
+    name:  Sign and publish binary ${{ inputs.architecture }}
+    needs: binary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download binary ${{ inputs.binary }}-${{ inputs.architecture }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.binary }}-${{ inputs.architecture }}
+          path: ${{ github.workspace }}/artifacts
       - name: Sign binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: hoprnet/hopr-workflows/actions/sign-file@ausias/fix-actions
         with:
           file: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
           gpg_private_key: ${{ secrets.gpg_private_key }}
-      - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
-        if: steps.version.outputs.publish_artifact_registry || steps.version.outputs.publish_github_release
-        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@ausias/fix-actions
-        with:
-          source: ${{ github.workspace }}/artifacts
-          package: ${{ inputs.binary }}
-          version: ${{ steps.version.outputs.build_version }}
-      - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} binary
-        if: steps.version.outputs.publish_workflow_run
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.binary }}-${{ inputs.architecture }}
-          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} signed binary
-        if: steps.version.outputs.publish_workflow_run
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.asc
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.asc
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} sha256 binary
-        if: steps.version.outputs.publish_workflow_run
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.sha256
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.sha256
+      - name: Setup GCP
+        if: needs.binary.outputs.publish_artifact == 'true'
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          install_sdk: "true"
+
+      - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
+        if: needs.binary.outputs.publish_artifact == 'true'
+        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@ausias/fix-actions
+        with:
+          source: ${{ github.workspace }}/artifacts
+          package: ${{ inputs.binary }}
+          version: ${{ needs.binary.outputs.build_version }}

@@ -33,9 +33,6 @@ outputs:
     docker_version:
         description: 'Docker compatible version'
         value: ${{ steps.versions.outputs.docker_version }}
-    publish_workflow_run:
-        description: 'Whether to publish the artifact in the workflow run'
-        value: ${{ steps.versions.outputs.publish_workflow_run }}
     publish_artifact_registry:
         description: 'Whether to publish the artifact in the Google Artifact registry'
         value: ${{ steps.versions.outputs.publish_artifact_registry }}
@@ -58,15 +55,12 @@ runs:
           commit_version="$current_version+commit.$(git rev-parse --short HEAD)"
           pr_version="$current_version+pr.${{ github.event.pull_request.number }}"
           release_version="$current_version"
-          publish_workflow_run=false
           publish_artifact_registry=false
           publish_github_release=false
           if [[ "${{ inputs.version_type }}" == "commit" ]]; then
             build_version=${commit_version}
             if [ "${GITHUB_PR_LABEL_PUBLISH_BINARIES:-0}" == '1' ]; then
               publish_artifact_registry=true
-            else
-              publish_workflow_run=true
             fi
           elif [[ "${{ inputs.version_type }}" == "pr" ]]; then
             build_version=${pr_version}
@@ -89,7 +83,6 @@ runs:
           echo "release_version=${release_version}" | tee -a "$GITHUB_OUTPUT"
           echo "build_version=${build_version}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_version=${build_version/+/-}" | tee -a "$GITHUB_OUTPUT"
-          echo "publish_workflow_run=${publish_workflow_run}" | tee -a "$GITHUB_OUTPUT"
           echo "publish_artifact_registry=${publish_artifact_registry}" | tee -a "$GITHUB_OUTPUT"
           echo "publish_github_release=${publish_github_release}" | tee -a "$GITHUB_OUTPUT"
       - name: Update build version
