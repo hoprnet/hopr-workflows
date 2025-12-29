@@ -92,14 +92,17 @@ jobs:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
       - name: Build binary ${{ inputs.architecture }}
-        run: ${{ inputs.build_command }}
+        run: |
+          ${{ inputs.build_command }}
+          mkdir -p ./artifacts
+          cp ./result/bin/${{ inputs.binary }} ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
         env:
           architecture: ${{ inputs.architecture }}
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
-          path: ./result/bin/${{ inputs.binary }}
+          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
 
   sign:
     name:  Sign and publish binary ${{ inputs.architecture }}
