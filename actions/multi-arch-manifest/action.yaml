@@ -23,20 +23,25 @@ runs:
         id: manifest
         shell: bash
         run: |
+          set -euo pipefail
           docker_manifest="${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.version }}"
-          ammends=""
-          if docker pull "${docker_manifest}-linux-arm64" 2>/dev/null; then
-            ammends="--amend ${docker_manifest}-linux-arm64"
-          else
-            echo "[WARN] Docker image ${docker_manifest}-linux-arm64 not found"
+          images=()
+          for arch in linux-arm64 linux-amd64; do
+            img="${docker_manifest}-${arch}"
+            if docker manifest inspect "$img" >/dev/null 2>&1; then
+              images+=(--amend "$img")
+            else
+              echo "[WARN] Missing or not accessible: $img"
+            fi
+          done
+
+          if [ "${#images[@]}" -eq 0 ]; then
+            echo "No images found to create the manifest. Exiting."
+            exit 1
           fi
-          if docker pull "${docker_manifest}-linux-amd64" 2>/dev/null; then
-            ammends="${ammends} --amend ${docker_manifest}-linux-amd64"
-          else
-            echo "[WARN] Docker image ${docker_manifest}-linux-amd64 not found"
-          fi
+
           echo "Creating multi-arch docker manifest: ${docker_manifest}"
-          docker manifest create "${docker_manifest}" $ammends
+          docker manifest create "${docker_manifest}" "${images[@]}"
 
       - name: Push multi-arch docker manifest
         shell: bash
