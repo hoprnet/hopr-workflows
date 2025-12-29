@@ -125,20 +125,20 @@ jobs:
             exit 1
           fi
           echo "platform=${platform}" | tee -a "${GITHUB_OUTPUT}"
-      - name: Build docker image - ${{ steps.version.outputs.docker_version }}-${{ steps.tag.outputs.platform }}
+      - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_version }}-${{ steps.tag.outputs.platform }}
         run: ${{ inputs.build_command }}
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_version }}-${{ steps.tag.outputs.platform }}
           SKOPEO_INSECURE_POLICY: "1"
-      - name: Build docker image - ${{ steps.version.outputs.docker_version }}-debug-${{ steps.tag.outputs.platform }}
+      - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_version }}-debug-${{ steps.tag.outputs.platform }}
         if: ${{ inputs.build_debug_command != '' }}
         run: ${{ inputs.build_debug_command }}
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_version }}-debug-${{ steps.tag.outputs.platform }}
           SKOPEO_INSECURE_POLICY: "1"
-      - name: Build docker image - latest-${{ steps.tag.outputs.platform }}
+      - name: Build docker image - ${{ inputs.docker_image_name }}:latest-${{ steps.tag.outputs.platform }}
         if: inputs.version_type == 'pr'
         run: ${{ inputs.build_command }}
         env:
@@ -151,7 +151,7 @@ jobs:
         with:
           username: ${{ secrets.docker_hub_username }}
           password: ${{ secrets.docker_hub_token }}
-      - name: Build docker image - Docker Hub - ${{ steps.version.outputs.docker_version }}-${{ steps.tag.outputs.platform }}
+      - name: Build docker image - Docker Hub - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_version }}-${{ steps.tag.outputs.platform }}
         if: inputs.version_type == 'release'
         run: ${{ inputs.build_command }}
         env:
