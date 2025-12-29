@@ -26,6 +26,10 @@ on:
         type: string
         default: "x86_64-linux"
         description: "Target architecture for the docker image"
+      cache_name:
+        required: true
+        type: string
+        description: "Cachix cache name to use"
       build_file:
         required: true
         type: string
@@ -97,7 +101,7 @@ jobs:
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/fix-actions
         with:
-          cache: hopli
+          cache: ${{ inputs.cache_name }}
           authToken: "${{ secrets.cachix_auth_token }}"
       - name: Updates build version
         id: version
