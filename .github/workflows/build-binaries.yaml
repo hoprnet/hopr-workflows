@@ -1,0 +1,132 @@
+#################################################################################
+# Pipeline to build binaries
+#################################################################################
+name: Build binaries
+
+on:
+  workflow_call:
+    inputs:
+      source_branch:
+        required: true
+        type: string
+      version_type:
+        required: true
+        type: string
+      architecture:
+        required: true
+        type: string
+      cachix_cache_name:
+        required: true
+        type: string
+        description: "Cachix cache name to use"
+      build_file:
+        required: true
+        type: string
+        default: "Cargo.toml"
+        description: "File to extract version from"
+      build_command:
+        required: true
+        type: string
+        description: "Command to build the binary"
+      build_debug_command:
+        required: false
+        type: string
+        description: "Additional build debug flavor to use"
+      binary:
+        required: true
+        type: string
+        description: "Binary name to build"
+      timeout_minutes:
+        required: false
+        type: number
+        default: 60
+        description: "Timeout for the job in minutes"
+      runner:
+        required: true
+        type: string
+    secrets:
+      gcp_service_account:
+        required: true
+      cachix_auth_token:
+        required: true
+      gpg_private_key:
+        required: true
+concurrency:
+  group: build-binary-${{ inputs.source_branch || github.ref_name }}-${{ inputs.architecture }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  binary:
+    name: ${{ inputs.architecture }}
+    if: inputs.version_type != 'commit' || contains(github.event.pull_request.labels.*.name, format('binary:{0}', inputs.architecture))
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          disable-sudo: true
+          egress-policy: audit
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/fix-actions
+        with:
+          cache: ${{ inputs.cachix_cache_name }}
+          authToken: "${{ secrets.cachix_auth_token }}"
+      - name: Updates build version
+        id: version
+        uses: hoprnet/hopr-workflows/actions/set-build-version@build-version-v1
+        with:
+          file: "${{ inputs.build_file }}"
+          version_type: "${{ inputs.version_type }}"
+      - name: Build binary ${{ inputs.architecture }}
+        run: |
+          ${{ inputs.build_command }}
+          mkdir -p ${{ github.workspace }}/artifacts
+          cp ./result/bin/${{ inputs.binary }} ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
+        env:
+          architecture: ${{ inputs.architecture }}
+      - name: Setup GCP
+        if: steps.version.outputs.publish_artifact_registry || steps.version.outputs.publish_github_release
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          install_sdk: "true"
+      - name: Sign binary ${{ inputs.binary }}-${{ inputs.architecture }}
+        uses: hoprnet/hopr-workflows/actions/sign-file@ausias/fix-actions
+        with:
+          file: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
+          gpg_private_key: ${{ secrets.gpg_private_key }}
+      - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
+        if: steps.version.outputs.publish_artifact_registry || steps.version.outputs.publish_github_release
+        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@ausias/fix-actions
+        with:
+          source: ${{ github.workspace }}/artifacts
+          package: ${{ inputs.binary }}
+          version: ${{ steps.version.outputs.build_version }}
+      - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} binary
+        if: steps.version.outputs.publish_workflow_run
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.binary }}-${{ inputs.architecture }}
+          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
+      - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} signed binary
+        if: steps.version.outputs.publish_workflow_run
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.binary }}-${{ inputs.architecture}}.asc
+          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.asc
+      - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} sha256 binary
+        if: steps.version.outputs.publish_workflow_run
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.binary }}-${{ inputs.architecture}}.sha256
+          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.sha256

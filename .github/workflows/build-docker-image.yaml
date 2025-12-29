@@ -35,7 +35,6 @@ on:
       build_command:
         required: true
         type: string
-        # nix run -L .#hopli${build_dev_option}-docker-build-and-upload
         description: "Command to build the docker image"
       build_debug_command:
         required: false
@@ -60,6 +59,11 @@ on:
         type: number
         default: 60
         description: "Timeout for the job in minutes"
+      runner:
+        required: false
+        type: string
+        description: "Runner to use for the job"
+        default: "self-hosted-hoprnet-bigger"
     secrets:
       gcp_service_account:
         required: true
@@ -79,7 +83,7 @@ concurrency:
 jobs:
   docker:
     name: Docker
-    runs-on: self-hosted-hoprnet-bigger
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     outputs:
       docker_version: ${{ steps.version.outputs.docker_version }}
