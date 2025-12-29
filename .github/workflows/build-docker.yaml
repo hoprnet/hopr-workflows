@@ -26,6 +26,11 @@ on:
         type: string
         default: "x86_64-linux"
         description: "Target architecture for the docker image"
+      build_file:
+        required: true
+        type: string
+        default: "Cargo.toml"
+        description: "File to extract version from"
       build_command:
         required: true
         type: string
@@ -98,7 +103,7 @@ jobs:
         id: version
         uses: hoprnet/hopr-workflows/actions/set-build-version@build-version-v1
         with:
-          file: Cargo.toml
+          file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
       - name: Set docker image tag
         id: tag
