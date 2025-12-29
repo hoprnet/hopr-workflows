@@ -15,6 +15,7 @@ runs:
       - name: Install pacakges
         shell: bash
         run: |
+          ls -lR ${{ github.workspace }}/artifacts
           if ! command -v gpg &> /dev/null; then
             echo "gpg could not be found, installing..."
             sudo apt-get update
