@@ -4,7 +4,7 @@
 #
 
 set -o errexit -o nounset -o pipefail
-
+set -x
 sign() {
     local input_file="${1:-}"
     echo "Signing file: ${input_file}"
