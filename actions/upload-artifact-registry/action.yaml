@@ -34,7 +34,6 @@ runs:
         shell: bash
         id: artifacts
         run: |
-          ls -1 ${{ inputs.source }}
           for artifact in `ls -1 ${{ inputs.source }}`; do
             gcloud artifacts generic upload \
               --project="${{ inputs.project }}" \
@@ -42,5 +41,5 @@ runs:
               --repository="${{ inputs.repository }}" \
               --package="${{ inputs.package }}" \
               --version="${{ inputs.version }}" \
-              --source="${artifact}";
+              --source="${{ inputs.source }}/${artifact}";
           done
