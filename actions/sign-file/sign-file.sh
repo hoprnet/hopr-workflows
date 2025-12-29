@@ -4,7 +4,7 @@
 #
 
 set -o errexit -o nounset -o pipefail
-set -x
+
 sign() {
     local input_file="${1:-}"
     echo "Signing file: ${input_file}"
@@ -18,6 +18,9 @@ sign() {
 
     # Generate hash and signature
     cd "$dirname"
+    echo "Moving to directory: $dirname"
+    ls -alR "$dirname"
+    echo "Creating SHA256 hash and GPG signature for $basename"
     sha256sum "$basename" > "$basename.sha256"
     echo "Hash written to $basename.sha256"
     gpg --armor --output "$basename.asc" --detach-sign "$basename"
