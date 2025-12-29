@@ -1,5 +1,5 @@
 #################################################################################
-# Child pipeline to build docker images
+# Pipeline to build docker images
 #################################################################################
 name: Docker Image
 env:
@@ -18,15 +18,12 @@ on:
         required: true
         type: string
         description: "Type of version to build: commit, pr, release, rc"
-        # commit: Tag docker images for regular commits on open PR
-        # pr: Tag docker images for merged PRs
-        # release: Tag docker images for releases
       architecture:
         required: false
         type: string
         default: "x86_64-linux"
         description: "Target architecture for the docker image"
-      cache_name:
+      cachix_cache_name:
         required: true
         type: string
         description: "Cachix cache name to use"
@@ -72,6 +69,10 @@ on:
         required: false
       docker_hub_token:
         required: false
+    outputs:
+      docker_version:
+        description: "Docker image version built"
+        value: ${{ jobs.docker.outputs.docker_version }}
 concurrency:
   group: build-docker-${{ inputs.source_branch || github.ref_name }}
   cancel-in-progress: true
@@ -80,13 +81,15 @@ jobs:
     name: Docker
     runs-on: self-hosted-hoprnet-bigger
     timeout-minutes: ${{ inputs.timeout_minutes }}
+    outputs:
+      docker_version: ${{ steps.version.outputs.docker_version }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           disable-sudo: true
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
-      - name: Checkout hoprnet repository
+      - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
@@ -101,7 +104,7 @@ jobs:
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/fix-actions
         with:
-          cache: ${{ inputs.cache_name }}
+          cache: ${{ inputs.cachix_cache_name }}
           authToken: "${{ secrets.cachix_auth_token }}"
       - name: Updates build version
         id: version
@@ -122,18 +125,18 @@ jobs:
             exit 1
           fi
           echo "platform=${platform}" | tee -a "${GITHUB_OUTPUT}"
-      - name: Build and push docker image - ${{ steps.tag.outputs.platform }}
+      - name: Build docker image - ${{ steps.version.outputs.docker_version }}-${{ steps.tag.outputs.platform }}
         run: ${{ inputs.build_command }}
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_version }}-${{ steps.tag.outputs.platform }}
-      - name: Build and push docker image - Debug
+      - name: Build docker image - ${{ steps.version.outputs.docker_version }}-debug-${{ steps.tag.outputs.platform }}
         if: ${{ inputs.build_debug_command != '' }}
         run: ${{ inputs.build_debug_command }}
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_version }}-debug-${{ steps.tag.outputs.platform }}
-      - name: Build and push docker image - latest
+      - name: Build docker image - latest-${{ steps.tag.outputs.platform }}
         if: inputs.version_type == 'pr'
         run: ${{ inputs.build_command }}
         env:
@@ -145,7 +148,7 @@ jobs:
         with:
           username: ${{ secrets.docker_hub_username }}
           password: ${{ secrets.docker_hub_token }}
-      - name: Build and push docker image - Docker Hub ${{ steps.tag.outputs.platform }}
+      - name: Build docker image - Docker Hub - ${{ steps.version.outputs.docker_version }}-${{ steps.tag.outputs.platform }}
         if: inputs.version_type == 'release'
         run: ${{ inputs.build_command }}
         env:

@@ -1,0 +1,43 @@
+# hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+### Requirements
+# - Requires docker to be installed
+# - Requires to be login into the docker registries used
+
+name: Multi-Arch Manifest
+description: Create a multi-arch docker manifest
+inputs:
+    registry:
+        description: Docker registry to push the image to
+        required: true
+        default: europe-west3-docker.pkg.dev/hoprassociation/docker-images
+    image:
+        description: Docker image name
+        required: true
+    version:
+        description: Docker image version
+        required: true
+runs:
+    using: composite
+    steps:
+      - name: Create multi-arch docker manifest
+        id: manifest
+        shell: bash
+        run: |
+          docker_manifest="${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.version }}"
+          ammends=""
+          if docker pull "${docker_manifest}-linux-arm64" 2>/dev/null; then
+            ammends="--amend ${docker_manifest}-linux-arm64"
+          else
+            echo "[WARN] Docker image ${docker_manifest}-linux-arm64 not found"
+          fi
+          if docker pull "${docker_manifest}-linux-amd64" 2>/dev/null; then
+            ammends="${ammends} --amend ${docker_manifest}-linux-amd64"
+          else
+            echo "[WARN] Docker image ${docker_manifest}-linux-amd64 not found"
+          fi
+          echo "Creating multi-arch docker manifest: ${docker_manifest}"
+          docker manifest create "${docker_manifest}" $ammends
+
+      - name: Push multi-arch docker manifest
+        shell: bash
+        run: docker manifest push "${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.version }}"
