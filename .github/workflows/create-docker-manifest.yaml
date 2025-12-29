@@ -39,7 +39,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   docker:
-    name: Docker
+    name: Multi-Arch Docker Manifest
     runs-on: self-hosted-hoprnet-big
     steps:
       - name: Setup GCP
