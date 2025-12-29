@@ -15,8 +15,13 @@ runs:
       - name: Install pacakges
         shell: bash
         run: |
-          apt-get update
-          apt-get install -y gpg
+          if ! command -v gpg &> /dev/null; then
+            echo "gpg could not be found, installing..."
+            sudo apt-get update
+            sudo apt-get install -y gpg
+          else
+            echo "gpg is already installed"
+          fi
       - name: Sign file
         shell: bash
         run: ${{ github.action_path }}/sign-file.sh "${{ inputs.file }}"
