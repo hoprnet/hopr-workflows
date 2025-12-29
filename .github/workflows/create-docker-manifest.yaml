@@ -38,7 +38,7 @@ concurrency:
   group: docker-multi-arch-manifest
   cancel-in-progress: false
 jobs:
-  docker:
+  manifest:
     name: Multi-Arch Docker Manifest
     runs-on: self-hosted-hoprnet-big
     steps:
