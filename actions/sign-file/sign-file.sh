@@ -8,8 +8,6 @@ set -o errexit -o nounset -o pipefail
 sign() {
     local input_file="${1:-}"
     echo "Signing file: ${input_file}"
-    basename="$(basename {{source_file}})"
-    dirname="$(dirname {{source_file}})"
 
     # Create isolated GPG keyring
     gnupghome="$(mktemp -d)"
@@ -17,14 +15,10 @@ sign() {
     echo "$GPG_PRIVATE_KEY" | gpg --batch --import
 
     # Generate hash and signature
-    cd "$dirname"
-    echo "Moving to directory: $dirname"
-    ls -alR "$dirname"
-    echo "Creating SHA256 hash and GPG signature for $basename"
-    sha256sum "$basename" > "$basename.sha256"
-    echo "Hash written to $basename.sha256"
-    gpg --armor --output "$basename.asc" --detach-sign "$basename"
-    echo "Signature written to $basename.asc"
+    sha256sum "$input_file" > "$input_file.sha256"
+    echo "Hash written to $input_file.sha256"
+    gpg --armor --output "$input_file.asc" --detach-sign "$input_file"
+    echo "Signature written to $input_file.asc"
 
     # Clean up
     rm -rf "$gnupghome"
