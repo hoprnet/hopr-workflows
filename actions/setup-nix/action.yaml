@@ -16,7 +16,7 @@ runs:
     using: composite
     steps:
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
         with:
           nix_path: ${{ inputs.nix_path }}
       - name: Set cache name
@@ -30,7 +30,7 @@ runs:
             echo "cachix_cache_name=${{ inputs.cachix_cache_name }}" | tee -a $GITHUB_OUTPUT
           fi
       - name: Use Nix Cache
-        uses: cachix/cachix-action@v16
+        uses: cachix/cachix-action@0fc020193b5a1fa3ac4575aa3a7d3aa6a35435ad # v16
         with:
           name: ${{ steps.cache-name.outputs.cachix_cache_name }}
           authToken: ${{ inputs.cachix_auth_token }}

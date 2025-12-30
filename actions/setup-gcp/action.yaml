@@ -30,13 +30,13 @@ runs:
     steps:
         - name: Set up Google Cloud Credentials
           id: auth
-          uses: google-github-actions/auth@v2
+          uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
           with:
               token_format: access_token
               credentials_json: ${{ inputs.google_credentials }}
         - name: Set up Google Cloud SDK
           if: inputs.install_sdk == 'true'
-          uses: google-github-actions/setup-gcloud@v2
+          uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
           with:
               project_id: ${{ inputs.project }}
               install_components: beta
@@ -48,7 +48,7 @@ runs:
             CLUSTER_NAME=$(echo "cluster-${{ inputs.project }}" | sed 's/hopr-//g')
             echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
         - name: Connect to GKE
-          uses: google-github-actions/get-gke-credentials@v2
+          uses: google-github-actions/get-gke-credentials@3da1e46a907576cefaa90c484278bb5b259dd395 # v3.0.0
           if: inputs.login_gke == 'true'
           with:
             cluster_name: ${{ steps.variables.outputs.cluster_name }}
@@ -56,7 +56,7 @@ runs:
             project_id: ${{ inputs.project }}
         - name: Login Google Container Registry
           if: inputs.login_artifact_registry == 'true'
-          uses: docker/login-action@v3
+          uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
           with:
             registry: europe-west3-docker.pkg.dev
             username: oauth2accesstoken

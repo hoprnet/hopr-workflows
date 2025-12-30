@@ -10,7 +10,7 @@ runs:
     using: composite
     steps:
         - name: Setup Node.js
-          uses: actions/setup-node@v4
+          uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
           with:
               node-version: ${{ inputs.node_version }}
 
@@ -19,7 +19,7 @@ runs:
           run: npm install -g yarn
 
         - name: Setup Node.js with Yarn
-          uses: actions/setup-node@v4
+          uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
           with:
               node-version: ${{ inputs.node_version }}
               cache: yarn
