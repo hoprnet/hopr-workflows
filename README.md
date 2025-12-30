@@ -21,6 +21,6 @@ GitHub workflows helping HOPR automate tasks via github actions
 
 ## Workflows
 
-- [Build Binaries](./workflows/build-binaries.yaml): Build the binaries for a project
-- [Build Docker Image](./workflows/build-docker-image.yaml): Build the docker platform specific image for the project
-- [Build Docker Manifest](./workflows/build-docker-manifest.yaml): Build the docker multi platform manifest image for the project
+- [Build Binaries](./.github/workflows/build-binaries.yaml): Build the binaries for a project
+- [Build Docker Image](./.github/workflows/build-docker-image.yaml): Build the docker platform specific image for the project
+- [Build Docker Manifest](./.github/workflows/build-docker-manifest.yaml): Build the docker multi platform manifest image for the project
