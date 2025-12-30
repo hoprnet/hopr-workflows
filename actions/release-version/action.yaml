@@ -1,10 +1,3 @@
-# hoprnet/hopr-workflows/actions/release-version@release-version-v1
-### Requirements
-# - Requires the repository to use Cargo.toml for versioning
-# - Requires jq to be installed
-# - Requires the repository to use Nix environment
-# - Requires the generate-lockfile command to be available in the Nix environment
-
 name: Release Version
 description: Release Version
 inputs:
@@ -49,10 +42,16 @@ runs:
           else
             echo "prerelease=false" | tee -a $GITHUB_OUTPUT
           fi
+      - name: Download files
+        id: download
+        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@ausias/fix-actions
+        with:
+          package: ${{ github.repository##*/ }}
+          version: ${{ steps.vars.outputs.current_version }}
       - name: Generate Release Notes
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
         with:
-          branch: ${{ github.ref }}
+          source_branch: ${{ github.ref }}
           format: github
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -61,6 +60,7 @@ runs:
             prerelease: ${{ steps.vars.outputs.prerelease }}
             name: "v${{ steps.vars.outputs.current_version }}"
             body_path: ./release-notes.txt
+            files: ${{ steps.download.outputs.downloaded_files }}
       - name: Bump version
         id: bump
         uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v1

@@ -1,7 +1,3 @@
-# hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v1
-### Requirements
-# - Requires a GCP setup with Artifact Registry access
-
 name: Upload Artifact Registry
 description: Upload Artifact Registry artifacts
 inputs:
@@ -27,6 +23,10 @@ inputs:
     version:
         description: Artifact version to upload
         required: true
+outputs:
+    uploaded_files:
+        description: Comma-separated list of uploaded files
+        value: ${{ steps.artifacts.outputs.uploaded_files }}
 runs:
     using: composite
     steps:
@@ -34,7 +34,8 @@ runs:
         shell: bash
         id: artifacts
         run: |
-          for artifact in `ls -1 ${{ inputs.source }}`; do
+          files=$(ls -1 ${{ inputs.source }})
+          for artifact in $files; do
             gcloud artifacts generic upload \
               --project="${{ inputs.project }}" \
               --location="${{ inputs.region }}" \
@@ -43,3 +44,6 @@ runs:
               --version="${{ inputs.version }}" \
               --source="${{ inputs.source }}/${artifact}";
           done
+          # Create a comma-separated list of uploaded files
+          uploaded_files=$(echo "$files" | paste -sd, -)
+          echo "uploaded_files=$uploaded_files" | tee -a $GITHUB_OUTPUT

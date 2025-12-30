@@ -2,10 +2,10 @@
 name: Setup Nix
 description: Setup Nix environment
 inputs:
-    cache:
+    cachix_cache_name:
         description: Name of the Cachix cache to use
-        required: true
-    authToken:
+        required: false
+    cachix_auth_token:
         description: Cachix authentication token
         required: false
     nix_path:
@@ -19,11 +19,21 @@ runs:
         uses: cachix/install-nix-action@v31
         with:
           nix_path: ${{ inputs.nix_path }}
+      - name: Set cache name
+        id: cache-name
+        shell: bash
+        run: |
+          if [ -z "${{ inputs.cachix_cache_name }}" ]; then
+            repo_name=$(basename "${{ github.repository }}")
+            echo "cachix_cache_name=${repo_name}" | tee -a $GITHUB_OUTPUT
+          else
+            echo "cachix_cache_name=${{ inputs.cachix_cache_name }}" | tee -a $GITHUB_OUTPUT
+          fi
       - name: Use Nix Cache
         uses: cachix/cachix-action@v16
         with:
-          name: ${{ inputs.cache }}
-          authToken: ${{ inputs.authToken }}
+          name: ${{ steps.cache-name.outputs.cachix_cache_name }}
+          authToken: ${{ inputs.cachix_auth_token }}
         env:
           USER: runner
 

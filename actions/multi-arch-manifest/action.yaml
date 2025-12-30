@@ -1,8 +1,3 @@
-# hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
-### Requirements
-# - Requires docker to be installed
-# - Requires to be login into the docker registries used
-
 name: Multi-Arch Manifest
 description: Create a multi-arch docker manifest
 inputs:

@@ -1,4 +1,3 @@
-# hoprnet/hopr-workflows/actions/publish-rust-docs@publish-rust-docs-v1
 name: Publish Rust Docs
 description: Publishes Rust documentation to GitHub Pages
 inputs:
@@ -11,10 +10,10 @@ inputs:
     publish:
         description: 'Publish the docs'
         required: true
-    nix_cache:
+    cachix_cache_name:
         description: 'Nix cache name'
         required: false
-    nix_auth_token:
+    cachix_auth_token:
         description: 'Nix cache auth token'
         required: false
     command:
@@ -39,11 +38,10 @@ runs:
           repository: ${{ inputs.source_repo }}
           ref: ${{ inputs.source_branch }}
       - name: Setup Nix
-        if: inputs.nix_cache != ''
         uses: hoprnet/hopr-workflows/actions/setup-nix@nix-v1
         with:
-          cache: ${{ inputs.nix_cache }}
-          authToken: "${{ inputs.nix_auth_token }}"
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ inputs.cachix_auth_token }}"
       - name: Build docs
         shell: bash
         run: ${{ inputs.command }}

@@ -1,7 +1,3 @@
-# hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
-### Requirements
-# - Requires a GCP setup with Artifact Registry access
-
 name: Download Artifact Registry
 description: Download Artifact Registry artifacts
 inputs:
@@ -27,6 +23,10 @@ inputs:
     version:
         description: Artifact version to download
         required: true
+outputs:
+    downloaded_files:
+        description: Comma-separated list of downloaded files
+        value: ${{ steps.artifacts.outputs.downloaded_files }}
 runs:
     using: composite
     steps:
@@ -53,3 +53,7 @@ runs:
               --destination="${{ inputs.destination }}" \
               "${file}";
           done
+          # Create a comma-separated list of downloaded files
+          IFS=','; downloaded_files="${files_array[*]}"; unset IFS
+          echo "downloaded_files=$downloaded_files" | tee -a $GITHUB_OUTPUT
+
