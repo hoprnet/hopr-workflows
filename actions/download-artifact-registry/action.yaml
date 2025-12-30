@@ -35,23 +35,33 @@ runs:
         id: artifacts
         run: |
           mkdir -p "${{ inputs.destination }}"
-          files=$(gcloud artifacts files list \
+          if ! files=$(gcloud artifacts files list \
             --project="${{ inputs.project }}" \
             --location="${{ inputs.region }}" \
             --repository="${{ inputs.repository }}" \
             --package="${{ inputs.package }}" \
             --version="${{ inputs.version }}" \
-            --format=json 2>/dev/null | jq -r ' .[] | .name')
+            --format=json | jq -r '.[] | .name'); then
+            echo "Error: Failed to list artifacts"
+            exit 1
+          fi
+          if [ -z "$files" ]; then
+            echo "Error: No files found for package ${{ inputs.package }} version ${{ inputs.version }}"
+            exit 1
+          fi
           IFS=$'\n' read -rd '' -a files_array <<<"$files"
           for file in "${files_array[@]}"; do
-            gcloud artifacts generic download \
+            if ! gcloud artifacts generic download \
               --project="${{ inputs.project }}" \
               --location="${{ inputs.region }}" \
               --repository="${{ inputs.repository }}" \
               --package="${{ inputs.package }}" \
               --version="${{ inputs.version }}" \
               --destination="${{ inputs.destination }}" \
-              "${file}";
+              "${file}"; then
+              echo "Error: Failed to download ${file}"
+              exit 1
+            fi
           done
           # Create a comma-separated list of downloaded files
           IFS=','; downloaded_files="${files_array[*]}"; unset IFS

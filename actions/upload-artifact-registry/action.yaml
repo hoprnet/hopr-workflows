@@ -34,16 +34,43 @@ runs:
         shell: bash
         id: artifacts
         run: |
-          files=$(ls -1 ${{ inputs.source }})
-          for artifact in $files; do
+          source_path="${{ inputs.source }}"
+          
+          # Validate source exists
+          if [ ! -e "$source_path" ]; then
+            echo "Error: Source path does not exist: $source_path"
+            exit 1
+          fi
+          
+          # Handle both files and directories
+          if [ -f "$source_path" ]; then
+            files=("$(basename "$source_path")")
+            source_dir="$(dirname "$source_path")"
+          else
+            files=()
+            while IFS= read -r -d '' file; do
+              files+=("$(basename "$file")")
+            done < <(find "$source_path" -maxdepth 1 -type f -print0)
+            source_dir="$source_path"
+          fi
+          
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "Error: No files found to upload"
+            exit 1
+          fi
+
+          for artifact in "${files[@]}"; do
             gcloud artifacts generic upload \
               --project="${{ inputs.project }}" \
               --location="${{ inputs.region }}" \
               --repository="${{ inputs.repository }}" \
               --package="${{ inputs.package }}" \
               --version="${{ inputs.version }}" \
-              --source="${{ inputs.source }}/${artifact}";
+              --source="${source_dir}/${artifact}" || {
+                echo "Error: Failed to upload ${artifact}"
+                exit 1
+              }
           done
           # Create a comma-separated list of uploaded files
-          uploaded_files=$(echo "$files" | paste -sd, -)
+          IFS=','; uploaded_files="${files[*]}"; unset IFS
           echo "uploaded_files=$uploaded_files" | tee -a $GITHUB_OUTPUT

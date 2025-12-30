@@ -33,7 +33,7 @@ runs:
           if [ "${#current_version_splitted[*]}" = "2" ]; then
             # Get Release Candidate Number
             release_candidate_number="${current_version_splitted[1]/rc\./}"
-          elif [ "${{ inputs.release_type }}" = "ReleaseCandidate" ]; then
+          elif [ "${{ inputs.release_type }}" = "rc" ]; then
             # Reset the release candidate for new release name
             release_candidate_number=0
           fi
@@ -81,7 +81,7 @@ runs:
           # capture group 1: version = "
           # capture group 2: the version number
           # capture group 3: "
-          sed -i.bak -E 's/(^version = ")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(")/\1${bump_version}/' ${{ inputs.file }}
+          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${bump_version}\5/" ${{ inputs.file }}
           rm ${{ inputs.file }}.bak
           if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
             nix develop --command cargo generate-lockfile

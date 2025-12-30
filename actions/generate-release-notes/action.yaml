@@ -31,7 +31,7 @@ runs:
           done
           if [ ${#missing_packages[@]} -ne 0 ]; then
             sudo apt-get update
-            sudo apt-get install -y "$missing_packages[@]"
+            sudo apt-get install -y "${missing_packages[@]}"
           fi
       - name: Generate release notes
         shell: bash

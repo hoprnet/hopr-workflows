@@ -42,11 +42,13 @@ runs:
           else
             echo "prerelease=false" | tee -a $GITHUB_OUTPUT
           fi
+          repository=${{ github.repository }}
+          echo "repository=${repository##*/}" | tee -a $GITHUB_OUTPUT
       - name: Download files
         id: download
         uses: hoprnet/hopr-workflows/actions/download-artifact-registry@ausias/fix-actions
         with:
-          package: ${{ github.repository##*/ }}
+          package: ${{ steps.vars.outputs.repository }}
           version: ${{ steps.vars.outputs.current_version }}
       - name: Generate Release Notes
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
