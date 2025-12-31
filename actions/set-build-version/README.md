@@ -32,13 +32,14 @@ Updates the `version` of the project based on the type of build desired.
 
 ## Outputs
 
-- `current_version`: Current version extracted from file.
+- `current_version`: Current version extracted from file. Example `1.2.3`
 - `commit_version`: Version with commit hash. Example: `1.2.3+commit.9a4f81a`.
 - `debug_version`: Debug version with commit hash. Example: `1.2.3+debug.9a4f81a`.
 - `pr_version`: Version with pull request number. Example: `1.2.3+commit.9a4f81a`.
 - `release_version`: Release version. Example: `1.2.3`.
 - `build_version`: Contains the value of output `commit_version`, `pr_version` or `release_version` depending on the `version_type` provided.
 - `docker_build_version`: Docker compatible build version. The character `+` is replaced by `-`. Platform agnostic tag. Example: `1.2.3-commit.9a4f81a`.
+- `docker_debug_version`: Docker compatible debug version. The character `+` is replaced by `-`. Platform agnostic tag. Example: `1.2.3-debug.9a4f81a`.
 - `docker_build_version_platform`: Docker compatible build version. The character `+` is replaced by `-`. Platform specific tag. Example: `1.2.3-commit.9a4f81a-linux-amd64`.
 - `docker_debug_version_platform`: Docker compatible debug version. The character `+` is replaced by `-`. Platform specific tag. Example: `1.2.3-debug.9a4f81a-linux-amd64`.
 - `docker_platform`: Docker platform based on architecture. Posible values: `linux-arm64` or `linux-amd64`.

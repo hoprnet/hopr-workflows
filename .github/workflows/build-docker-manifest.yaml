@@ -13,10 +13,14 @@ on:
         required: true
         type: string
         description: "Docker image name"
-      docker_version:
+      docker_build_version:
         required: true
         type: string
         description: "Docker image version to use"
+      docker_debug_version:
+        required: false
+        type: string
+        description: "Docker debug image version to use"
       docker_gcp_registry:
         required: false
         type: string
@@ -35,7 +39,7 @@ on:
       docker_hub_token:
         required: false
 concurrency:
-  group: docker-multi-arch-manifest-${{ inputs.docker_image_name }}-${{ inputs.docker_version }}
+  group: docker-multi-arch-manifest-${{ inputs.docker_image_name }}-${{ inputs.docker_build_version }}
   cancel-in-progress: false
 jobs:
   manifest:
@@ -49,12 +53,18 @@ jobs:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'false'
-      - name: Create multi-arch docker manifest - ${{ inputs.docker_version }}
+      - name: Create multi-arch docker manifest - ${{ inputs.docker_build_version }}
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ausias/fix-actions
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
-          version: ${{ inputs.docker_version }}
+          version: ${{ inputs.docker_build_version }}
+      - name: Create multi-arch docker manifest - ${{ inputs.docker_debug_version }}
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ausias/fix-actions
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: ${{ inputs.docker_debug_version }}
       - name: Create multi-arch docker manifest - latest
         if: inputs.version_type == 'pr'
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ausias/fix-actions

@@ -34,6 +34,9 @@ outputs:
     docker_build_version:
         description: 'Docker compatible version'
         value: ${{ steps.versions.outputs.docker_build_version }}
+    docker_debug_version:
+        description: 'Docker compatible debug version'
+        value: ${{ steps.versions.outputs.docker_debug_version }}
     docker_build_version_platform:
         description: 'Docker compatible version with platform suffix'
         value: ${{ steps.versions.outputs.docker_build_version_platform }}
@@ -97,13 +100,14 @@ runs:
 
           # Generate Docker compatible version
           docker_build_version=${build_version/+/-}
+          docker_debug_version=${debug_version/+/-}
           if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
             docker_build_version_platform="${docker_build_version}-linux-arm64"
-            docker_debug_version_platform="${debug_version/+/-}-linux-amd64"
+            docker_debug_version_platform="${docker_debug_version}-linux-arm64"
             docker_platform="linux-arm64"
           elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
             docker_build_version_platform="${docker_build_version}-linux-amd64"
-            docker_debug_version_platform="${debug_version/+/-}-linux-amd64"
+            docker_debug_version_platform="${docker_debug_version}-linux-amd64"
             docker_platform="linux-amd64"
           else
             echo "Unsupported architecture: ${{ inputs.architecture }}"
@@ -116,6 +120,7 @@ runs:
           echo "release_version=${release_version}" | tee -a "$GITHUB_OUTPUT"
           echo "build_version=${build_version}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_build_version=${docker_build_version}" | tee -a "$GITHUB_OUTPUT"
+          echo "docker_debug_version=${docker_debug_version}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_build_version_platform=${docker_build_version_platform}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_debug_version_platform=${docker_debug_version_platform}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_platform=${docker_platform}" | tee -a "$GITHUB_OUTPUT"

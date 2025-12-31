@@ -31,13 +31,10 @@ runs:
           done
 
           if [ "${#images[@]}" -eq 0 ]; then
-            echo "No images found to create the manifest. Exiting."
-            exit 1
+            echo "[WARN] No images found to create the manifest."
+            exit 0 # Exit without error if no images are found as the debug image might not be built
+          else
+            echo "[INFO] Creating multi-arch docker manifest: ${docker_manifest}"
+            docker manifest create "${docker_manifest}" "${images[@]}"
+            docker manifest push "${docker_manifest}"
           fi
-
-          echo "Creating multi-arch docker manifest: ${docker_manifest}"
-          docker manifest create "${docker_manifest}" "${images[@]}"
-
-      - name: Push multi-arch docker manifest
-        shell: bash
-        run: docker manifest push "${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.version }}"
