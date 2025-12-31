@@ -52,9 +52,9 @@ outputs:
     publish_github_release:
         description: 'Whether to publish the artifact in the GitHub Release'
         value: ${{ steps.versions.outputs.publish_github_release }}
-    build_flavor_debug:
-        description: 'Whether the build flavor debug needs to be built'
-        value: ${{ steps.versions.outputs.build_flavor_debug }}
+    deploy_staging:
+        description: 'Whether to deploy to staging environment'
+        value: ${{ steps.versions.outputs.deploy_staging }}
 runs:
     using: 'composite'
     steps:
@@ -68,19 +68,18 @@ runs:
           echo "Gathering version from ${{ inputs.file }} and setting build version type to '${{ inputs.version_type }}'"
           current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
           commit_version="$current_version+commit.$(git rev-parse --short HEAD)"
-          debug_version="$current_version+debug.$(git rev-parse --short HEAD)"
           pr_version="$current_version+pr.${{ github.event.pull_request.number }}"
           release_version="$current_version"
           publish_artifact_registry=false
           publish_github_release=false
-          build_flavor_debug=false
+          deploy_staging=false
           if [[ "${{ inputs.version_type }}" == "commit" ]]; then
             build_version=${commit_version}
             if [ "${GITHUB_PR_LABEL_PUBLISH_BINARIES:-0}" == '1' ]; then
               publish_artifact_registry=true
             fi
-            if [[ "${GITHUB_PR_LABEL_BUILD_FLAVOR_DEBUG:-0}" == '1' ]]; then
-              build_flavor_debug=true
+            if [[ "${GITHUB_PR_LABEL_DEPLOY_STAGING:-0}" == '1' ]]; then
+              deploy_staging=true
             fi
           elif [[ "${{ inputs.version_type }}" == "pr" ]]; then
             build_version=${pr_version}
@@ -98,16 +97,27 @@ runs:
             exit 1
           fi
 
+          ## Debug build flavor
+          if [[ "${{ inputs.version_type }}" == "commit" ]] && [[ "${GITHUB_PR_LABEL_BUILD_FLAVOR_DEBUG:-0}" == '1' ]]; then
+              debug_version="$current_version+debug.$(git rev-parse --short HEAD)"
+              docker_debug_version=${debug_version/+/-}
+              if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
+                docker_debug_version_platform="${docker_debug_version}-linux-arm64"
+              else [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
+                docker_debug_version_platform="${docker_debug_version}-linux-amd64"
+              fi
+              echo "debug_version=${debug_version}" | tee -a "$GITHUB_OUTPUT"
+              echo "docker_debug_version=${docker_debug_version}" | tee -a "$GITHUB_OUTPUT"
+              echo "docker_debug_version_platform=${docker_debug_version_platform}" | tee -a "$GITHUB_OUTPUT"
+          fi
+
           # Generate Docker compatible version
           docker_build_version=${build_version/+/-}
-          docker_debug_version=${debug_version/+/-}
           if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
             docker_build_version_platform="${docker_build_version}-linux-arm64"
-            docker_debug_version_platform="${docker_debug_version}-linux-arm64"
             docker_platform="linux-arm64"
           elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
             docker_build_version_platform="${docker_build_version}-linux-amd64"
-            docker_debug_version_platform="${docker_debug_version}-linux-amd64"
             docker_platform="linux-amd64"
           else
             echo "Unsupported architecture: ${{ inputs.architecture }}"
@@ -115,18 +125,15 @@ runs:
           fi
           echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
           echo "commit_version=${commit_version}" | tee -a "$GITHUB_OUTPUT"
-          echo "debug_version=${debug_version}" | tee -a "$GITHUB_OUTPUT"
           echo "pr_version=${pr_version}" | tee -a "$GITHUB_OUTPUT"
           echo "release_version=${release_version}" | tee -a "$GITHUB_OUTPUT"
           echo "build_version=${build_version}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_build_version=${docker_build_version}" | tee -a "$GITHUB_OUTPUT"
-          echo "docker_debug_version=${docker_debug_version}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_build_version_platform=${docker_build_version_platform}" | tee -a "$GITHUB_OUTPUT"
-          echo "docker_debug_version_platform=${docker_debug_version_platform}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_platform=${docker_platform}" | tee -a "$GITHUB_OUTPUT"
           echo "publish_artifact_registry=${publish_artifact_registry}" | tee -a "$GITHUB_OUTPUT"
           echo "publish_github_release=${publish_github_release}" | tee -a "$GITHUB_OUTPUT"
-          echo "build_flavor_debug=${build_flavor_debug}" | tee -a "$GITHUB_OUTPUT"
+          echo "deploy_staging=${deploy_staging}" | tee -a "$GITHUB_OUTPUT"
       - name: Update build version
         shell: bash
         run: |

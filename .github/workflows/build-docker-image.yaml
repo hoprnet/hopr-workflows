@@ -64,6 +64,14 @@ on:
         type: string
         description: "Runner to use for the job"
         default: "self-hosted-hoprnet-bigger"
+      deployment_namespace:
+        required: false
+        type: string
+        description: "Kubernetes namespace for the deployment to restart in staging"
+      deployment_label_selector:
+        required: false
+        type: string
+        description: "Kubernetes label selector for the deployment to restart in staging"
     secrets:
       gcp_service_account:
         required: true
@@ -102,18 +110,6 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
-      - name: Setup GCP
-        id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
-        with:
-          google_credentials: ${{ secrets.gcp_service_account }}
-          login_artifact_registry: 'true'
-          install_sdk: 'false'
-      - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/fix-actions
-        with:
-          cachix_cache_name: ${{ inputs.cachix_cache_name }}
-          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Updates build version
         id: version
         uses: hoprnet/hopr-workflows/actions/set-build-version@ausias/fix-actions
@@ -121,20 +117,41 @@ jobs:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
           architecture: "${{ inputs.architecture }}"
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          login_artifact_registry: 'true'
+          install_sdk: '${{ steps.version.outputs.deploy_staging }}'
+          login_gke: '${{ steps.version.outputs.deploy_staging }}'
+          project: hopr-staging
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/fix-actions
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         run: ${{ inputs.build_command }}
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
           SKOPEO_INSECURE_POLICY: "1"
-      - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
-        if: steps.version.outputs.build_flavor_debug == 'true' && inputs.build_debug_command != ''
+      - name: Build staging docker image - ${{ inputs.docker_image_name }}:staging
+        if: steps.version.outputs.deploy_staging == 'true' && inputs.architecture == 'x86_64-linux'
+        run: ${{ inputs.build_command }}
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
+          IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:staging
+          SKOPEO_INSECURE_POLICY: "1"
+      - name: Build debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
+        if: steps.version.outputs.docker_debug_version_platform != '' && inputs.build_debug_command != ''
         run: ${{ inputs.build_debug_command }}
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
           SKOPEO_INSECURE_POLICY: "1"
-      - name: Build docker image - ${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
+      - name: Build latest docker image - ${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
         if: inputs.version_type == 'pr'
         run: ${{ inputs.build_command }}
         env:
@@ -154,3 +171,17 @@ jobs:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
           SKOPEO_INSECURE_POLICY: "1"
+      - name: Deploy in staging
+        if: steps.version.outputs.deploy_staging == 'true'
+        run: |
+          echo "Starting deployment restart"
+          if ! kubectl rollout restart deployments -n ${{ inputs.deployment_namespace }} -l ${{ inputs.deployment_label_selector }}; then
+            echo "Failed to restart deployment"
+            exit 1
+          fi
+          if ! kubectl rollout status deployments -n ${{ inputs.deployment_namespace }} -l ${{ inputs.deployment_label_selector }} --timeout=600s; then
+            echo "Deployment did not complete within the timeout period"
+            exit 1
+          fi
+          echo "Restart completed successfully"
+        timeout-minutes: 15

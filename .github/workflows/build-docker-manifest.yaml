@@ -59,7 +59,8 @@ jobs:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ inputs.docker_build_version }}
-      - name: Create multi-arch docker manifest - ${{ inputs.docker_debug_version }}
+      - name: Create debug multi-arch docker manifest - ${{ inputs.docker_debug_version }}
+        if: inputs.docker_debug_version != ''
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ausias/fix-actions
         with:
           registry: ${{ inputs.docker_gcp_registry }}
