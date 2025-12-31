@@ -14,7 +14,7 @@ on:
         type: string
         description: "Docker image name"
       docker_version:
-        required: false
+        required: true
         type: string
         description: "Docker image version to use"
       docker_gcp_registry:
@@ -35,7 +35,7 @@ on:
       docker_hub_token:
         required: false
 concurrency:
-  group: docker-multi-arch-manifest
+  group: docker-multi-arch-manifest-${{ inputs.docker_image_name }}-${{ inputs.docker_version }}
   cancel-in-progress: false
 jobs:
   manifest:

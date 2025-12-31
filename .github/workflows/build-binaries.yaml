@@ -52,7 +52,7 @@ on:
       gpg_private_key:
         required: true
 concurrency:
-  group: build-binary-${{ inputs.source_branch || github.ref_name }}-${{ inputs.architecture }}
+  group: build-binary-${{ github.repository }}-${{ inputs.source_branch }}-${{ inputs.architecture }}
   cancel-in-progress: true
 
 permissions:

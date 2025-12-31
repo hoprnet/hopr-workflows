@@ -19,7 +19,7 @@ on:
         type: string
         description: "Type of version to build: commit, pr, release, rc"
       architecture:
-        required: false
+        required: true
         type: string
         default: "x86_64-linux"
         description: "Target architecture for the docker image"
@@ -78,7 +78,7 @@ on:
         description: "Docker image version built"
         value: ${{ jobs.docker.outputs.docker_version }}
 concurrency:
-  group: build-docker-${{ inputs.source_branch || github.ref_name }}
+  group: build-docker-${{ github.repository }}-${{ inputs.source_branch }}-${{ inputs.architecture }}
   cancel-in-progress: true
 jobs:
   docker:
@@ -124,7 +124,7 @@ jobs:
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
           SKOPEO_INSECURE_POLICY: "1"
       - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
-        if: steps.version.outputs.build_flavor_debug == 'true'
+        if: steps.version.outputs.build_flavor_debug == 'true' && inputs.build_debug_command != ''
         run: ${{ inputs.build_debug_command }}
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
