@@ -83,14 +83,15 @@ jobs:
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/fix-actions
         with:
-          cache: ${{ inputs.cachix_cache_name }}
-          authToken: "${{ secrets.cachix_auth_token }}"
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@build-version-v1
+        uses: hoprnet/hopr-workflows/actions/set-build-version@ausias/fix-actions
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
+          architecture: "${{ inputs.architecture }}"
       - name: Build binary ${{ inputs.architecture }}
         run: |
           ${{ inputs.build_command }}
