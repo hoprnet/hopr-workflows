@@ -61,7 +61,7 @@ permissions:
 
 jobs:
   binary:
-    name: Build binary ${{ inputs.architecture }}
+    name: Binary
     if: inputs.version_type != 'commit' || contains(github.event.pull_request.labels.*.name, format('binary:{0}', inputs.architecture))
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
@@ -106,7 +106,7 @@ jobs:
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
 
   sign:
-    name:  Sign and publish binary ${{ inputs.architecture }}
+    name:  Sign and publish
     needs: binary
     runs-on: ubuntu-latest
     steps:
