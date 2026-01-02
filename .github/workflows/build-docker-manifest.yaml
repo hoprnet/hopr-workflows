@@ -93,4 +93,4 @@ jobs:
         with:
           registry: ${{ inputs.docker_hub_registry }}
           image: ${{ inputs.docker_image_name }}
-          version: ${{ inputs.docker_version }}
+          version: ${{ inputs.docker_build_version }}
