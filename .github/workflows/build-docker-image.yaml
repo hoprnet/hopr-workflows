@@ -172,7 +172,7 @@ jobs:
   deploy:
     name: Deploy
     needs: docker
-    if: needs.docker.outputs.deploy_staging == 'true'
+    if: needs.docker.outputs.deploy_staging == 'true' && inputs.deployment_namespace != '' && inputs.deployment_label_selector != ''
     runs-on: self-hosted-hoprnet-small
     steps:
       - name: Setup GCP
