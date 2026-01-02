@@ -103,7 +103,7 @@ runs:
               docker_debug_version=${debug_version/+/-}
               if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
                 docker_debug_version_platform="${docker_debug_version}-linux-arm64"
-              else [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
+              elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
                 docker_debug_version_platform="${docker_debug_version}-linux-amd64"
               fi
               echo "debug_version=${debug_version}" | tee -a "$GITHUB_OUTPUT"
