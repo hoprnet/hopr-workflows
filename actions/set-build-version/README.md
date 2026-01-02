@@ -45,4 +45,4 @@ Updates the `version` of the project based on the type of build desired.
 - `docker_platform`: Docker platform based on architecture. Posible values: `linux-arm64` or `linux-amd64`.
 - `publish_artifact_registry`: Whether to publish the artifact in the Google Artifact registry. Enabled when the `version_type` is `pr` or `release` and when it's `commit` and the PR has the label `publish-binaries` attached.
 - `publish_github_release`: Whether to publish the artifact in the GitHub Release. Enabled when the `version_type` is `release`.
-- `deploy_staging`: Whether to deploy to staging environment. Enabled when the label `deploy-staging` is attached to the PR and the `version_type` is `commit`.
+- `deploy_staging`: Whether to deploy to staging environment. Enabled when the label `deploy-staging` is attached to the PR and the `version_type` is `commit` or when the `version_type` is `pr` and the event is `merged`.

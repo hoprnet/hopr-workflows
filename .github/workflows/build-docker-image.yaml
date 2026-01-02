@@ -99,6 +99,7 @@ jobs:
     outputs:
       docker_build_version: ${{ steps.version.outputs.docker_build_version }}
       docker_debug_version: ${{ steps.version.outputs.docker_debug_version }}
+      deploy_staging: ${{ steps.version.outputs.deploy_staging }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
@@ -119,13 +120,10 @@ jobs:
           architecture: "${{ inputs.architecture }}"
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@ausias/fix-actions
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
-          install_sdk: '${{ steps.version.outputs.deploy_staging }}'
-          login_gke: '${{ steps.version.outputs.deploy_staging }}'
-          project: hopr-staging
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/fix-actions
         with:
@@ -171,8 +169,22 @@ jobs:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
           SKOPEO_INSECURE_POLICY: "1"
+  deploy:
+    name: Deploy to Staging
+    needs: docker
+    if: needs.docker.outputs.deploy_staging == 'true'
+    runs-on: self-hosted-hoprnet-small
+    steps:
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@ausias/fix-actions
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          install_sdk: 'true'
+          login_gke: 'true'
+          project: hopr-staging
+
       - name: Deploy in staging
-        if: steps.version.outputs.deploy_staging == 'true'
         run: |
           echo "Starting deployment restart"
           if ! kubectl rollout restart deployments -n ${{ inputs.deployment_namespace }} -l ${{ inputs.deployment_label_selector }}; then

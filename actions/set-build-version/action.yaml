@@ -84,6 +84,7 @@ runs:
           elif [[ "${{ inputs.version_type }}" == "pr" ]]; then
             build_version=${pr_version}
             publish_artifact_registry=true
+            deploy_staging=true
           elif [[ "${{ inputs.version_type }}" == "release" ]]; then
             build_version=${release_version}
             publish_github_release=true
