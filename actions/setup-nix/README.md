@@ -1,6 +1,6 @@
 # Setup Nix
 
-This action setup the runner to run in a Nix environment
+This action sets up the runner to run in a Nix environment
 
 ## Usage
 
@@ -19,7 +19,7 @@ None
 
 ## Inputs
 
-- `cachix_cache_name`: Cachix cache name. Default value. Github repository name
+- `cachix_cache_name`: Cachix cache name. Default value. GitHub repository name
 - `cachix_auth_token`: Cachix authentication token
 - `nix_path`: Nix path to use. Default value: "nixpkgs=channel:nixos-24.05"
 

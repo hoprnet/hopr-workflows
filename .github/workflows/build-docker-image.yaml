@@ -28,7 +28,7 @@ on:
         type: string
         description: "Cachix cache name to use"
       build_file:
-        required: true
+        required: false
         type: string
         default: "Cargo.toml"
         description: "File to extract version from"
@@ -156,14 +156,22 @@ jobs:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
           SKOPEO_INSECURE_POLICY: "1"
+      - name: Identify Docker hub publish condition
+        id: docker_hub
+        run: |
+          if [ "${{ inputs.version_type }}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
+            echo "publish=true" | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" | tee -a "$GITHUB_OUTPUT"
+          fi
       - name: Log in to Docker Hub
-        if: inputs.version_type == 'release' && secrets.docker_hub_username != '' && secrets.docker_hub_token != ''
+        if: steps.docker_hub.outputs.publish == 'true'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.docker_hub_username }}
           password: ${{ secrets.docker_hub_token }}
       - name: Build docker image - Docker Hub - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-        if: inputs.version_type == 'release' && secrets.docker_hub_username != '' && secrets.docker_hub_token != ''
+        if: steps.docker_hub.outputs.publish == 'true'
         run: ${{ inputs.build_command }}
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}

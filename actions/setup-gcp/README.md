@@ -22,7 +22,7 @@ None
 
 ## Inputs
 
-- `google_credentials`: This is the Google service account in JSON format with permissions to interact from Github in GCP.
+- `google_credentials`: This is the Google service account in JSON format with permissions to interact from GitHub in GCP.
 - `install_sdk`: Determines if the GCloud cli command line needs to be installed.
 - `login_artifact_registry`: Determines if the service account needs to login in the Google Artifact registry to be able to publish new artifacts.
 - `login_gke`: Determines if the service account needs to be logged in into the Kubernetes cluster

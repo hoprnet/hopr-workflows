@@ -1,7 +1,7 @@
 # Release notes
 
 This action generates the release notes of a given repository based on the pull requests merged into the `source_branch` branch (`main`) since the last release.
-It identifies the date where the last tag was created in the given branch, and then collects all the pull requests merged in the given branch until now.
+It identifies the date when the last tag was created in the given branch, and then collects all the pull requests merged in the given branch until now.
 
 ## Usage
 

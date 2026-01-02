@@ -73,14 +73,22 @@ jobs:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest
+      - name: Identify Docker hub publish condition
+        id: docker_hub
+        run: |
+          if [ "${{ inputs.version_type }}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
+            echo "publish=true" | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" | tee -a "$GITHUB_OUTPUT"
+          fi
       - name: Log in to Docker Hub
-        if: inputs.version_type == 'release' && secrets.docker_hub_username != '' && secrets.docker_hub_token != ''
+        if: steps.docker_hub.outputs.publish == 'true'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.docker_hub_username }}
           password: ${{ secrets.docker_hub_token }}
       - name: Create multi-arch docker manifest - Docker Hub - ${{ inputs.docker_build_version }}
-        if: inputs.version_type == 'release' && secrets.docker_hub_username != '' && secrets.docker_hub_token != ''
+        if: steps.docker_hub.outputs.publish == 'true'
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_hub_registry }}
