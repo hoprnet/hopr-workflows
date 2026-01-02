@@ -12,7 +12,7 @@ Updates the `version` of the project based on the type of build desired.
 ```bash
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@build-version-v1
+        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v1
         with:
           file: Cargo.toml
           version_type: 'commit'

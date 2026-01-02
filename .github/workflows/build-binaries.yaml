@@ -81,13 +81,13 @@ jobs:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v1
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
@@ -116,7 +116,7 @@ jobs:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts
       - name: Sign binary ${{ inputs.binary }}-${{ inputs.architecture }}
-        uses: hoprnet/hopr-workflows/actions/sign-file@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/sign-file@sign-file-v1
         with:
           file: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
           gpg_private_key: ${{ secrets.gpg_private_key }}
@@ -132,14 +132,14 @@ jobs:
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.sha256
       - name: Setup GCP
         if: needs.binary.outputs.publish_artifact == 'true'
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           install_sdk: "true"
 
       - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
         if: needs.binary.outputs.publish_artifact == 'true'
-        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v1
         with:
           source: ${{ github.workspace }}/artifacts
           package: ${{ inputs.binary }}

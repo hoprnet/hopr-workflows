@@ -1,4 +1,3 @@
-# hoprnet/hopr-workflows/actions/setup-nix@nix-v1
 name: Setup Nix
 description: Setup Nix environment
 inputs:

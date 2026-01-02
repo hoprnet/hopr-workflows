@@ -48,27 +48,27 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'false'
       - name: Create multi-arch docker manifest - ${{ inputs.docker_build_version }}
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ inputs.docker_build_version }}
       - name: Create debug multi-arch docker manifest - ${{ inputs.docker_debug_version }}
         if: inputs.docker_debug_version != ''
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ inputs.docker_debug_version }}
       - name: Create multi-arch docker manifest - latest
         if: inputs.version_type == 'pr'
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
@@ -81,7 +81,7 @@ jobs:
           password: ${{ secrets.docker_hub_token }}
       - name: Create multi-arch docker manifest - Docker Hub - ${{ inputs.docker_build_version }}
         if: inputs.version_type == 'release' && secrets.docker_hub_username != '' && secrets.docker_hub_token != ''
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_hub_registry }}
           image: ${{ inputs.docker_image_name }}

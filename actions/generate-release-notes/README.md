@@ -7,7 +7,7 @@ It identifies the date where the last tag was created in the given branch, and t
 
 ```bash
       - name: Generate Release Notes
-        uses: hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
+        uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
         with:
           source_branch: ${{ github.ref }}
           format: github

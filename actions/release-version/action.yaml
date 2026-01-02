@@ -46,12 +46,12 @@ runs:
           echo "repository=${repository##*/}" | tee -a $GITHUB_OUTPUT
       - name: Download files
         id: download
-        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
         with:
           package: ${{ steps.vars.outputs.repository }}
           version: ${{ steps.vars.outputs.current_version }}
       - name: Generate Release Notes
-        uses: hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
+        uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
         with:
           source_branch: ${{ github.ref }}
           format: github

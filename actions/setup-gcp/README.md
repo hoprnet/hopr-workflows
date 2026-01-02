@@ -7,7 +7,7 @@ This action compiles a set of tasks to install and authenticate against GCP
 ```bash
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
         with:
           google_credentials: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
           install_sdk: "true"

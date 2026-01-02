@@ -1,4 +1,3 @@
-# hoprnet/hopr-workflows/actions/setup-node-js@node-js-v1
 name: Setup NodeJs
 description: Setup NodeJS repository
 inputs:

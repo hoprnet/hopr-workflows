@@ -113,19 +113,19 @@ jobs:
           ref: ${{ inputs.source_branch }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v1
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
           architecture: "${{ inputs.architecture }}"
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
@@ -177,7 +177,7 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@ausias/fix-actions
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           install_sdk: 'true'

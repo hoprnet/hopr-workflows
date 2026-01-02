@@ -1,4 +1,3 @@
-# hoprnet/hopr-workflows/actions/setup-gcp@gcp-v1
 name: Setup GCP
 description: Install GCP tools and authenticate
 inputs:
