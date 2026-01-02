@@ -64,7 +64,6 @@ runs:
         shell: bash
         id: versions
         run: |
-          set -x
           echo "Gathering version from ${{ inputs.file }} and setting build version type to '${{ inputs.version_type }}'"
           current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
           commit_version="$current_version+commit.$(git rev-parse --short HEAD)"

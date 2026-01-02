@@ -93,7 +93,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   docker:
-    name: Docker
+    name: Build
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     outputs:
@@ -170,7 +170,7 @@ jobs:
           IMAGE_TARGET: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
           SKOPEO_INSECURE_POLICY: "1"
   deploy:
-    name: Deploy to Staging
+    name: Deploy
     needs: docker
     if: needs.docker.outputs.deploy_staging == 'true'
     runs-on: self-hosted-hoprnet-small
