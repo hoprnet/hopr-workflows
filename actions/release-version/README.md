@@ -30,7 +30,7 @@ This action performs the following steps:
 ## Inputs
 
 - `file`: The filepath to the `Cargo.toml` file.
-- `release_type`: The type of release that the project is about to bump to. Posible values are : `rc`, `patch`, `minor` and `major`.
+- `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
 - `zulip_email`: Email of the user used to send Zulip notifications.
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.

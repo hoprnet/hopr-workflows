@@ -9,8 +9,8 @@ GitHub workflows helping HOPR automate tasks via github actions
 - [Download Artifact Registry](./actions/download-artifact-registry/README.md): Downloads artifacts from Google Artifact Registry.
 - [Generate Release Notes](./actions/generate-release-notes/README.md): Generate Release notes
 - [Multi Architecture Manifest](./actions/multi-arch-manifest/README.md): Publishes a multi-arch docker manifest
-- [Publish Rust Docs](./actions/publish-rust-docs/README.md): Publishes rust docs in Github pages
-- [Release Version](./actions/release-version/README.md): Creates a github release
+- [Publish Rust Docs](./actions/publish-rust-docs/README.md): Publishes rust docs in GitHub Pages
+- [Release Version](./actions/release-version/README.md): Creates a GitHub release
 - [Set Build Version](./actions/set-build-version/README.md): Updates project version before building
 - [Setup GCP](./actions/setup-gcp/README.md): Setup GCP tools and permissions
 - [Setup Nix](./actions/setup-nix/README.md): Setup a Nix environment in the runner

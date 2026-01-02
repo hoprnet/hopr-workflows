@@ -16,7 +16,7 @@ inputs:
 runs:
     using: composite
     steps:
-      - name: Install pacakges
+      - name: Install packages
         shell: bash
         run: |
           required_packages=("gh" "jq")

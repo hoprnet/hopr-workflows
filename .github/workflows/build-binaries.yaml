@@ -20,7 +20,7 @@ on:
         type: string
         description: "Cachix cache name to use"
       build_file:
-        required: true
+        required: false
         type: string
         default: "Cargo.toml"
         description: "File to extract version from"

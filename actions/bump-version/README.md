@@ -22,7 +22,7 @@ It also commits the change on the `${{ github.ref_name}}` branch. If the branch 
 ## Inputs
 
 - `file`: The filepath to the `Cargo.toml` file
-- `release_type`: The type of release that the project is about to bump to. Posible values are : `rc`, `patch`, `minor` and `major`.
+- `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
 
 ## Outputs
 

@@ -10,7 +10,7 @@ inputs:
 runs:
     using: composite
     steps:
-      - name: Install pacakges
+      - name: Install packages
         shell: bash
         run: |
           if ! command -v gpg &> /dev/null; then

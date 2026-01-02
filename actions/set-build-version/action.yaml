@@ -6,7 +6,7 @@ inputs:
         required: true
         default: Cargo.toml
     version_type:
-        description: 'Version type to bump (commit, pr, release, rc)'
+        description: 'Version type to bump (commit, pr, release)'
         required: true
     architecture:
         description: 'Target architecture for the docker image'
