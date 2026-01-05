@@ -7,7 +7,6 @@ env:
   CARGO_TERM_COLOR: always
 permissions:
   contents: read
-  security-events: write
 on:
   workflow_call:
     inputs:
