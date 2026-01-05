@@ -44,7 +44,7 @@ concurrency:
 jobs:
   manifest:
     name: Multi-Arch
-    runs-on: self-hosted-hoprnet-big
+    runs-on: self-hosted-hoprnet-small
     steps:
       - name: Setup GCP
         id: gcp
