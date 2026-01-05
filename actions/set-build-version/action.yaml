@@ -77,13 +77,17 @@ runs:
             if [ "${GITHUB_PR_LABEL_PUBLISH_BINARIES:-0}" == '1' ]; then
               publish_artifact_registry=true
             fi
+            # The applications using the `deploy-staging` label will be deployed on PR commits to staging
             if [[ "${GITHUB_PR_LABEL_DEPLOY_STAGING:-0}" == '1' ]]; then
               deploy_staging=true
             fi
           elif [[ "${{ inputs.version_type }}" == "pr" ]]; then
             build_version=${pr_version}
             publish_artifact_registry=true
-            deploy_staging=true
+            # The applications not using the `deploy-staging` label will deploy to staging once PR is merged
+            if [[ "${GITHUB_PR_LABEL_DEPLOY_STAGING:-0}" == '0' ]]; then
+              deploy_staging=true
+            fi
           elif [[ "${{ inputs.version_type }}" == "release" ]]; then
             build_version=${release_version}
             publish_github_release=true
