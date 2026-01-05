@@ -40,6 +40,7 @@ runs:
         with:
           google_credentials: ${{ inputs.gcp_service_account }}
           login_artifact_registry: 'true'
+          install_sdk: 'true'
       - name: Get current version
         shell: bash
         id: vars
