@@ -21,6 +21,9 @@ inputs:
     zulip_topic:
         description: Zulip topic for notifications
         required: false
+    gcp_service_account:
+        description: GCP Service Account JSON for Artifact Registry access
+        required: true
 outputs:
     current_version:
         description: Current released version
@@ -31,6 +34,12 @@ outputs:
 runs:
     using: composite
     steps:
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        with:
+          google_credentials: ${{ inputs.gcp_service_account }}
+          login_artifact_registry: 'true'
       - name: Get current version
         shell: bash
         id: vars

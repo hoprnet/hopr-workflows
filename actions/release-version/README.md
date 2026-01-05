@@ -19,6 +19,7 @@ This action performs the following steps:
           zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
           zulip_channel: "MyChannel"
           zulip_topic: "Releases"
+          gcp_service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
 ```
 
 ## Requirements
@@ -35,6 +36,7 @@ This action performs the following steps:
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.
 - `zulip_topic`: Zulip topic for notifications.
+- `gpc_service_account`: GCP Service Account JSON for Artifact Registry access
 
 ## Outputs
 
