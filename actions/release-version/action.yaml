@@ -1,6 +1,10 @@
 name: Release Version
 description: Release Version
 inputs:
+    source_branch:
+        description: Source branch for release notes
+        required: false
+        default: main
     file:
         description: File to update version in
         required: true
@@ -21,6 +25,13 @@ inputs:
     zulip_topic:
         description: Zulip topic for notifications
         required: false
+    attach_binaries:
+        description: Whether to attach binaries from Artifact Registry
+        required: false
+        default: 'true'
+    gcp_service_account:
+        description: GCP Service Account JSON for Artifact Registry access
+        required: true
 outputs:
     current_version:
         description: Current released version
@@ -31,6 +42,13 @@ outputs:
 runs:
     using: composite
     steps:
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        with:
+          google_credentials: ${{ inputs.gcp_service_account }}
+          login_artifact_registry: 'true'
+          install_sdk: 'true'
       - name: Get current version
         shell: bash
         id: vars
@@ -44,7 +62,8 @@ runs:
           fi
           repository=${{ github.repository }}
           echo "repository=${repository##*/}" | tee -a $GITHUB_OUTPUT
-      - name: Download files
+      - name: Download binary files
+        if: inputs.attach_binaries == 'true'
         id: download
         uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
         with:
@@ -53,7 +72,7 @@ runs:
       - name: Generate Release Notes
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
         with:
-          source_branch: ${{ github.ref }}
+          source_branch: ${{ inputs.source_branch }}
           format: github
       - name: Create Release
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
@@ -62,7 +81,7 @@ runs:
             prerelease: ${{ steps.vars.outputs.prerelease }}
             name: "v${{ steps.vars.outputs.current_version }}"
             body_path: ./release-notes.txt
-            files: ${{ steps.download.outputs.downloaded_files }}
+            files: ${{ steps.download.outputs.downloaded_files || '' }}
       - name: Bump version
         id: bump
         uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v1

@@ -135,12 +135,8 @@ json_format_changelog() {
 
 # Validate input parameters
 check_parameters() {
-    if [[ $# -lt 2 ]]; then
-        echo "Usage: $0 <branch> <format> [release_notes_file]"
-        exit 1
-    fi
-    local branch="$1"
-    local format="$2"
+    local branch="${1:-main}"
+    local format="${2:-github}"
     if ! git ls-remote --heads origin "$branch" | grep -q "$branch"; then
         echo "Error: Branch '$branch' does not exist."
         exit 1
@@ -193,8 +189,8 @@ get_last_release_date() {
 
 # Main function
 main() {
-    local branch="$1"
-    local format="$2"
+    local branch="${1:-main}"
+    local format="${2:-github}"
     local release_notes_file="${3:-release-notes.txt}"
 
     local github_repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
