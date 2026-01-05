@@ -1,9 +1,3 @@
-# hoprnet/hopr-workflows/actions/set-build-version@build-version-v1
-### Requirements
-# - Requires the repository to use Cargo.toml for versioning
-# - Requires the repository to use Nix environment
-# - Requires the generate-lockfile command to be available in the Nix environment
-
 name: 'Setup Version'
 description: 'Setup Version'
 inputs:
@@ -14,6 +8,10 @@ inputs:
     version_type:
         description: 'Version type to bump (commit, pr, release)'
         required: true
+    architecture:
+        description: 'Target architecture for the docker image'
+        required: true
+        default: x86_64-linux
 outputs:
     current_version:
         description: 'Current version extracted from file'
@@ -21,6 +19,9 @@ outputs:
     commit_version:
         description: 'Version with commit hash'
         value: ${{ steps.versions.outputs.commit_version }}
+    debug_version:
+        description: 'Debug version with commit hash'
+        value: ${{ steps.versions.outputs.debug_version }}
     pr_version:
         description: 'Version with pull request number'
         value: ${{ steps.versions.outputs.pr_version }}
@@ -30,19 +31,30 @@ outputs:
     build_version:
         description: 'Build version based on version type'
         value: ${{ steps.versions.outputs.build_version }}
-    docker_version:
+    docker_build_version:
         description: 'Docker compatible version'
-        value: ${{ steps.versions.outputs.docker_version }}
-    publish_workflow_run:
-        description: 'Whether to publish the artifact in the workflow run'
-        value: ${{ steps.versions.outputs.publish_workflow_run }}
+        value: ${{ steps.versions.outputs.docker_build_version }}
+    docker_debug_version:
+        description: 'Docker compatible debug version'
+        value: ${{ steps.versions.outputs.docker_debug_version }}
+    docker_build_version_platform:
+        description: 'Docker compatible version with platform suffix'
+        value: ${{ steps.versions.outputs.docker_build_version_platform }}
+    docker_debug_version_platform:
+        description: 'Docker compatible debug version with platform suffix'
+        value: ${{ steps.versions.outputs.docker_debug_version_platform }}
+    docker_platform:
+        description: 'Docker platform based on architecture'
+        value: ${{ steps.versions.outputs.docker_platform }}
     publish_artifact_registry:
         description: 'Whether to publish the artifact in the Google Artifact registry'
         value: ${{ steps.versions.outputs.publish_artifact_registry }}
     publish_github_release:
         description: 'Whether to publish the artifact in the GitHub Release'
         value: ${{ steps.versions.outputs.publish_github_release }}
-
+    deploy_staging:
+        description: 'Whether to deploy to staging environment'
+        value: ${{ steps.versions.outputs.deploy_staging }}
 runs:
     using: 'composite'
     steps:
@@ -52,25 +64,26 @@ runs:
         shell: bash
         id: versions
         run: |
-          set -x
           echo "Gathering version from ${{ inputs.file }} and setting build version type to '${{ inputs.version_type }}'"
           current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
           commit_version="$current_version+commit.$(git rev-parse --short HEAD)"
           pr_version="$current_version+pr.${{ github.event.pull_request.number }}"
           release_version="$current_version"
-          publish_workflow_run=false
           publish_artifact_registry=false
           publish_github_release=false
+          deploy_staging=false
           if [[ "${{ inputs.version_type }}" == "commit" ]]; then
             build_version=${commit_version}
             if [ "${GITHUB_PR_LABEL_PUBLISH_BINARIES:-0}" == '1' ]; then
               publish_artifact_registry=true
-            else
-              publish_workflow_run=true
+            fi
+            if [[ "${GITHUB_PR_LABEL_DEPLOY_STAGING:-0}" == '1' ]]; then
+              deploy_staging=true
             fi
           elif [[ "${{ inputs.version_type }}" == "pr" ]]; then
             build_version=${pr_version}
             publish_artifact_registry=true
+            deploy_staging=true
           elif [[ "${{ inputs.version_type }}" == "release" ]]; then
             build_version=${release_version}
             publish_github_release=true
@@ -83,20 +96,49 @@ runs:
             echo "- 'release': To set version for release"
             exit 1
           fi
+
+          ## Debug build flavor
+          if [[ "${{ inputs.version_type }}" == "commit" ]] && [[ "${GITHUB_PR_LABEL_BUILD_FLAVOR_DEBUG:-0}" == '1' ]]; then
+              debug_version="$current_version+debug.$(git rev-parse --short HEAD)"
+              docker_debug_version=${debug_version/+/-}
+              if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
+                docker_debug_version_platform="${docker_debug_version}-linux-arm64"
+              elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
+                docker_debug_version_platform="${docker_debug_version}-linux-amd64"
+              fi
+              echo "debug_version=${debug_version}" | tee -a "$GITHUB_OUTPUT"
+              echo "docker_debug_version=${docker_debug_version}" | tee -a "$GITHUB_OUTPUT"
+              echo "docker_debug_version_platform=${docker_debug_version_platform}" | tee -a "$GITHUB_OUTPUT"
+          fi
+
+          # Generate Docker compatible version
+          docker_build_version=${build_version/+/-}
+          if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
+            docker_build_version_platform="${docker_build_version}-linux-arm64"
+            docker_platform="linux-arm64"
+          elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
+            docker_build_version_platform="${docker_build_version}-linux-amd64"
+            docker_platform="linux-amd64"
+          else
+            echo "Unsupported architecture: ${{ inputs.architecture }}"
+            exit 1
+          fi
           echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
           echo "commit_version=${commit_version}" | tee -a "$GITHUB_OUTPUT"
           echo "pr_version=${pr_version}" | tee -a "$GITHUB_OUTPUT"
           echo "release_version=${release_version}" | tee -a "$GITHUB_OUTPUT"
           echo "build_version=${build_version}" | tee -a "$GITHUB_OUTPUT"
-          echo "docker_version=${build_version/+/-}" | tee -a "$GITHUB_OUTPUT"
-          echo "publish_workflow_run=${publish_workflow_run}" | tee -a "$GITHUB_OUTPUT"
+          echo "docker_build_version=${docker_build_version}" | tee -a "$GITHUB_OUTPUT"
+          echo "docker_build_version_platform=${docker_build_version_platform}" | tee -a "$GITHUB_OUTPUT"
+          echo "docker_platform=${docker_platform}" | tee -a "$GITHUB_OUTPUT"
           echo "publish_artifact_registry=${publish_artifact_registry}" | tee -a "$GITHUB_OUTPUT"
           echo "publish_github_release=${publish_github_release}" | tee -a "$GITHUB_OUTPUT"
+          echo "deploy_staging=${deploy_staging}" | tee -a "$GITHUB_OUTPUT"
       - name: Update build version
         shell: bash
         run: |
-          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(\+[^\"]+)?(\")/\1${{ steps.versions.outputs.build_version}}\4/" ${{ inputs.file }}
+          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${{ steps.versions.outputs.build_version}}\5/" ${{ inputs.file }}
           if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
-            nix develop -c cargo generate-lockfile
+            nix develop --command cargo generate-lockfile
           fi
           rm "${{ inputs.file }}.bak"

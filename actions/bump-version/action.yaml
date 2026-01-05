@@ -1,29 +1,23 @@
-# hoprnet/hopr-workflows/actions/bump-version@bump-version-v1
-### Requirements
-# - Requires the repository to use Cargo.toml for versioning
-# - Requires the repository to use Nix environment
-# - Requires the generate-lockfile command to be available in the Nix environment
-
-name: 'Bump Version'
-description: 'Bump Version'
+name: Bump Version
+description: Bump Version
 inputs:
     file:
-        description: 'File to update version in'
+        description: File to update version in
         required: true
         default: Cargo.toml
     release_type:
-        description: 'Release type to bump (major, minor, patch)'
+        description: Release type to bump (major, minor, patch, rc)
         required: false
         default: patch
 outputs:
     current_version:
-        description: 'Current version extracted from file'
+        description: Current version extracted from file
         value: ${{ steps.versions.outputs.current_version }}
     bump_version:
-        description: 'Version bumped'
+        description: Version bumped
         value: ${{ steps.versions.outputs.bump_version }}
 runs:
-    using: 'composite'
+    using: composite
     steps:
       - name: Bump version
         shell: bash
@@ -31,8 +25,21 @@ runs:
         run: |
           current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
           echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
+          # Split pre-release if any
+          IFS='-'
+          read -a current_version_splitted <<<"${current_version}"
+    
+          current_version_without_rc="${current_version_splitted[0]}"
+          if [ "${#current_version_splitted[*]}" = "2" ]; then
+            # Get Release Candidate Number
+            release_candidate_number="${current_version_splitted[1]/rc\./}"
+          elif [ "${{ inputs.release_type }}" = "rc" ]; then
+            # Reset the release candidate for new release name
+            release_candidate_number=0
+          fi
+
           # Extract parts without IFS or read
-          IFS='.' read -r major_version minor_version patch_version <<< "${current_version}"
+          IFS='.' read -r major_version minor_version patch_version <<< "${current_version_without_rc}"
           echo "Current version ${major_version}.${minor_version}.${patch_version}"
           # Bump the appropriate part
           echo "Bumping ${{ inputs.release_type }} version"
@@ -47,29 +54,44 @@ runs:
                   patch_version=0
                   ;;
               patch)
-                  patch_version=$((patch_version+1))
+                  if [ -n "$release_candidate_number" ]; then
+                    # If we are bumping a patch after a RC, we do not increment the patch version
+                    echo "Bumping patch after Release Candidate, keeping patch version the same."
+                    unset release_candidate_number
+                  else
+                    patch_version=$((patch_version+1))
+                  fi
+                  ;;
+              rc)
+                  release_candidate_number=$((release_candidate_number + 1))
                   ;;
               *)
                   echo "Invalid release type ${{ inputs.release_type }}"
                   exit 1
                   ;;
           esac
-          echo "New version: ${major_version}.${minor_version}.${patch_version}"
           bump_version="${major_version}.${minor_version}.${patch_version}"
+          if [ -n "$release_candidate_number" ]; then
+              bump_version="${bump_version}-rc.${release_candidate_number}"
+          fi
+          echo "Bumped version: ${bump_version}"
+
 
           # Update the version in the specified file
           # capture group 1: version = "
           # capture group 2: the version number
           # capture group 3: "
-          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(\")/\1${bump_version}\3/" ${{ inputs.file }}
+          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${bump_version}\5/" ${{ inputs.file }}
           rm ${{ inputs.file }}.bak
-          nix develop --command cargo generate-lockfile
+          if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
+            nix develop --command cargo generate-lockfile
+          fi
           echo "bump_version=${bump_version}" | tee -a "$GITHUB_OUTPUT"
           lock_file=$(echo "${{ inputs.file }}" | sed 's/toml/lock/')
           echo "lock_file=${lock_file}" | tee -a "$GITHUB_OUTPUT"
       - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
         with:
           add: '["${{ inputs.file }}", "${{ steps.versions.outputs.lock_file }}"]'
-          new_branch: main
+          new_branch: ${{ github.ref_name }}
           message: "Bump to version ${{ steps.versions.outputs.bump_version }}"
           pathspec_error_handling: ignore

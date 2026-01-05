@@ -1,0 +1,40 @@
+name: Multi-Arch Manifest
+description: Create a multi-arch docker manifest
+inputs:
+    registry:
+        description: Docker registry to push the image to
+        required: true
+        default: europe-west3-docker.pkg.dev/hoprassociation/docker-images
+    image:
+        description: Docker image name
+        required: true
+    version:
+        description: Docker image version
+        required: true
+runs:
+    using: composite
+    steps:
+      - name: Create multi-arch docker manifest
+        id: manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker_manifest="${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.version }}"
+          images=()
+          for arch in linux-arm64 linux-amd64; do
+            img="${docker_manifest}-${arch}"
+            if docker manifest inspect "$img" >/dev/null 2>&1; then
+              images+=(--amend "$img")
+            else
+              echo "[WARN] Missing or not accessible: $img"
+            fi
+          done
+
+          if [ "${#images[@]}" -eq 0 ]; then
+            echo "[WARN] No images found to create the manifest."
+            exit 0 # Exit without error if no images are found as the debug image might not be built
+          else
+            echo "[INFO] Creating multi-arch docker manifest: ${docker_manifest}"
+            docker manifest create "${docker_manifest}" "${images[@]}"
+            docker manifest push "${docker_manifest}"
+          fi

@@ -1,0 +1,76 @@
+name: Upload Artifact Registry
+description: Upload Artifact Registry artifacts
+inputs:
+    source:
+        description: Source folder to upload the artifact from
+        required: false
+        default: ./artifacts
+    project:
+        description: GCP Project name
+        required: false
+        default: hoprassociation
+    region:
+        description: GCP region
+        required: false
+        default: europe-west3
+    repository:
+        description: Artifact Registry repository name
+        required: false
+        default: rust-binaries
+    package:
+        description: Artifact Registry package name
+        required: true
+    version:
+        description: Artifact version to upload
+        required: true
+outputs:
+    uploaded_files:
+        description: Comma-separated list of uploaded files
+        value: ${{ steps.artifacts.outputs.uploaded_files }}
+runs:
+    using: composite
+    steps:
+      - name: Upload artifacts
+        shell: bash
+        id: artifacts
+        run: |
+          source_path="${{ inputs.source }}"
+          
+          # Validate source exists
+          if [ ! -e "$source_path" ]; then
+            echo "Error: Source path does not exist: $source_path"
+            exit 1
+          fi
+          
+          # Handle both files and directories
+          if [ -f "$source_path" ]; then
+            files=("$(basename "$source_path")")
+            source_dir="$(dirname "$source_path")"
+          else
+            files=()
+            while IFS= read -r -d '' file; do
+              files+=("$(basename "$file")")
+            done < <(find "$source_path" -maxdepth 1 -type f -print0)
+            source_dir="$source_path"
+          fi
+          
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "Error: No files found to upload"
+            exit 1
+          fi
+
+          for artifact in "${files[@]}"; do
+            gcloud artifacts generic upload \
+              --project="${{ inputs.project }}" \
+              --location="${{ inputs.region }}" \
+              --repository="${{ inputs.repository }}" \
+              --package="${{ inputs.package }}" \
+              --version="${{ inputs.version }}" \
+              --source="${source_dir}/${artifact}" || {
+                echo "Error: Failed to upload ${artifact}"
+                exit 1
+              }
+          done
+          # Create a comma-separated list of uploaded files
+          IFS=','; uploaded_files="${files[*]}"; unset IFS
+          echo "uploaded_files=$uploaded_files" | tee -a $GITHUB_OUTPUT

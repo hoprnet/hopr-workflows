@@ -1,28 +1,41 @@
-# hoprnet/hopr-workflows/actions/generate-release-notes@release-notes-v1
-### Requirements
-# - Requires gh CLI to be installed and authenticated
-
 name: Generate Release Notes
 description: Generates release notes based on PR
 inputs:
-    branch:
-        description: 'Repository branch to generate release notes for'
+    source_branch:
+        description: Repository branch to generate release notes for
         required: true
         default: main
     format:
-        description: 'Format of the release notes (github, json)'
+        description: Format of the release notes
         required: true
         default: github
     release_notes_file:
-        description: 'File to output the release notes to'
+        description: File to output the release notes to
         required: false
         default: ./release-notes.txt
 runs:
-    using: 'composite'
+    using: composite
     steps:
+      - name: Install packages
+        shell: bash
+        run: |
+          required_packages=("gh" "jq")
+          missing_packages=()
+          for required_package in "${required_packages[@]}"; do
+            if ! command -v $required_package &> /dev/null; then
+              echo "$required_package could not be found, installing..."
+              missing_packages+=("$required_package")
+            else
+              echo "$required_package is already installed"
+            fi
+          done
+          if [ ${#missing_packages[@]} -ne 0 ]; then
+            sudo apt-get update
+            sudo apt-get install -y "${missing_packages[@]}"
+          fi
       - name: Generate release notes
         shell: bash
-        run: ${{ github.action_path }}/generate-release-notes.sh "${{ inputs.branch }}" "${{ inputs.format }}" "${{ inputs.release_notes_file }}"
+        run: ${{ github.action_path }}/generate-release-notes.sh "${{ inputs.source_branch }}" "${{ inputs.format }}" "${{ inputs.release_notes_file }}"
         env:
           GH_TOKEN: ${{ github.token }}
         working-directory: ${{ github.workspace }}

@@ -1,0 +1,53 @@
+name: Publish Rust Docs
+description: Publishes Rust documentation to GitHub Pages
+inputs:
+    source_repo:
+        description: Source repository
+        required: true
+    source_branch:
+        description: Source branch
+        required: true
+    publish:
+        description: 'Publish the docs'
+        required: true
+    cachix_cache_name:
+        description: 'Nix cache name'
+        required: false
+    cachix_auth_token:
+        description: 'Nix cache auth token'
+        required: false
+    command:
+        description: 'Command to generate the docs'
+        required: false
+        default: 'nix build -L .#docs'
+    github_token:
+      description: GitHub token
+      required: true
+runs:
+    using: composite
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          repository: ${{ inputs.source_repo }}
+          ref: ${{ inputs.source_branch }}
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ inputs.cachix_auth_token }}"
+      - name: Build docs
+        shell: bash
+        run: ${{ inputs.command }}
+      - name: Increase git buffer size
+        shell: bash
+        if: inputs.publish
+        run: git config --global http.postBuffer 524288000
+      - name: Deploy
+        if: inputs.publish
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
+        with:
+          github_token: ${{ inputs.github_token }}
+          publish_dir: ./result/share/doc/
+          force_orphan: true

@@ -1,0 +1,69 @@
+name: Download Artifact Registry
+description: Download Artifact Registry artifacts
+inputs:
+    destination:
+        description: Destination folder to download the artifact to
+        required: false
+        default: ./artifacts
+    project:
+        description: GCP Project name
+        required: false
+        default: hoprassociation
+    region:
+        description: GCP region
+        required: false
+        default: europe-west3
+    repository:
+        description: Artifact Registry repository name
+        required: false
+        default: rust-binaries
+    package:
+        description: Artifact Registry package name
+        required: true
+    version:
+        description: Artifact version to download
+        required: true
+outputs:
+    downloaded_files:
+        description: Comma-separated list of downloaded files
+        value: ${{ steps.artifacts.outputs.downloaded_files }}
+runs:
+    using: composite
+    steps:
+      - name: Download artifacts
+        shell: bash
+        id: artifacts
+        run: |
+          mkdir -p "${{ inputs.destination }}"
+          if ! files=$(gcloud artifacts files list \
+            --project="${{ inputs.project }}" \
+            --location="${{ inputs.region }}" \
+            --repository="${{ inputs.repository }}" \
+            --package="${{ inputs.package }}" \
+            --version="${{ inputs.version }}" \
+            --format=json | jq -r '.[] | .name'); then
+            echo "Error: Failed to list artifacts"
+            exit 1
+          fi
+          if [ -z "$files" ]; then
+            echo "Error: No files found for package ${{ inputs.package }} version ${{ inputs.version }}"
+            exit 1
+          fi
+          IFS=$'\n' read -rd '' -a files_array <<<"$files"
+          for file in "${files_array[@]}"; do
+            if ! gcloud artifacts generic download \
+              --project="${{ inputs.project }}" \
+              --location="${{ inputs.region }}" \
+              --repository="${{ inputs.repository }}" \
+              --package="${{ inputs.package }}" \
+              --version="${{ inputs.version }}" \
+              --destination="${{ inputs.destination }}" \
+              "${file}"; then
+              echo "Error: Failed to download ${file}"
+              exit 1
+            fi
+          done
+          # Create a comma-separated list of downloaded files
+          IFS=','; downloaded_files="${files_array[*]}"; unset IFS
+          echo "downloaded_files=$downloaded_files" | tee -a $GITHUB_OUTPUT
+

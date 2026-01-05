@@ -1,0 +1,28 @@
+name: Sign File
+description: Signs a file using a GPG private key
+inputs:
+    file:
+        description: File to sign
+        required: true
+    gpg_private_key:
+        description: GPG private key for signing
+        required: true
+runs:
+    using: composite
+    steps:
+      - name: Install packages
+        shell: bash
+        run: |
+          if ! command -v gpg &> /dev/null; then
+            echo "gpg could not be found, installing..."
+            sudo apt-get update
+            sudo apt-get install -y gpg
+          else
+            echo "gpg is already installed"
+          fi
+      - name: Sign file
+        shell: bash
+        run: ${{ github.action_path }}/sign-file.sh "${{ inputs.file }}"
+        env:
+          GPG_PRIVATE_KEY: ${{ inputs.gpg_private_key }}
+        working-directory: ${{ github.workspace }}
