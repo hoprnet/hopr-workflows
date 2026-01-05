@@ -13,6 +13,7 @@ This action performs the following steps:
       - name: Release version
         uses: hoprnet/hopr-workflows/actions/release-version@release-version-v1
         with:
+          source_branch: main
           file: Cargo.toml
           release_type: patch
           zulip_email: ${{ secrets.ZULIP_EMAIL }}
@@ -31,6 +32,7 @@ This action performs the following steps:
 
 ## Inputs
 
+- `source_branch`: Source branch for release notes
 - `file`: The filepath to the `Cargo.toml` file.
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
 - `zulip_email`: Email of the user used to send Zulip notifications.

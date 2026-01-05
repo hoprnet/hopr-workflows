@@ -1,6 +1,10 @@
 name: Release Version
 description: Release Version
 inputs:
+    source_branch:
+        description: Source branch for release notes
+        required: false
+        default: main
     file:
         description: File to update version in
         required: true
@@ -68,7 +72,7 @@ runs:
       - name: Generate Release Notes
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
         with:
-          source_branch: ${{ github.ref }}
+          source_branch: ${{ inputs.source_branch }}
           format: github
       - name: Create Release
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
