@@ -39,7 +39,7 @@ This action performs the following steps:
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.
 - `zulip_topic`: Zulip topic for notifications.
-- `gpc_service_account`: GCP Service Account JSON for Artifact Registry access
+- `gcp_service_account`: GCP Service Account JSON for Artifact Registry access
 - `attach_binaries`: Whether to attach binaries from Artifact Registry
 
 ## Outputs
