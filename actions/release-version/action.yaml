@@ -21,6 +21,10 @@ inputs:
     zulip_topic:
         description: Zulip topic for notifications
         required: false
+    attach_binaries:
+        description: Whether to attach binaries from Artifact Registry
+        required: false
+        default: 'true'
     gcp_service_account:
         description: GCP Service Account JSON for Artifact Registry access
         required: true
@@ -54,7 +58,8 @@ runs:
           fi
           repository=${{ github.repository }}
           echo "repository=${repository##*/}" | tee -a $GITHUB_OUTPUT
-      - name: Download files
+      - name: Download binary files
+        if: inputs.attach_binaries == 'true'
         id: download
         uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
         with:
@@ -72,7 +77,7 @@ runs:
             prerelease: ${{ steps.vars.outputs.prerelease }}
             name: "v${{ steps.vars.outputs.current_version }}"
             body_path: ./release-notes.txt
-            files: ${{ steps.download.outputs.downloaded_files }}
+            files: ${{ steps.download.outputs.downloaded_files || '' }}
       - name: Bump version
         id: bump
         uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v1

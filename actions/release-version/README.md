@@ -20,6 +20,7 @@ This action performs the following steps:
           zulip_channel: "MyChannel"
           zulip_topic: "Releases"
           gcp_service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
+          attach_binaries: 'true'
 ```
 
 ## Requirements
@@ -37,6 +38,7 @@ This action performs the following steps:
 - `zulip_channel`: Zulip channel for notifications.
 - `zulip_topic`: Zulip topic for notifications.
 - `gpc_service_account`: GCP Service Account JSON for Artifact Registry access
+- `attach_binaries`: Whether to attach binaries from Artifact Registry
 
 ## Outputs
 
