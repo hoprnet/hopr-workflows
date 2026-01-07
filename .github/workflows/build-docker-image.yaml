@@ -189,24 +189,60 @@ jobs:
       contents: read
       security-events: write
     steps:
+      - name: Get docker image
+        id: docker
+        run: |
+          docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+          docker pull "${docker_image}"
+          echo "docker_image=${docker_image}" | tee -a $GITHUB_OUTPUT
+          docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_image}" | awk -F'@' '{print $2}')
+          echo "docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${docker_digest}" | tee -a $GITHUB_OUTPUT
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+      - name: Install Cosign
+        run: |
+          COSIGN_VERSION="v2.4.1"
+          curl -Lo cosign https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64
+          chmod +x cosign
+          sudo mv cosign /usr/local/bin/cosign
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          login_artifact_registry: 'true'
       - name: Run Trivy vulnerability scanner
         run: |
-          # Run Trivy using Docker to avoid dependency issues on self-hosted runner
-          docker run --rm \
-            -v "$(pwd):/output" \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.67.2 image \
+          trivy image \
             --format sarif \
-            --output "/output/trivy-results-${{ inputs.architecture }}.sarif" \
+            --output "trivy-results-${{ inputs.architecture }}.sarif" \
             --severity HIGH,CRITICAL \
             --exit-code 1 \
-            "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+            "${{ steps.docker.outputs.docker_image }}"
       - name: Upload Trivy results to GitHub Security
         if: always()
         uses: github/codeql-action/upload-sarif@d3ced5c96c16c4332e2a61eb6f3649d6f1b20bb8 # v3.31.5
         with:
           sarif_file: trivy-results-${{ inputs.architecture }}.sarif
           category: trivy-${{ inputs.architecture }}
+      - name: Generate SBOM
+        run: |
+          trivy image \
+            --format cyclonedx \
+            --output "sbom.json" \
+            "${{ steps.docker.outputs.docker_image }}"
+      - name: Attach SBOM to image with Cosign
+        run: |
+          cosign attest \
+            --predicate "sbom.json" \
+            --type cyclonedx \
+            "${{ steps.docker.outputs.docker_digest }}"
   smoke-test:
     name: Smoke Test
     if: vars.RUN_DOCKER_SMOKE_TESTS == 'true' && inputs.architecture == 'x86_64-linux' && inputs.smoke_test_command != ''
