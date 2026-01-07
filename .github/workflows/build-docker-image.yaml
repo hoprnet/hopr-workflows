@@ -39,6 +39,10 @@ on:
         required: false
         type: string
         description: "Additional build debug flavor to use"
+      smoke_test_command:
+        required: false
+        type: string
+        description: "Command to run smoke tests against the built image"
       docker_image_name:
         required: true
         type: string
@@ -91,11 +95,12 @@ concurrency:
   group: build-docker-${{ github.repository }}-${{ inputs.source_branch }}-${{ inputs.architecture }}
   cancel-in-progress: true
 jobs:
-  docker:
+  build:
     name: Build
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     outputs:
+      docker_build_version_platform: ${{ steps.version.outputs.docker_build_version_platform }}
       docker_build_version: ${{ steps.version.outputs.docker_build_version }}
       docker_debug_version: ${{ steps.version.outputs.docker_debug_version }}
       deploy_staging: ${{ steps.version.outputs.deploy_staging }}
@@ -155,31 +160,74 @@ jobs:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
           SKOPEO_INSECURE_POLICY: "1"
-      - name: Identify Docker hub publish condition
+      - name: Determine Docker hub publishing condition
         id: docker_hub
         run: |
           if [ "${{ inputs.version_type }}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
-            echo "publish=true" | tee -a "$GITHUB_OUTPUT"
+            echo "publish_docker_hub=true" | tee -a "$GITHUB_OUTPUT"
           else
-            echo "publish=false" | tee -a "$GITHUB_OUTPUT"
+            echo "publish_docker_hub=false" | tee -a "$GITHUB_OUTPUT"
           fi
       - name: Log in to Docker Hub
-        if: steps.docker_hub.outputs.publish == 'true'
+        if: steps.docker_hub.outputs.publish_docker_hub == 'true'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.docker_hub_username }}
           password: ${{ secrets.docker_hub_token }}
       - name: Build docker image - Docker Hub - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-        if: steps.docker_hub.outputs.publish == 'true'
+        if: steps.docker_hub.outputs.publish_docker_hub == 'true'
         run: ${{ inputs.build_command }}
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
           SKOPEO_INSECURE_POLICY: "1"
+  scan:
+    name: Scan
+    needs: build
+    runs-on: self-hosted-hoprnet-small
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Run Trivy vulnerability scanner
+        run: |
+          # Run Trivy using Docker to avoid dependency issues on self-hosted runner
+          docker run --rm \
+            -v "$(pwd):/output" \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.67.2 image \
+            --format sarif \
+            --output "/output/trivy-results-${{ inputs.architecture }}.sarif" \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+      - name: Upload Trivy results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@d3ced5c96c16c4332e2a61eb6f3649d6f1b20bb8 # v3.31.5
+        with:
+          sarif_file: trivy-results-${{ inputs.architecture }}.sarif
+          category: trivy-${{ inputs.architecture }}
+  smoke-test:
+    name: Smoke Test
+    if: vars.RUN_DOCKER_SMOKE_TESTS == 'true' && inputs.architecture == 'x86_64-linux' && inputs.smoke_test_command != ''
+    needs: build
+    runs-on: self-hosted-hoprnet-big
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+      - name: Run smoke tests
+        run: ${{ inputs.smoke_test_command }}
+        env:
+          DOCKER_IMAGE: "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
   deploy:
     name: Deploy
-    needs: docker
-    if: (needs.docker.outputs.deploy_staging == 'true' || vars.DEPLOY_STAGING_MERGED_PR == 'true') && (inputs.deployment_namespace != '' && inputs.deployment_label_selector != '')
+    needs: build
+    if: (needs.build.outputs.deploy_staging == 'true' || (vars.DEPLOY_STAGING_MERGED_PR == 'true' && inputs.version_type == 'pr')) && (inputs.deployment_namespace != '' && inputs.deployment_label_selector != '')
     runs-on: self-hosted-hoprnet-small
     steps:
       - name: Setup GCP
