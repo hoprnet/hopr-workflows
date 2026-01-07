@@ -215,7 +215,6 @@ jobs:
         id: docker
         run: |
           docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
-          docker pull "${docker_image}"
           echo "docker_image=${docker_image}" | tee -a $GITHUB_OUTPUT
           docker_digest=$(skopeo inspect --format '{{.Digest}}' docker://$docker_image)
           echo "docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${docker_digest}" | tee -a $GITHUB_OUTPUT
