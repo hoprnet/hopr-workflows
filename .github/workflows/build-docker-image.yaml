@@ -183,8 +183,8 @@ jobs:
           SKOPEO_INSECURE_POLICY: "1"
   scan:
     name: Scan
-    # needs: build
-    runs-on: self-hosted-hoprnet-small
+    needs: build
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
