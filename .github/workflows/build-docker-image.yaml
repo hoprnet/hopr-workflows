@@ -257,9 +257,16 @@ jobs:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Run smoke tests
-        run: ${{ inputs.smoke_test_command }}
+        run: ${{ inputs.smoke_test_command }} 2>&1 | tee test.logs
         env:
-          DOCKER_IMAGE: "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+          SOURCE_IMAGE: "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: smoke-test-logs
+          path: test.logs
+          retention-days: 7
   deploy:
     name: Deploy
     needs: build
