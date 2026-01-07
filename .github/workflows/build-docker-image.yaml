@@ -189,17 +189,25 @@ jobs:
       contents: read
       security-events: write
     steps:
+      - name: Install skopeo
+        run: |
+          SKOPEO_VERSION="v1.21.0"
+          curl -L \
+            https://github.com/containers/skopeo/releases/download/${SKOPEO_VERSION}/skopeo-linux-amd64 \
+            -o skopeo
+          chmod +x skopeo
+          sudo mv skopeo /usr/local/bin/skopeo
       - name: Install Trivy
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release skopeo
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release 
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
           echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install -y trivy
       - name: Install Cosign
         run: |
-          COSIGN_VERSION="v2.4.1"
+          COSIGN_VERSION="v3.0.3"
           curl -Lo cosign https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64
           chmod +x cosign
           sudo mv cosign /usr/local/bin/cosign
