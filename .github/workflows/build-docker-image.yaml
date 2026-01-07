@@ -189,18 +189,10 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - name: Get docker image
-        id: docker
-        run: |
-          docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
-          docker pull "${docker_image}"
-          echo "docker_image=${docker_image}" | tee -a $GITHUB_OUTPUT
-          docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_image}" | awk -F'@' '{print $2}')
-          echo "docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${docker_digest}" | tee -a $GITHUB_OUTPUT
       - name: Install Trivy
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release skopeo
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
           echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
@@ -211,6 +203,14 @@ jobs:
           curl -Lo cosign https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64
           chmod +x cosign
           sudo mv cosign /usr/local/bin/cosign
+      - name: Get docker image
+        id: docker
+        run: |
+          docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+          docker pull "${docker_image}"
+          echo "docker_image=${docker_image}" | tee -a $GITHUB_OUTPUT
+          docker_digest=$(skopeo inspect --format '{{.Digest}}' docker://$docker_image)
+          echo "docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${docker_digest}" | tee -a $GITHUB_OUTPUT
       - name: Setup GCP
         id: gcp
         uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
