@@ -189,14 +189,8 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - name: Install skopeo
-        run: |
-          SKOPEO_VERSION="v1.21.0"
-          curl -L \
-            https://github.com/containers/skopeo/releases/download/${SKOPEO_VERSION}/skopeo-linux-amd64 \
-            -o skopeo
-          chmod +x skopeo
-          sudo mv skopeo /usr/local/bin/skopeo
+      - name: Set up Docker
+        uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4.7.0
       - name: Install Trivy
         run: |
           sudo apt-get update
@@ -215,8 +209,9 @@ jobs:
         id: docker
         run: |
           docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+          docker pull "${docker_image}"
           echo "docker_image=${docker_image}" | tee -a $GITHUB_OUTPUT
-          docker_digest=$(skopeo inspect --format '{{.Digest}}' docker://$docker_image)
+          docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_image}" | awk -F'@' '{print $2}')
           echo "docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${docker_digest}" | tee -a $GITHUB_OUTPUT
       - name: Setup GCP
         id: gcp
