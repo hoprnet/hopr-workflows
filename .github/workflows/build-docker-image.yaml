@@ -212,6 +212,7 @@ jobs:
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
+          install_sdk: 'true'
       - name: Get docker image
         id: docker
         run: |
@@ -249,6 +250,13 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: "true"
           COSIGN_YES: "true"
+      - name: Attach SBOM to image with Google Container Analysis
+        run: |
+          gcloud artifacts sbom load \
+            --source sbom.json \
+            --uri "${{ steps.docker.outputs.docker_digest }}" \
+            --destination gs://docker-images-sboms
+
   smoke-test:
     name: Smoke Test
     if: vars.RUN_DOCKER_SMOKE_TESTS == 'true' && inputs.architecture == 'x86_64-linux' && inputs.smoke_test_command != ''
