@@ -213,19 +213,6 @@ jobs:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'true'
-      - name: Scan vulnerabilities with Trivy
-        run: |
-          trivy image \
-            --format sarif \
-            --output "trivy-results-${{ inputs.architecture }}.sarif" \
-            --severity HIGH,CRITICAL \
-            --exit-code 1 \
-            "${{ steps.docker.outputs.docker_image }}"
-      - name: Upload Trivy vulnerabilities to GitHub Security
-        uses: github/codeql-action/upload-sarif@d3ced5c96c16c4332e2a61eb6f3649d6f1b20bb8 # v3.31.5
-        with:
-          sarif_file: trivy-results-${{ inputs.architecture }}.sarif
-          category: trivy-${{ inputs.architecture }}
       - name: Get docker image digest
         id: docker
         run: |
@@ -241,8 +228,21 @@ jobs:
             docker_hub_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_hub_image}" | awk -F'@' '{print $2}')
             echo "docker_hub_digest=${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}@${docker_hub_digest}" | tee -a $GITHUB_OUTPUT
           fi
+      - name: Scan vulnerabilities with Trivy
+        run: |
+          trivy image \
+            --format sarif \
+            --output "trivy-results-${{ inputs.architecture }}.sarif" \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            "${{ steps.docker.outputs.gcp_docker_image }}"
+      - name: Upload Trivy vulnerabilities to GitHub Security
+        uses: github/codeql-action/upload-sarif@d3ced5c96c16c4332e2a61eb6f3649d6f1b20bb8 # v3.31.5
+        with:
+          sarif_file: trivy-results-${{ inputs.architecture }}.sarif
+          category: trivy-${{ inputs.architecture }}
       - name: Generate SBOM
-        run: trivy image --format cyclonedx --output "sbom.json" "${{ steps.docker.outputs.docker_image }}"
+        run: trivy image --format cyclonedx --output "sbom.json" --license-full"${{ steps.docker.outputs.docker_image }}"
       - name: Attach SBOM to Google Artifact for attestation
         run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.docker_digest }}"
         env:
