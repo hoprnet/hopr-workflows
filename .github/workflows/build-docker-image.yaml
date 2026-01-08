@@ -246,7 +246,6 @@ jobs:
       - name: Attach SBOM to Google Artifact for attestation
         run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.gcp_docker_digest }}"
         env:
-          COSIGN_EXPERIMENTAL: "true"
           COSIGN_YES: "true"
       - name: Attach SBOM to Google Artifact for vulnerability analysis
         run: |
@@ -258,7 +257,6 @@ jobs:
         if: inputs.version_type == 'release'
         run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.docker_hub_digest }}"
         env:
-          COSIGN_EXPERIMENTAL: "true"
           COSIGN_YES: "true"
 
   smoke-test:
