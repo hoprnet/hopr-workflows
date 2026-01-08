@@ -252,7 +252,7 @@ jobs:
           COSIGN_YES: "true"
       - name: Attach SBOM to image with Google Container Analysis
         run: |
-          gcloud artifacts sbom load \
+          gcloud artifacts sbom load --project hoprassociation \
             --source sbom.json \
             --uri "${{ steps.docker.outputs.docker_digest }}" \
             --destination gs://docker-images-sboms
