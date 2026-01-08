@@ -160,7 +160,7 @@ jobs:
           GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
           SKOPEO_INSECURE_POLICY: "1"
-      - name: Determine Docker hub publishing condition
+      - name: Determine DockerHub publishing condition
         id: docker_hub
         run: |
           if [ "${{ inputs.version_type }}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
@@ -168,13 +168,13 @@ jobs:
           else
             echo "publish_docker_hub=false" | tee -a "$GITHUB_OUTPUT"
           fi
-      - name: Log in to Docker Hub
+      - name: Log in to DockerHub
         if: steps.docker_hub.outputs.publish_docker_hub == 'true'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.docker_hub_username }}
           password: ${{ secrets.docker_hub_token }}
-      - name: Build docker image - Docker Hub - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+      - name: Build docker image - DockerHub - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         if: steps.docker_hub.outputs.publish_docker_hub == 'true'
         run: ${{ inputs.build_command }}
         env:
