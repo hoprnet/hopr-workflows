@@ -187,6 +187,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write # Allows to request an identity token. Fetches an OIDC token from GitHub OAuth OIDC provider
       security-events: write
     steps:
       - name: Set up Docker
@@ -209,7 +210,7 @@ jobs:
         id: docker
         run: |
           docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
-          docker pull "${docker_image}"
+          # docker pull "${docker_image}"
           echo "docker_image=${docker_image}" | tee -a $GITHUB_OUTPUT
           docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_image}" | awk -F'@' '{print $2}')
           echo "docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${docker_digest}" | tee -a $GITHUB_OUTPUT
@@ -245,6 +246,9 @@ jobs:
             --predicate "sbom.json" \
             --type cyclonedx \
             "${{ steps.docker.outputs.docker_digest }}"
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_YES: "true"
   smoke-test:
     name: Smoke Test
     if: vars.RUN_DOCKER_SMOKE_TESTS == 'true' && inputs.architecture == 'x86_64-linux' && inputs.smoke_test_command != ''
