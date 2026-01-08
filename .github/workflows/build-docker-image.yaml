@@ -213,15 +213,7 @@ jobs:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'true'
-      - name: Get docker image
-        id: docker
-        run: |
-          docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
-          docker pull "${docker_image}" # Pull the image to inspect
-          echo "docker_image=${docker_image}" | tee -a $GITHUB_OUTPUT
-          docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_image}" | awk -F'@' '{print $2}')
-          echo "docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${docker_digest}" | tee -a $GITHUB_OUTPUT
-      - name: Run Trivy vulnerability scanner
+      - name: Scan vulnerabilities with Trivy
         run: |
           trivy image \
             --format sarif \
@@ -229,33 +221,45 @@ jobs:
             --severity HIGH,CRITICAL \
             --exit-code 1 \
             "${{ steps.docker.outputs.docker_image }}"
-      - name: Upload Trivy results to GitHub Security
-        if: always()
+      - name: Upload Trivy vulnerabilities to GitHub Security
         uses: github/codeql-action/upload-sarif@d3ced5c96c16c4332e2a61eb6f3649d6f1b20bb8 # v3.31.5
         with:
           sarif_file: trivy-results-${{ inputs.architecture }}.sarif
           category: trivy-${{ inputs.architecture }}
+      - name: Get docker image digest
+        id: docker
+        run: |
+          gcp_docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+          docker pull "${gcp_docker_image}" # Pull the image to inspect
+          echo "gcp_docker_image=${gcp_docker_image}" | tee -a $GITHUB_OUTPUT
+          gcp_docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${gcp_docker_image}" | awk -F'@' '{print $2}')
+          echo "gcp_docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${gcp_docker_digest}" | tee -a $GITHUB_OUTPUT
+          if [[ "${{ inputs.version_type }}" == "release" ]]; then
+            docker_hub_image="${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+            docker pull "${docker_hub_image}" # Pull the image to inspect
+            echo "docker_hub_image=${docker_hub_image}" | tee -a $GITHUB_OUTPUT
+            docker_hub_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_hub_image}" | awk -F'@' '{print $2}')
+            echo "docker_hub_digest=${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}@${docker_hub_digest}" | tee -a $GITHUB_OUTPUT
+          fi
       - name: Generate SBOM
-        run: |
-          trivy image \
-            --format cyclonedx \
-            --output "sbom.json" \
-            "${{ steps.docker.outputs.docker_image }}"
-      - name: Attach SBOM to image with Cosign
-        run: |
-          cosign attest \
-            --predicate "sbom.json" \
-            --type cyclonedx \
-            "${{ steps.docker.outputs.docker_digest }}"
+        run: trivy image --format cyclonedx --output "sbom.json" "${{ steps.docker.outputs.docker_image }}"
+      - name: Attach SBOM to Google Artifact for attestation
+        run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.docker_digest }}"
         env:
           COSIGN_EXPERIMENTAL: "true"
           COSIGN_YES: "true"
-      - name: Attach SBOM to image with Google Container Analysis
+      - name: Attach SBOM to Google Artifact for vulnerability analysis
         run: |
           gcloud artifacts sbom load --project hoprassociation \
             --source sbom.json \
-            --uri "${{ steps.docker.outputs.docker_digest }}" \
+            --uri "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}" \
             --destination gs://docker-images-sboms
+      - name: Attach SBOM to DockerHub for attestation
+        if: inputs.version_type == 'release'
+        run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.docker_hub_digest }}"
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_YES: "true"
 
   smoke-test:
     name: Smoke Test
