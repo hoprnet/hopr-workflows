@@ -242,7 +242,7 @@ jobs:
           sarif_file: trivy-results-${{ inputs.architecture }}.sarif
           category: trivy-${{ inputs.architecture }}
       - name: Generate SBOM
-        run: trivy image --format cyclonedx --output "sbom.json" --license-full"${{ steps.docker.outputs.gcp_docker_image }}"
+        run: trivy image --format cyclonedx --output "sbom.json" "${{ steps.docker.outputs.gcp_docker_image }}"
       - name: Attach SBOM to Google Artifact for attestation
         run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.gcp_docker_digest }}"
         env:
