@@ -30,6 +30,7 @@ runs:
           fi
       - name: Use Nix Cache
         uses: cachix/cachix-action@0fc020193b5a1fa3ac4575aa3a7d3aa6a35435ad # v16
+        continue-on-error: true # Allow failure if cachix is not available
         with:
           name: ${{ steps.cache-name.outputs.cachix_cache_name }}
           authToken: ${{ inputs.cachix_auth_token }}
