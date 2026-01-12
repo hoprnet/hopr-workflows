@@ -1,7 +1,7 @@
 #################################################################################
 # Pipeline to clean up registry from artifacts and docker images
 #################################################################################
-name: Cleanup Registry
+name: Cleanup registry
 env:
   RUST_BACKTRACE: "1"
   CARGO_TERM_COLOR: always
