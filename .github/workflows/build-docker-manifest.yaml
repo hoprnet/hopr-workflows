@@ -1,7 +1,7 @@
 #################################################################################
 # Pipeline to upload multi-arch docker images
 #################################################################################
-name: Multi-Arch docker image manifest
+name: Multi-Arch docker manifest
 on:
   workflow_call:
     inputs:
