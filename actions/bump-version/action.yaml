@@ -23,7 +23,14 @@ runs:
         shell: bash
         id: versions
         run: |
-          current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
+          if [[ "${{ inputs.file }}" =~ ^.*\.toml$ ]]; then
+            current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
+          elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
+            current_version=$(jq -r '.version' ${{ inputs.file }})
+          else
+            echo "Unsupported file type: ${{ inputs.file }}"
+            exit 1
+          fi
           echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
           # Split pre-release if any
           IFS='-'
@@ -78,16 +85,19 @@ runs:
 
 
           # Update the version in the specified file
-          # capture group 1: version = "
-          # capture group 2: the version number
-          # capture group 3: "
-          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${bump_version}\5/" ${{ inputs.file }}
-          rm ${{ inputs.file }}.bak
-          if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
-            nix develop --command cargo generate-lockfile
+          if [[ "${{ inputs.file }}" =~ .*\.toml$ ]]; then
+            sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${bump_version}\5/" ${{ inputs.file }}
+            rm "${{ inputs.file }}.bak"
+            if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
+              echo "Regenerating Cargo.lock file"
+              nix develop --command cargo generate-lockfile
+            fi
+          elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
+            jq --arg bump_version "${bump_version}" '.version = $bump_version' ${{ inputs.file }} > "${{ inputs.file }}.tmp"
+            mv "${{ inputs.file }}.tmp" ${{ inputs.file }}
           fi
           echo "bump_version=${bump_version}" | tee -a "$GITHUB_OUTPUT"
-          lock_file=$(echo "${{ inputs.file }}" | sed 's/toml/lock/')
+          lock_file=$(echo "${{ inputs.file }}" | sed -E 's/\.(toml|json)$/.lock/')
           echo "lock_file=${lock_file}" | tee -a "$GITHUB_OUTPUT"
       - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
         with:

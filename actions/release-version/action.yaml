@@ -13,6 +13,12 @@ inputs:
         description: Release type to bump (major, minor, patch, rc)
         required: false
         default: patch
+    gcp_service_account:
+        description: GCP Service Account JSON for Artifact Registry access
+        required: false
+    package_name:
+        required: false
+        description: "Google artifact registry package name"
     zulip_api_key:
         description: Zulip API Key for notifications
         required: false
@@ -25,50 +31,37 @@ inputs:
     zulip_topic:
         description: Zulip topic for notifications
         required: false
-    attach_binaries:
-        description: Whether to attach binaries from Artifact Registry
-        required: false
-        default: 'true'
-    gcp_service_account:
-        description: GCP Service Account JSON for Artifact Registry access
-        required: true
 outputs:
     current_version:
         description: Current released version
-        value: ${{ steps.vars.outputs.current_version }}
+        value: ${{ steps.version.outputs.current_version }}
     bump_version:
         description: Version bumped
         value: ${{ steps.bump.outputs.bump_version }}
 runs:
     using: composite
     steps:
+      - name: Get version info
+        id: version
+        uses: hoprnet/hopr-workflows/actions/set-build-version@ausias/workflows-v2 #set-build-version-v2
+        with:
+          file: "${{ inputs.file }}"
+          version_type: release
       - name: Setup GCP
+        if: inputs.gcp_service_account != ''
         id: gcp
         uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
         with:
           google_credentials: ${{ inputs.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'true'
-      - name: Get current version
-        shell: bash
-        id: vars
-        run: |
-          current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
-          echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
-          if [[ $current_version == *"-rc."* ]]; then
-            echo "prerelease=true" | tee -a $GITHUB_OUTPUT
-          else
-            echo "prerelease=false" | tee -a $GITHUB_OUTPUT
-          fi
-          repository=${{ github.repository }}
-          echo "repository=${repository##*/}" | tee -a $GITHUB_OUTPUT
       - name: Download binary files
-        if: inputs.attach_binaries == 'true'
+        if: inputs.package_name != ''
         id: download
         uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
         with:
-          package: ${{ steps.vars.outputs.repository }}
-          version: ${{ steps.vars.outputs.current_version }}
+          package: ${{ inputs.package_name }}
+          version: ${{ steps.version.outputs.current_version }}
       - name: Generate Release Notes
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
         with:
@@ -77,9 +70,9 @@ runs:
       - name: Create Release
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
-            tag_name: "v${{ steps.vars.outputs.current_version }}"
-            prerelease: ${{ steps.vars.outputs.prerelease }}
-            name: "v${{ steps.vars.outputs.current_version }}"
+            tag_name: "v${{ steps.version.outputs.current_version }}"
+            prerelease: ${{ steps.version.outputs.prerelease }}
+            name: "v${{ steps.version.outputs.current_version }}"
             body_path: ./release-notes.txt
             files: ${{ steps.download.outputs.downloaded_files || '' }}
       - name: Bump version
@@ -93,7 +86,7 @@ runs:
         if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
         run: |
           {
-            echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ steps.vars.outputs.current_version }}\` has been released."
+            echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ steps.version.outputs.current_version }}\` has been released."
             echo ""
             cat ./release-notes.txt
           } > notification_message.txt

@@ -21,7 +21,7 @@ This action performs the following steps:
           zulip_channel: "MyChannel"
           zulip_topic: "Releases"
           gcp_service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
-          attach_binaries: 'true'
+          package_name: my-package
 ```
 
 ## Requirements
@@ -35,12 +35,12 @@ This action performs the following steps:
 - `source_branch`: Source branch for release notes
 - `file`: The filepath to the `Cargo.toml` file.
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
+- `gcp_service_account`: GCP Service Account JSON for Artifact Registry access
+- `package_name`: Google artifact registry package name
 - `zulip_email`: Email of the user used to send Zulip notifications.
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.
 - `zulip_topic`: Zulip topic for notifications.
-- `gcp_service_account`: GCP Service Account JSON for Artifact Registry access
-- `attach_binaries`: Whether to attach binaries from Artifact Registry
 
 ## Outputs
 
