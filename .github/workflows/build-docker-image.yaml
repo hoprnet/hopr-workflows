@@ -76,6 +76,11 @@ on:
         required: false
         type: string
         description: "Kubernetes label selector for the deployment to restart in staging"
+      fail_on_scan_vulnerabilities:
+        required: false
+        type: boolean
+        description: "Whether to fail the build if vulnerabilities are found during the scan"
+        default: true
     secrets:
       gcp_service_account:
         required: true
@@ -231,11 +236,16 @@ jobs:
           fi
       - name: Scan vulnerabilities with Trivy
         run: |
+          if [ "${{ inputs.fail_on_scan_vulnerabilities }}" = "true" ]; then
+            EXIT_CODE_OPTION="--exit-code 1"
+          else
+            EXIT_CODE_OPTION=""
+          fi
           trivy image \
             --format sarif \
             --output "trivy-results-${{ inputs.architecture }}.sarif" \
             --severity HIGH,CRITICAL \
-            --exit-code 1 \
+            $EXIT_CODE_OPTION \
             "${{ steps.docker.outputs.gcp_docker_image }}"
       - name: Upload Trivy vulnerabilities to GitHub Security
         uses: github/codeql-action/upload-sarif@d3ced5c96c16c4332e2a61eb6f3649d6f1b20bb8 # v3.31.5
