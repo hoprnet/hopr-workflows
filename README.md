@@ -56,9 +56,6 @@ jobs:
 - `binary` (Required): The name of the binary to output.
 - `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
 - `runner` (Required): The runner label to use for the job.
-- `deployment_namespace`: Kubernetes namespace for the deployment to restart in staging
-- `deployment_label_selector`: Kubernetes label selector for the deployment to restart in staging
-- `fail_on_scan_vulnerabilities`: Whether to fail the build if vulnerabilities are found during the scan (Default: `true`)
 
 **Secrets:**
 - `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
@@ -115,6 +112,7 @@ jobs:
 - `runner` (Optional): Runner to use for the job (Default: `self-hosted-hoprnet-bigger`).
 - `deployment_namespace` (Optional): Kubernetes namespace for the deployment to restart in staging.
 - `deployment_label_selector` (Optional): Kubernetes label selector for the deployment to restart in staging.
+- `fail_on_scan_vulnerabilities`: Whether to fail the build if vulnerabilities are found during the scan (Default: `true`)
 
 **Secrets:**
 - `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
