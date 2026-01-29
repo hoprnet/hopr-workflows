@@ -78,9 +78,9 @@ on:
         description: "Kubernetes label selector for the deployment to restart in staging"
       fail_on_scan_vulnerabilities:
         required: false
-        type: boolean
+        type: string
         description: "Whether to fail the build if vulnerabilities are found during the scan"
-        default: true
+        default: "true"
     secrets:
       gcp_service_account:
         required: true
