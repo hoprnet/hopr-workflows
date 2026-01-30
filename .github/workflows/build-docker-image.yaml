@@ -110,6 +110,7 @@ jobs:
       docker_build_version: ${{ steps.version.outputs.docker_build_version }}
       docker_debug_version: ${{ steps.version.outputs.docker_debug_version }}
       deploy_staging: ${{ steps.version.outputs.deploy_staging }}
+      publish_docker_hub: ${{ steps.docker_hub.outputs.publish_docker_hub }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
@@ -227,7 +228,7 @@ jobs:
           echo "gcp_docker_image=${gcp_docker_image}" | tee -a $GITHUB_OUTPUT
           gcp_docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${gcp_docker_image}" | awk -F'@' '{print $2}')
           echo "gcp_docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${gcp_docker_digest}" | tee -a $GITHUB_OUTPUT
-          if [[ "${{ inputs.version_type }}" == "release" ]]; then
+          if [[ "${{ needs.build.outputs.publish_docker_hub }}" == "true" ]]; then
             docker_hub_image="${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
             docker pull "${docker_hub_image}" # Pull the image to inspect
             echo "docker_hub_image=${docker_hub_image}" | tee -a $GITHUB_OUTPUT
@@ -264,8 +265,14 @@ jobs:
             --source sbom.json \
             --uri "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}" \
             --destination gs://docker-images-sboms
+      - name: Log in to DockerHub
+        if: needs.build.outputs.publish_docker_hub == 'true'
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          username: ${{ secrets.docker_hub_username }}
+          password: ${{ secrets.docker_hub_token }}
       - name: Attach SBOM to DockerHub for attestation
-        if: inputs.version_type == 'release'
+        if: needs.build.outputs.publish_docker_hub == 'true'
         run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.docker_hub_digest }}"
         env:
           COSIGN_YES: "true"
