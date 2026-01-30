@@ -41,6 +41,7 @@ This action performs the following steps:
 - `zulip_topic`: Zulip topic for notifications.
 - `gcp_service_account`: GCP Service Account JSON for Artifact Registry access
 - `attach_binaries`: Whether to attach binaries from Artifact Registry
+- `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch
 
 ## Outputs
 

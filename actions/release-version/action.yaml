@@ -32,6 +32,9 @@ inputs:
     gcp_service_account:
         description: GCP Service Account JSON for Artifact Registry access
         required: true
+    github_token:
+        description: GitHub Token from the Bot with permission to make direct commits into the branch
+        required: true
 outputs:
     current_version:
         description: Current released version
@@ -48,6 +51,7 @@ runs:
           ref: ${{ inputs.source_branch }}
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ inputs.github_token }}
       - name: Setup GCP
         id: gcp
         uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
