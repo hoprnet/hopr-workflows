@@ -133,7 +133,11 @@ github_format_changelog() {
 
 # Build the changelog in JSON format
 json_format_changelog() {
-    local change_log_content="$(printf '%s\n' "${changelog_entries[@]:-}" | jq -s -c '.')"
+json_format_changelog() {
+    local change_log_content
+    change_log_content="$(printf '%s\n' "${changelog_entries[@]:-}" | jq -s -c '.')"
+    echo -e "${change_log_content}"
+}
     echo -e "${change_log_content}"
 }
 
