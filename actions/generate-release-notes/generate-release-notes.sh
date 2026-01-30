@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # Initialize changelog entries array
-declare -a changelog_entries
+declare -a changelog_entries=()
 
 # Decode the entry of a changelog
 jq_decode() {
@@ -29,7 +29,7 @@ fetch_merged_prs() {
         echo "[INFO] No PRs found for ${repo_name}" >&2
         return 0
     fi
-    
+
     # Process each PR
     for pr_encoded in ${prs}; do
         local pr_decoded=$(jq_decode "${pr_encoded}")
@@ -87,7 +87,11 @@ github_format_changelog() {
 
     
     # Process each changelog entry
-    for entry in "${changelog_entries[@]}"; do
+    for entry in "${changelog_entries[@]:-}"; do
+        if [[ -z "$entry" ]]; then
+            continue
+        fi
+
         local id=$(echo "$entry" | jq -r '.id')
         local title=$(echo "$entry" | jq -r '.title')
         local author=$(echo "$entry" | jq -r '.author')
@@ -129,7 +133,8 @@ github_format_changelog() {
 
 # Build the changelog in JSON format
 json_format_changelog() {
-    local change_log_content="$(printf '%s\n' "${changelog_entries[@]}" | jq -s -c '.')"
+    local change_log_content
+    change_log_content="$(printf '%s\n' "${changelog_entries[@]:-}" | jq -s -c '.')"
     echo -e "${change_log_content}"
 }
 

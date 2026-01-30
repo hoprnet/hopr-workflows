@@ -42,6 +42,12 @@ outputs:
 runs:
     using: composite
     steps:
+      - name: Checkout hoprnet repository
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          ref: ${{ inputs.source_branch }}
+          fetch-depth: 0
+          fetch-tags: true
       - name: Setup GCP
         id: gcp
         uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
