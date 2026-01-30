@@ -22,6 +22,7 @@ This action performs the following steps:
           zulip_topic: "Releases"
           gcp_service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
           attach_binaries: 'true'
+          github_token: "${{ secrets.GH_RUNNER_TOKEN }}"
 ```
 
 ## Requirements
