@@ -87,11 +87,15 @@ runs:
             nix develop --command cargo generate-lockfile
           fi
           echo "bump_version=${bump_version}" | tee -a "$GITHUB_OUTPUT"
-          lock_file=$(echo "${{ inputs.file }}" | sed 's/toml/lock/')
-          echo "lock_file=${lock_file}" | tee -a "$GITHUB_OUTPUT"
+          lock_file=$(echo "${{ inputs.file }}" | sed 's/\.toml$/.lock/')
+          if [[ -f "$lock_file" ]]; then
+            echo "commit_files=${{ inputs.file }} ${lock_file}" | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "commit_files=${{ inputs.file }}" | tee -a "$GITHUB_OUTPUT"
+          fi
       - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
         with:
-          add: '["${{ inputs.file }}", "${{ steps.versions.outputs.lock_file }}"]'
+          add: '${{ steps.versions.outputs.commit_files }}'
           new_branch: ${{ github.ref_name }}
           message: "Bump to version ${{ steps.versions.outputs.bump_version }}"
           pathspec_error_handling: ignore
