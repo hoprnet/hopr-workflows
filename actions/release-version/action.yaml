@@ -31,6 +31,13 @@ inputs:
     zulip_topic:
         description: Zulip topic for notifications
         required: false
+    attach_binaries:
+        description: Whether to attach binaries from Artifact Registry
+        required: false
+        default: 'true'
+    github_token:
+        description: GitHub Token from the Bot with permission to make direct commits into the branch
+        required: true
 outputs:
     current_version:
         description: Current released version
@@ -41,6 +48,13 @@ outputs:
 runs:
     using: composite
     steps:
+      - name: Checkout hoprnet repository
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          ref: ${{ inputs.source_branch }}
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ inputs.github_token }}
       - name: Get version info
         id: version
         uses: hoprnet/hopr-workflows/actions/set-build-version@ausias/workflows-v2 #set-build-version-v2

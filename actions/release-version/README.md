@@ -22,6 +22,8 @@ This action performs the following steps:
           zulip_topic: "Releases"
           gcp_service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
           package_name: my-package
+          attach_binaries: 'true'
+          github_token: "${{ secrets.GH_RUNNER_TOKEN }}"
 ```
 
 ## Requirements
@@ -41,6 +43,9 @@ This action performs the following steps:
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.
 - `zulip_topic`: Zulip topic for notifications.
+- `gcp_service_account`: GCP Service Account JSON for Artifact Registry access
+- `attach_binaries`: Whether to attach binaries from Artifact Registry
+- `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch
 
 ## Outputs
 
