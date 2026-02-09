@@ -49,8 +49,10 @@ runs:
             echo "Error: No files found for package ${{ inputs.package }} version ${{ inputs.version }}"
             exit 1
           fi
-          IFS=$'\n' read -rd '' -a files_array <<<"$files"
+          IFS=$'\n' read -rd '' -a files_array <<<"$files" || true
           for file in "${files_array[@]}"; do
+            # Extract the filename from the full resource path (after the last ':')
+            filename="${file##*:}"
             if ! gcloud artifacts generic download \
               --project="${{ inputs.project }}" \
               --location="${{ inputs.region }}" \
@@ -58,8 +60,8 @@ runs:
               --package="${{ inputs.package }}" \
               --version="${{ inputs.version }}" \
               --destination="${{ inputs.destination }}" \
-              "${file}"; then
-              echo "Error: Failed to download ${file}"
+              --name="${filename}"; then
+              echo "Error: Failed to download ${filename}"
               exit 1
             fi
           done
