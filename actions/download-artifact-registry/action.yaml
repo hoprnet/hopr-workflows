@@ -34,6 +34,7 @@ runs:
         shell: bash
         id: artifacts
         run: |
+          set -x
           mkdir -p "${{ inputs.destination }}"
           if ! files=$(gcloud artifacts files list \
             --project="${{ inputs.project }}" \
