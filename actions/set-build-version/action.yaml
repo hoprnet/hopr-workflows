@@ -135,7 +135,6 @@ runs:
             docker_platform="linux-amd64"
           else
             echo "Unsupported architecture: ${{ inputs.architecture }}"
-            exit 1
           fi
           echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
           echo "commit_version=${commit_version}" | tee -a "$GITHUB_OUTPUT"
