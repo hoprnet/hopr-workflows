@@ -36,8 +36,7 @@ This action performs the following steps:
 - `source_branch`: Source branch for release notes
 - `file`: The filepath to the `Cargo.toml` file.
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
-- `gcp_service_account`: GCP Service Account JSON for Artifact Registry access
-- `package_name`: Google artifact registry package name
+- `package_name`: Package name from Google Artifact Registry to download binaries from and publish in the release
 - `zulip_email`: Email of the user used to send Zulip notifications.
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.

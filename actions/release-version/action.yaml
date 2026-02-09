@@ -30,7 +30,7 @@ inputs:
         required: false
     gcp_service_account:
         description: GCP Service Account JSON for Artifact Registry access
-        required: true
+        required: false
     github_token:
         description: GitHub Token from the Bot with permission to make direct commits into the branch
         required: true
