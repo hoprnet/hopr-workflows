@@ -50,7 +50,7 @@ runs:
             echo "Error: No files found for package ${{ inputs.package }} version ${{ inputs.version }}"
             exit 1
           fi
-          IFS=$'\n' read -rd '' -a files_array <<<"$files"
+          IFS=$'\n' read -rd '' -a files_array <<<"$files" || true
           for file in "${files_array[@]}"; do
             if ! gcloud artifacts generic download \
               --project="${{ inputs.project }}" \
