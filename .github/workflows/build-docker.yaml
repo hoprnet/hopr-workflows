@@ -22,11 +22,6 @@ on:
         description: 'JSON string for the matrix strategy. Must include keys: runner, architecture, build_command, build_debug_command (optional), smoke_test_command (optional)'
         required: true
         type: string
-      # architecture:
-      #   required: false
-      #   type: string
-      #   default: "x86_64-linux"
-      #   description: "Target architecture for the docker image"
       cachix_cache_name:
         required: true
         type: string
@@ -36,18 +31,6 @@ on:
         type: string
         default: "Cargo.toml"
         description: "File to extract version from"
-      # build_command:
-      #   required: true
-      #   type: string
-      #   description: "Command to build the docker image"
-      # build_debug_command:
-      #   required: false
-      #   type: string
-      #   description: "Additional build debug flavor to use"
-      # smoke_test_command:
-      #   required: false
-      #   type: string
-      #   description: "Command to run smoke tests against the built image"
       docker_image_name:
         required: true
         type: string
@@ -67,11 +50,6 @@ on:
         type: number
         default: 60
         description: "Timeout for the job in minutes"
-      # runner:
-      #   required: false
-      #   type: string
-      #   description: "Runner to use for the job"
-      #   default: "self-hosted-hoprnet-bigger"
       deployment_namespace:
         required: false
         type: string
@@ -102,12 +80,15 @@ on:
         description: "Docker debug image version built"
         value: ${{ jobs.build.outputs.docker_debug_version }}
 concurrency:
-  group: build-docker-${{ github.repository }}-${{ inputs.source_branch }}-${{ fromJSON(inputs.build_matrix).architecture }}
+  group: build-docker-${{ github.repository }}-${{ inputs.source_branch }}
   cancel-in-progress: true
 jobs:
   build:
     name: Build
-    runs-on: ${{ fromJSON(inputs.build_matrix).runner }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include: ${{ fromJSON(inputs.build_matrix) }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     outputs:
       docker_build_version_platform: ${{ steps.version.outputs.docker_build_version_platform }}
@@ -115,6 +96,7 @@ jobs:
       docker_debug_version: ${{ steps.version.outputs.docker_debug_version }}
       deploy_staging: ${{ steps.version.outputs.deploy_staging }}
       publish_docker_hub: ${{ steps.docker_hub.outputs.publish_docker_hub }}
+      docker_platform: ${{ steps.version.outputs.docker_platform }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
@@ -132,7 +114,7 @@ jobs:
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
-          architecture: "${{ fromJSON(inputs.build_matrix).architecture }}"
+          architecture: "${{ matrix.architecture }}"
       - name: Setup GCP
         id: gcp
         uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
@@ -145,24 +127,14 @@ jobs:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-        run: ${{ fromJSON(inputs.build_matrix).build_command }}
+        run: ${{ matrix.build_command }}
         env:
           IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-      # - name: Build staging docker image - ${{ inputs.docker_image_name }}:staging
-      #   if: steps.version.outputs.deploy_staging == 'true' && fromJSON(inputs.build_matrix).architecture == 'x86_64-linux'
-      #   run: ${{ fromJSON(inputs.build_matrix).build_command }}
-      #   env:
-      #     IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:staging
       - name: Build debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
-        if: steps.version.outputs.docker_debug_version_platform != '' && fromJSON(inputs.build_matrix).build_debug_command != ''
-        run: ${{ fromJSON(inputs.build_matrix).build_debug_command }}
+        if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
+        run: ${{ matrix.build_debug_command }}
         env:
           IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
-      # - name: Build latest docker image - ${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
-      #   if: inputs.version_type == 'pr'
-      #   run: ${{ fromJSON(inputs.build_matrix).build_command }}
-      #   env:
-      #     IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
       - name: Determine DockerHub publishing condition
         id: docker_hub
         run: |
@@ -177,11 +149,6 @@ jobs:
         with:
           username: ${{ secrets.docker_hub_username }}
           password: ${{ secrets.docker_hub_token }}
-      # - name: Build docker image - DockerHub - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-      #   if: steps.docker_hub.outputs.publish_docker_hub == 'true'
-      #   run: ${{ fromJSON(inputs.build_matrix).build_command }}
-      #   env:
-      #     IMAGE_NAME: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
       - name: Publish docker images
         run: |
           gcp_image_name="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}"
@@ -189,27 +156,27 @@ jobs:
           echo "Publishing image to GCP Artifact Registry: ${gcp_image}"
           docker push "${gcp_image}"
           echo "Published image to GCP Artifact Registry: ${gcp_image}"
-          if [ "${{ steps.version.outputs.deploy_staging }}" = "true" ] && [ "${{ fromJSON(inputs.build_matrix).architecture }}" = "x86_64-linux" ]; then
+          if [[ "${{ steps.version.outputs.deploy_staging }}" == "true" && "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
             staging_image="${gcp_image_name}:staging"
             echo "Publishing staging image to GCP Artifact Registry: ${staging_image}"
             docker tag "${gcp_image}" "${staging_image}"
             docker push "${staging_image}"
             echo "Published staging image to GCP Artifact Registry: ${staging_image}"
           fi
-          if [ "${{ steps.version.outputs.docker_debug_version_platform }}" != "" ] && [ "${{ fromJSON(inputs.build_matrix).build_debug_command }}" != "" ]; then
+          if [[ "${{ steps.version.outputs.docker_debug_version_platform }}" != "" && "${{ matrix.build_debug_command }}" != "" ]]; then
             debug_image="${gcp_image_name}:${{ steps.version.outputs.docker_debug_version_platform }}"
             echo "Publishing debug image to GCP Artifact Registry: ${debug_image}"
             docker push "${debug_image}"
             echo "Published debug image to GCP Artifact Registry: ${debug_image}"
           fi
-          if [ "${{ inputs.version_type }}" = "pr" ] && [ "${{ fromJSON(inputs.build_matrix).architecture }}" = "x86_64-linux" ]; then
+          if [[ "${{ inputs.version_type }}" == "pr" ]]; then
             latest_image="${gcp_image_name}:latest-${{ steps.version.outputs.docker_platform }}"
             echo "Publishing latest image to GCP Artifact Registry: ${latest_image}"
             docker tag "${gcp_image}" "${latest_image}"
             docker push "${latest_image}"
             echo "Published latest image to GCP Artifact Registry: ${latest_image}"
           fi
-          if [ "${{ steps.docker_hub.outputs.publish_docker_hub }}" = "true" ]; then
+          if [[ "${{ steps.docker_hub.outputs.publish_docker_hub }}" == "true" ]]; then
             docker_hub_image="${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}"
             echo "Publishing image to DockerHub: ${docker_hub_image}"
             docker tag "${gcp_image}" "${docker_hub_image}"
@@ -273,6 +240,9 @@ jobs:
     name: Scan
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJSON(inputs.build_matrix) }}
     permissions:
       contents: read
       id-token: write # Allows to request an identity token. Fetches an OIDC token from GitHub OAuth OIDC provider
@@ -325,15 +295,15 @@ jobs:
           fi
           trivy image \
             --format sarif \
-            --output "trivy-results-${{ fromJson(inputs.build_matrix).architecture }}.sarif" \
+            --output "trivy-results-${{ needs.build.outputs.docker_platform }}.sarif" \
             --severity HIGH,CRITICAL \
             $EXIT_CODE_OPTION \
             "${{ steps.docker.outputs.gcp_docker_image }}"
       - name: Upload Trivy vulnerabilities to GitHub Security
         uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v4.32.0
         with:
-          sarif_file: trivy-results-${{ fromJson(inputs.build_matrix).architecture }}.sarif
-          category: trivy-${{ fromJson(inputs.build_matrix).architecture }}
+          sarif_file: trivy-results-${{ needs.build.outputs.docker_platform }}.sarif
+          category: trivy-${{ needs.build.outputs.docker_platform }}
       - name: Generate SBOM
         run: trivy image --format cyclonedx --output "sbom.json" "${{ steps.docker.outputs.gcp_docker_image }}"
       - name: Attach SBOM to Google Artifact for attestation
@@ -359,9 +329,12 @@ jobs:
           COSIGN_YES: "true"
   smoke-test:
     name: Smoke Test
-    if: vars.RUN_DOCKER_SMOKE_TESTS == 'true' && fromJson(inputs.build_matrix).architecture == 'x86_64-linux' && fromJson(inputs.build_matrix).smoke_test_command != ''
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include: ${{ fromJSON(inputs.build_matrix) }}
+    if: vars.RUN_DOCKER_SMOKE_TESTS == 'true' && matrix.smoke_test_command != ''
     needs: build
-    runs-on: self-hosted-hoprnet-big
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -374,7 +347,8 @@ jobs:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Run smoke tests
-        run: ${{ fromJson(inputs.build_matrix).smoke_test_command }} 2>&1 | tee test.logs
+        if: matrix.smoke_test_command != ''
+        run: ${{ matrix.smoke_test_command }} 2>&1 | tee test.logs
         env:
           SOURCE_IMAGE: "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
       - name: Upload logs on failure
