@@ -84,7 +84,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    name: Build
+    name: Build (${{ matrix.architecture }})
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
@@ -237,7 +237,7 @@ jobs:
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_build_version }}
   scan:
-    name: Scan
+    name: Scan (${{ matrix.architecture }})
     needs: build
     runs-on: ubuntu-latest
     strategy:
@@ -328,7 +328,7 @@ jobs:
         env:
           COSIGN_YES: "true"
   smoke-test:
-    name: Smoke Test
+    name: Smoke Test (${{ matrix.architecture }})
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
