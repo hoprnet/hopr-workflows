@@ -158,7 +158,7 @@ runs:
             rm "${{ inputs.file }}.bak"
             if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
               echo "Regenerating Cargo.lock file"
-              nix develop --command cargo generate-lockfile
+              nix develop --command cargo generate-lockfile --manifest-path ${{ inputs.file }}
             fi
           elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
             jq --arg build_version "${{ steps.versions.outputs.build_version }}" '.version = $build_version' ${{ inputs.file }} > "${{ inputs.file }}.tmp"
