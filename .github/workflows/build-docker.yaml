@@ -333,7 +333,7 @@ jobs:
     strategy:
       matrix:
         include: ${{ fromJSON(inputs.build_matrix) }}
-    if: vars.RUN_DOCKER_SMOKE_TESTS == 'true' && matrix.smoke_test_command != ''
+    if: vars.RUN_DOCKER_SMOKE_TESTS == 'true'
     needs: build
     steps:
       - name: Checkout repository
@@ -352,7 +352,7 @@ jobs:
         env:
           SOURCE_IMAGE: "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
       - name: Upload logs on failure
-        if: failure()
+        if: failure() && matrix.smoke_test_command != ''
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: smoke-test-logs
