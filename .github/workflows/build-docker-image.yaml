@@ -98,7 +98,7 @@ on:
         description: "Docker debug image version built"
         value: ${{ jobs.build.outputs.docker_debug_version }}
 concurrency:
-  group: build-docker-${{ github.repository }}-${{ inputs.source_branch }}-${{ inputs.architecture }}
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}
   cancel-in-progress: true
 jobs:
   build:
