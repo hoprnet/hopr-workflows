@@ -39,7 +39,7 @@ on:
       docker_hub_token:
         required: false
 concurrency:
-  group: docker-multi-arch-manifest-${{ inputs.docker_image_name }}-${{ inputs.docker_build_version }}
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ inputs.docker_image_name }}-${{ inputs.docker_build_version }}
   cancel-in-progress: false
 jobs:
   manifest:
