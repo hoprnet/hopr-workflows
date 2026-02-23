@@ -66,6 +66,77 @@ jobs:
 
 - No outputs defined.
 
+### [Build Docker](./.github/workflows/build-docker.yaml)
+
+Constructs a platform-specific Docker image for the project and its multi-architecture manifest.
+
+**Usage:**
+```yaml
+jobs:
+  build-docker:
+    name: Docker
+    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v1
+    needs: build-binaries
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+    with:
+      source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+      version_type: "commit"
+      build_matrix: >-
+        [
+          {
+            "runner": "self-hosted-hoprnet-bigger",
+            "architecture": "x86_64-linux",
+            "build_command": "nix run -L .#docker-blokli-x86_64-linux",
+            "smoke_test_command": "nix develop -c just smoke-test"
+          }
+        ]
+      cachix_cache_name: "blokli"
+      build_file: "bloklid/Cargo.toml"
+      docker_image_name: "bloklid"
+      deployment_namespace: blokli
+      deployment_label_selector: app.kubernetes.io/name=blokli
+    secrets:
+      gcp_service_account: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY}}
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      docker_hub_username: ${{ secrets.DOCKER_HUB_USERNAME }}
+      docker_hub_token: ${{ secrets.DOCKER_HUB_TOKEN }}
+```
+
+**Key Features:**
+- Builds Docker images using Nix or standard commands.
+- Scan docker images for vulnerabilities.
+- Support for pushing to Google Artifact Registry and Docker Hub.
+- Outputs version tags for downstream jobs.
+
+**Inputs:**
+- `source_branch` (Required): Source branch to build the docker image from.
+- `version_type` (Required): The strategy for versioning (e.g., `commit`, `pr`, `release`).
+- `build_matrix`: It's a JSON array containing an object with the parameters for each matrix parallel execution.
+- `cachix_cache_name` (Required): The name of the Cachix cache to use.
+- `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
+- `docker_image_name` (Required): The name of the image.
+- `docker_gcp_registry` (Optional): Docker registry to push the image to (Default: `europe-west3-docker.pkg.dev/hoprassociation/docker-images`).
+- `docker_hub_registry` (Optional): Docker registry to push the image to (Default: `docker.io/hoprnet`).
+- `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
+- `runner` (Optional): Runner to use for the job (Default: `self-hosted-hoprnet-bigger`).
+- `deployment_namespace` (Optional): Kubernetes namespace for the deployment to restart in staging.
+- `deployment_label_selector` (Optional): Kubernetes label selector for the deployment to restart in staging.
+- `fail_on_scan_vulnerabilities`: Whether to fail the build if vulnerabilities are found during the scan (Default: `true`)
+
+**Secrets:**
+- `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
+- `docker_hub_username` (Optional): Docker Hub username (Required for release builds).
+- `docker_hub_token` (Optional): Docker Hub token (Required for release builds).
+
+**Outputs:**
+- `docker_build_version`: Docker image version built.
+- `docker_debug_version`: Docker debug image version built.
+
+
 ### [Build Docker Image](./.github/workflows/build-docker-image.yaml)
 
 Constructs a platform-specific Docker image for the project. This workflow is designed to run in a parallel matrix for different architectures to later be combined into a manifest.

@@ -71,10 +71,11 @@ runs:
 
           for artifact in "${files[@]}"; do
             # Check if the file already exists in the cached list
-            if echo "$existing_files" | grep -q "${artifact}$"; then
+            existing_name=$(echo "$existing_files" | grep "${artifact}$" || true)
+            if [ -n "$existing_name" ]; then
               echo "File ${artifact} already exists, deleting before re-upload..."
               gcloud artifacts files delete \
-                "${artifact}" --quiet || {
+                "${existing_name}" --quiet || {
                   echo "Warning: Failed to delete existing ${artifact}, attempting upload anyway"
                 }
             fi

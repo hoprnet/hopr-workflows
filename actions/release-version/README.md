@@ -34,7 +34,7 @@ This action performs the following steps:
 ## Inputs
 
 - `source_branch`: Source branch for release notes
-- `file`: The filepath to the `Cargo.toml` file.
+- `file`: The filepath to the version file (e.g. `Cargo.toml` or `package.json`).
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
 - `package_name`: Package name from Google Artifact Registry to download binaries from and publish in the release
 - `zulip_email`: Email of the user used to send Zulip notifications.

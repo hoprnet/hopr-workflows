@@ -101,7 +101,7 @@ runs:
             publish_github_release=true
             publish_artifact_registry=true
             if [[ $current_version == *"-rc."* ]]; then
-              echo "prerelease=true"
+              prerelease=true
             fi
           else
             echo "Invalid version type"
@@ -129,14 +129,17 @@ runs:
           # Generate Docker compatible version
           docker_build_version=${build_version/+/-}
           if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
-            docker_build_version_platform="${docker_build_version}-linux-arm64"
             docker_platform="linux-arm64"
           elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
-            docker_build_version_platform="${docker_build_version}-linux-amd64"
             docker_platform="linux-amd64"
           else
+            # We are not supporting other architectures for docker images at the moment
+            # But we want to allow the action to be used for other architectures for non-docker builds, so we won't fail the action here. 
+            # Instead, we'll set the docker_platform to the input architecture and let the docker build step fail if it's not supported.
+            docker_platform="${{ inputs.architecture }}"            
             echo "Unsupported architecture: ${{ inputs.architecture }}"
           fi
+          docker_build_version_platform="${docker_build_version}-${docker_platform}"
           echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
           echo "commit_version=${commit_version}" | tee -a "$GITHUB_OUTPUT"
           echo "pr_version=${pr_version}" | tee -a "$GITHUB_OUTPUT"

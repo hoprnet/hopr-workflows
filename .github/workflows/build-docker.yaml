@@ -110,7 +110,7 @@ jobs:
           ref: ${{ inputs.source_branch }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@ausias/workflows-v2
+        uses: hoprnet/hopr-workflows/actions/set-build-version@ausias/workflows-v2 # @set-build-version-v2
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
@@ -251,13 +251,17 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4.7.0
       - name: Install Trivy
+        env:
+          TRIVY_VERSION: "0.61.0"
         run: |
+          sudo mkdir -p /etc/apt/keyrings
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | gpg --dearmor \
+            | sudo tee /etc/apt/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release 
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
+          sudo apt-get install -y trivy=${TRIVY_VERSION}
       - name: Install Cosign
         run: |
           COSIGN_VERSION="v3.0.3"
@@ -326,7 +330,7 @@ jobs:
           COSIGN_YES: "true"
       - name: Attach SBOM to Google Artifact for vulnerability analysis
         run: |
-          gcloud artifacts sbom load --project hoprassociation \
+          gcloud artifacts sbom load \
             --source sbom.json \
             --uri "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}" \
             --destination gs://docker-images-sboms
@@ -364,12 +368,12 @@ jobs:
         if: matrix.smoke_test_command != ''
         run: ${{ matrix.smoke_test_command }} 2>&1 | tee test.logs
         env:
-          SOURCE_IMAGE: "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+          SOURCE_IMAGE: "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version }}"
       - name: Upload logs on failure
         if: failure() && matrix.smoke_test_command != ''
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
-          name: smoke-test-logs
+          name: smoke-test-logs-${{ matrix.architecture }}
           path: test.logs
           retention-days: 7
   deploy:
@@ -390,11 +394,11 @@ jobs:
       - name: Deploy in staging
         run: |
           echo "Starting deployment restart"
-          if ! kubectl rollout restart deployments -n ${{ inputs.deployment_namespace }} -l ${{ inputs.deployment_label_selector }}; then
+          if ! kubectl rollout restart deployments -n "${{ inputs.deployment_namespace }}" -l "${{ inputs.deployment_label_selector }}"; then
             echo "Failed to restart deployment"
             exit 1
           fi
-          if ! kubectl rollout status deployments -n ${{ inputs.deployment_namespace }} -l ${{ inputs.deployment_label_selector }} --timeout=600s; then
+          if ! kubectl rollout status deployments -n "${{ inputs.deployment_namespace }}" -l "${{ inputs.deployment_label_selector }}" --timeout=600s; then
             echo "Deployment did not complete within the timeout period"
             exit 1
           fi
