@@ -37,7 +37,7 @@ Updates the `version` of the project based on the type of build desired.
 - `debug_version`: Debug version with commit hash. Example: `1.2.3+debug.9a4f81a`. Set when the label `build-flavor-debug` is attached to the PR and the `version_type` is `commit`.
 - `pr_version`: Version with pull request number. Example: `1.2.3+pr.456`.
 - `release_version`: Release version. Example: `1.2.3`.
-- `prerelease`: Whether the version is a prerelease: `true` when the release_type is `rc`.
+- `prerelease`: Whether the version is a prerelease: `true` when the `version_type` is `release` and `current_version` contains `-rc.`.
 - `build_version`: Contains the value of output `commit_version`, `pr_version` or `release_version` depending on the `version_type` provided.
 - `docker_build_version`: Docker compatible build version. The character `+` is replaced by `-`. Platform agnostic tag. Example: `1.2.3-commit.9a4f81a`.
 - `docker_debug_version`: Docker compatible debug version. The character `+` is replaced by `-`. Platform agnostic tag. Example: `1.2.3-debug.9a4f81a`. Set when the label `build-flavor-debug` is attached to the PR and the `version_type` is `commit`.
