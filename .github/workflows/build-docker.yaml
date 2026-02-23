@@ -271,16 +271,30 @@ jobs:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'true'
+      - name: Compute platform-specific tags
+        id: platform
+        run: |
+          base_version="${{ needs.build.outputs.docker_build_version }}"
+          if [[ "${{ matrix.architecture }}" == "aarch64-linux" ]]; then
+            echo "docker_build_version_platform=${base_version}-linux-arm64" | tee -a $GITHUB_OUTPUT
+            echo "docker_platform=linux-arm64" | tee -a $GITHUB_OUTPUT
+          elif [[ "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
+            echo "docker_build_version_platform=${base_version}-linux-amd64" | tee -a $GITHUB_OUTPUT
+            echo "docker_platform=linux-amd64" | tee -a $GITHUB_OUTPUT
+          else
+            echo "Unsupported architecture: ${{ matrix.architecture }}"
+            exit 1
+          fi
       - name: Get docker image digest
         id: docker
         run: |
-          gcp_docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+          gcp_docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}"
           docker pull "${gcp_docker_image}" # Pull the image to inspect
           echo "gcp_docker_image=${gcp_docker_image}" | tee -a $GITHUB_OUTPUT
           gcp_docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${gcp_docker_image}" | awk -F'@' '{print $2}')
           echo "gcp_docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${gcp_docker_digest}" | tee -a $GITHUB_OUTPUT
           if [[ "${{ needs.build.outputs.publish_docker_hub }}" == "true" ]]; then
-            docker_hub_image="${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}"
+            docker_hub_image="${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}"
             docker pull "${docker_hub_image}" # Pull the image to inspect
             echo "docker_hub_image=${docker_hub_image}" | tee -a $GITHUB_OUTPUT
             docker_hub_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_hub_image}" | awk -F'@' '{print $2}')
@@ -295,15 +309,15 @@ jobs:
           fi
           trivy image \
             --format sarif \
-            --output "trivy-results-${{ needs.build.outputs.docker_platform }}.sarif" \
+            --output "trivy-results-${{ steps.platform.outputs.docker_platform }}.sarif" \
             --severity HIGH,CRITICAL \
             $EXIT_CODE_OPTION \
             "${{ steps.docker.outputs.gcp_docker_image }}"
       - name: Upload Trivy vulnerabilities to GitHub Security
         uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v4.32.0
         with:
-          sarif_file: trivy-results-${{ needs.build.outputs.docker_platform }}.sarif
-          category: trivy-${{ needs.build.outputs.docker_platform }}
+          sarif_file: trivy-results-${{ steps.platform.outputs.docker_platform }}.sarif
+          category: trivy-${{ steps.platform.outputs.docker_platform }}
       - name: Generate SBOM
         run: trivy image --format cyclonedx --output "sbom.json" "${{ steps.docker.outputs.gcp_docker_image }}"
       - name: Attach SBOM to Google Artifact for attestation
@@ -314,7 +328,7 @@ jobs:
         run: |
           gcloud artifacts sbom load --project hoprassociation \
             --source sbom.json \
-            --uri "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version_platform }}" \
+            --uri "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}" \
             --destination gs://docker-images-sboms
       - name: Log in to DockerHub
         if: needs.build.outputs.publish_docker_hub == 'true'
