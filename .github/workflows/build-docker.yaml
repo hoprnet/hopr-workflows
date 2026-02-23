@@ -360,7 +360,7 @@ jobs:
           retention-days: 7
   deploy:
     name: Deploy
-    needs: build
+    needs: [ build, manifest, scan ]
     if: (needs.build.outputs.deploy_staging == 'true' || (vars.DEPLOY_STAGING_MERGED_PR == 'true' && inputs.version_type == 'pr')) && (inputs.deployment_namespace != '' && inputs.deployment_label_selector != '')
     runs-on: self-hosted-hoprnet-small
     steps:
