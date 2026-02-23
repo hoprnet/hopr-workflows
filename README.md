@@ -30,7 +30,7 @@ Compiles binaries for a specific architecture using Nix. It handles version nami
 ```yaml
 jobs:
   build:
-    uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v1
+    uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v2
     with:
       source_branch: ${{ github.ref_name }}
       version_type: commit
