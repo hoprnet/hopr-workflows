@@ -103,12 +103,20 @@ jobs:
         with:
           disable-sudo: true
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+      - name: Configure git credentials for private repositories
+        if: ${{ github.event.repository.private }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TOKEN_B64=$(echo -n "x-access-token:${GH_TOKEN}" | base64 | tr -d '\n')
+          CONFIG_FILE="${RUNNER_TEMP}/gitconfig-credentials"
+          printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
+          echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
-          token: ${{ github.token }} # Required for private repositories to fetch the code on NixOs runners
       - name: Updates build version
         id: version
         uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
@@ -184,6 +192,11 @@ jobs:
             docker push "${docker_hub_image}"
             echo "Published image to DockerHub: ${docker_hub_image}"
           fi
+      - name: Remove git credentials
+        if: ${{ github.event.repository.private && always() }}
+        run: |
+          rm -f "${GIT_CONFIG_GLOBAL}" || true
+          echo "GIT_CONFIG_GLOBAL=" >> "${GITHUB_ENV}"
   manifest:
     name: Multi-Arch
     runs-on: self-hosted-hoprnet-small
@@ -348,6 +361,15 @@ jobs:
     if: vars.RUN_DOCKER_SMOKE_TESTS == 'true'
     needs: build
     steps:
+      - name: Configure git credentials for private repositories
+        if: ${{ github.event.repository.private }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TOKEN_B64=$(echo -n "x-access-token:${GH_TOKEN}" | base64 | tr -d '\n')
+          CONFIG_FILE="${RUNNER_TEMP}/gitconfig-credentials"
+          printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
+          echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
@@ -370,6 +392,11 @@ jobs:
           name: smoke-test-logs-${{ matrix.architecture }}
           path: test.logs
           retention-days: 7
+      - name: Remove git credentials
+        if: ${{ github.event.repository.private && always() }}
+        run: |
+          rm -f "${GIT_CONFIG_GLOBAL}" || true
+          echo "GIT_CONFIG_GLOBAL=" >> "${GITHUB_ENV}"
   deploy:
     name: Deploy
     needs: [ build, manifest, scan ]
