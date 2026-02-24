@@ -8,4 +8,3 @@ tag tagName:
     echo "Pushing updated tag to remote repository..."
     git push origin {{tagName}}
     echo "Tag {{tagName}} updated successfully."
-    
