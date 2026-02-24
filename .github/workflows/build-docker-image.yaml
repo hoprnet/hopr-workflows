@@ -182,13 +182,13 @@ jobs:
       #   with:
       #     username: ${{ secrets.docker_hub_username }}
       #     password: ${{ secrets.docker_hub_token }}
-      - name: Build docker image - DockerHub - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-        if: steps.docker_hub.outputs.publish_docker_hub == 'true'
-        run: ${{ inputs.build_command }}
-        env:
-          GOOGLE_ACCESS_TOKEN: ${{ secrets.docker_hub_token }}
-          IMAGE_TARGET: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-          SKOPEO_INSECURE_POLICY: "1"
+      # - name: Build docker image - DockerHub - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+      #   if: steps.docker_hub.outputs.publish_docker_hub == 'true'
+      #   run: ${{ inputs.build_command }}
+      #   env:
+      #     GOOGLE_ACCESS_TOKEN: ${{ secrets.docker_hub_token }}
+      #     IMAGE_TARGET: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+      #     SKOPEO_INSECURE_POLICY: "1"
   scan:
     name: Scan
     needs: build
