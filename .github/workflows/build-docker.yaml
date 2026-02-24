@@ -108,6 +108,7 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
+          token: ${{ github.token }} # Required for private repositories to fetch the code on NixOs runners
       - name: Updates build version
         id: version
         uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
