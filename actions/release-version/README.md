@@ -17,6 +17,8 @@ This action performs the following steps:
           file: Cargo.toml
           release_type: patch
           package_name: my-package
+          cachix_cache_name: my-repo
+          cachix_auth_token: ${{ cachix_auth_token }}
           zulip_email: ${{ secrets.ZULIP_EMAIL }}
           zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
           zulip_channel: "MyChannel"
@@ -36,7 +38,9 @@ This action performs the following steps:
 - `source_branch`: Source branch for release notes
 - `file`: The filepath to the version file (e.g. `Cargo.toml` or `package.json`).
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
-- `package_name`: Package name from Google Artifact Registry to download binaries from and publish in the release
+- `package_name`: Package name from Google Artifact Registry to download binaries from and publish in the release.
+- `cachix_cache_name` (Required): The name of the Cachix cache to use.
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
 - `zulip_email`: Email of the user used to send Zulip notifications.
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.

@@ -16,6 +16,12 @@ inputs:
     package_name:
         required: false
         description: "Google artifact registry package name"
+    cachix_cache_name:
+        required: true
+        description: "Cachix cache name to use"
+    cachix_auth_token:
+        required: true
+        description: "Cachix authentication token"
     zulip_api_key:
         description: Zulip API Key for notifications
         required: false
@@ -65,6 +71,11 @@ runs:
           google_credentials: ${{ inputs.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'true'
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ inputs.cachix_auth_token }}"
       - name: Download binary files
         if: inputs.package_name != ''
         id: download
