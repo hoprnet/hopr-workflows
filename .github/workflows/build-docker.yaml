@@ -264,13 +264,6 @@ jobs:
     steps:
       - name: Set up Docker
         uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4.7.0
-      - name: Install Trivy
-        env:
-          TRIVY_VERSION: "0.69.1"
-        run: |
-          curl -Lo trivy.deb "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb"
-          sudo apt-get install -y ./trivy.deb
-          rm trivy.deb
       - name: Install Cosign
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
         with:
@@ -311,31 +304,60 @@ jobs:
             docker_hub_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_hub_image}" | awk -F'@' '{print $2}')
             echo "docker_hub_digest=${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}@${docker_hub_digest}" | tee -a $GITHUB_OUTPUT
           fi
-      - name: Scan vulnerabilities with Trivy
-        run: |
           if [ "${{ inputs.fail_on_scan_vulnerabilities }}" = "true" ]; then
-            EXIT_CODE_OPTION="--exit-code 1"
+            echo "trivy_exit_code=1" | tee -a $GITHUB_ENV
           else
-            EXIT_CODE_OPTION=""
+            echo "trivy_exit_code=0" | tee -a $GITHUB_ENV
           fi
-          trivy image \
-            --format sarif \
-            --output "trivy-results-${{ steps.platform.outputs.docker_platform }}.sarif" \
-            --severity HIGH,CRITICAL \
-            $EXIT_CODE_OPTION \
-            "${{ steps.docker.outputs.gcp_docker_image }}"
-      - name: Upload Trivy vulnerabilities to GitHub Security
-        uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v4.32.0
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
         with:
-          sarif_file: trivy-results-${{ steps.platform.outputs.docker_platform }}.sarif
-          category: trivy-${{ steps.platform.outputs.docker_platform }}
+          image-ref: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}
+          format: table
+          exit-code: "${{ steps.docker.outputs.trivy_exit_code }}"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+          output: trivy.txt
+      - name: Build PR comment body
+        run: |
+          {
+            echo "## 🔎 Trivy report"
+            echo ""
+            echo "_Updated for commit \`${{ github.event.pull_request.head.sha }}\`_"
+            echo ""
+            echo '```'
+            sed -n '1,650p' trivy.txt
+            echo '```'
+            echo ""
+          } > trivy-comment.md
+      - name: Find existing Trivy comment
+        id: find
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad #v4.0.0
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "## 🔎 Trivy report"
+
+      - name: Create or update Trivy comment
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 #v5.0.0
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find.outputs.comment-id }}
+          body-path: trivy-comment.md
+          edit-mode: replace
       - name: Generate SBOM
-        run: trivy image --format cyclonedx --output "sbom.json" "${{ steps.docker.outputs.gcp_docker_image }}"
-      - name: Attach SBOM to Google Artifact for attestation
+        uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
+        with:
+          scan-type: image
+          image-ref: ${{ steps.docker.outputs.gcp_docker_image }}
+          format: cyclonedx
+          output: sbom.json
+      - name: Attest SBOM on GCP Artifact Registry
         run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.gcp_docker_digest }}"
         env:
           COSIGN_YES: "true"
-      - name: Attach SBOM to Google Artifact for vulnerability analysis
+      - name: Upload SBOM file to GCS Bucket for Google Artifact vulnerability analysis
         run: |
           gcloud artifacts sbom load \
             --source sbom.json \
