@@ -18,7 +18,7 @@ This action performs the following steps:
           release_type: patch
           package_name: my-package
           cachix_cache_name: my-repo
-          cachix_auth_token: ${{ cachix_auth_token }}
+          cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
           zulip_email: ${{ secrets.ZULIP_EMAIL }}
           zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
           zulip_channel: "MyChannel"
