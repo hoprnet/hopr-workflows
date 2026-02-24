@@ -252,16 +252,11 @@ jobs:
         uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4.7.0
       - name: Install Trivy
         env:
-          TRIVY_VERSION: "0.61.0"
+          TRIVY_VERSION: "0.69.1"
         run: |
-          sudo mkdir -p /etc/apt/keyrings
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
-            | gpg --dearmor \
-            | sudo tee /etc/apt/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" \
-            | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy=${TRIVY_VERSION}
+          curl -Lo trivy.deb "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb"
+          sudo apt-get install -y ./trivy.deb
+          rm trivy.deb
       - name: Install Cosign
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
         with:
