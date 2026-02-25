@@ -328,7 +328,7 @@ jobs:
             echo "_Updated for commit \`${{ github.event.pull_request.head.sha }}\`_"
             echo ""
             echo '```'
-            sed -n '1,650p' trivy.txt
+            grep -v "     0      " trivy.txt | head -n 650
             echo '```'
             echo ""
           } > trivy-comment.md
