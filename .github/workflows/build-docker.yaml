@@ -259,8 +259,6 @@ jobs:
         include: ${{ fromJSON(inputs.build_matrix) }}
     permissions:
       contents: read
-      id-token: write # Allows to request an identity token. Fetches an OIDC token from GitHub OAuth OIDC provider
-      security-events: write
       pull-requests: write
     steps:
       - name: Set up Docker
