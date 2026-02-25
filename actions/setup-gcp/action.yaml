@@ -37,7 +37,7 @@ outputs:
 runs:
     using: composite
     steps:
-        - name: Authenticate in Google Cloud using Account Key JSON
+        - name: Authenticate in Google Cloud using JSON Account Key
           if: inputs.google_credentials != ''
           id: auth_credentials
           uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
