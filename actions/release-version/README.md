@@ -11,7 +11,7 @@ This action performs the following steps:
 
 ```bash
       - name: Release version
-        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v1
+        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v2
         with:
           source_branch: main
           file: Cargo.toml

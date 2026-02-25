@@ -18,7 +18,7 @@ on:
       version_type:
         required: true
         type: string
-        description: "Type of version to build: commit, pr, release, rc"
+        description: "Type of version to build: commit, pr, release"
       build_matrix:
         description: 'JSON string for the matrix strategy. Must include keys: runner, architecture, build_command, build_debug_command (optional), smoke_test_command (optional)'
         required: true
@@ -127,7 +127,7 @@ jobs:
           architecture: "${{ matrix.architecture }}"
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -205,7 +205,7 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -271,7 +271,7 @@ jobs:
           cosign-release: 'v3.0.5'
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -311,6 +311,7 @@ jobs:
             echo "trivy_exit_code=0" | tee -a $GITHUB_OUTPUT
           fi
       - name: Run Trivy
+        if: inputs.version_type == 'commit'
         uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
         with:
           image-ref: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}
@@ -321,6 +322,7 @@ jobs:
           severity: "HIGH,CRITICAL"
           output: trivy.json
       - name: Build Security Report Markdown
+        if: inputs.version_type == 'commit'
         run: |
           {
             echo "## 🔎 Trivy Security Report"
@@ -338,6 +340,7 @@ jobs:
 
           } > trivy-comment.md
       - name: Find existing Trivy comment
+        if: inputs.version_type == 'commit'
         id: find
         uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad #v4.0.0
         with:
@@ -346,6 +349,7 @@ jobs:
           body-includes: "## 🔎 Trivy Security Report"
 
       - name: Create or update Trivy comment
+        if: inputs.version_type == 'commit'
         uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 #v5.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -433,7 +437,7 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           install_sdk: 'true'
