@@ -304,32 +304,36 @@ jobs:
             echo "docker_hub_digest=${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}@${docker_hub_digest}" | tee -a $GITHUB_OUTPUT
           fi
           if [ "${{ inputs.fail_on_scan_vulnerabilities }}" = "true" ]; then
-            echo "trivy_exit_code=1" | tee -a $GITHUB_ENV
+            echo "trivy_exit_code=1" | tee -a $GITHUB_OUTPUT
           else
-            echo "trivy_exit_code=0" | tee -a $GITHUB_ENV
+            echo "trivy_exit_code=0" | tee -a $GITHUB_OUTPUT
           fi
       - name: Run Trivy
         uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
         with:
           image-ref: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}
-          format: table
+          format: json
           exit-code: "${{ steps.docker.outputs.trivy_exit_code }}"
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "HIGH,CRITICAL"
-          output: trivy.txt
-      - name: Build PR comment body
+          output: trivy.json
+      - name: Build Markdown table with headers
         run: |
-          # Build a markdown comment body with the Trivy report, excluding lines with "0" vulnerabilities and limiting to 500 lines to avoid hitting comment size limits
           {
-            echo "## 🔎 Trivy report"
+            echo "## 🔎 Trivy Security Report"
             echo ""
-            echo "_Updated for commit \`${{ github.event.pull_request.head.sha }}\`_"
-            echo ""
-            echo '```'
-            sed '/.*│[[:space:]]*0[[:space:]]*│.*/d' trivy.txt | head -n 500
-            echo '```'
-            echo ""
+            echo "| Target | Package | Installed | Severity | CVE |"
+            echo "|--------|----------|------------|----------|-----|"
+
+            jq -r '
+              .Results[]
+              | select(.Vulnerabilities != null)
+              | .Target as $target
+              | .Vulnerabilities[]
+              | "| \($target) | \(.PkgName) | \(.InstalledVersion) | \(.Severity) | \(.VulnerabilityID) |"
+            ' trivy.json
+
           } > trivy-comment.md
       - name: Find existing Trivy comment
         id: find
@@ -337,7 +341,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: "github-actions[bot]"
-          body-includes: "## 🔎 Trivy report"
+          body-includes: "## 🔎 Trivy Security Report"
 
       - name: Create or update Trivy comment
         uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 #v5.0.0
