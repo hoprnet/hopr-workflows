@@ -322,13 +322,14 @@ jobs:
           output: trivy.txt
       - name: Build PR comment body
         run: |
+          # Build a markdown comment body with the Trivy report, excluding lines with "0" vulnerabilities and limiting to 500 lines to avoid hitting comment size limits
           {
             echo "## 🔎 Trivy report"
             echo ""
             echo "_Updated for commit \`${{ github.event.pull_request.head.sha }}\`_"
             echo ""
             echo '```'
-            grep -v "     0      " trivy.txt | head -n 650
+            grep -v "     0      " trivy.txt | head -n 500
             echo '```'
             echo ""
           } > trivy-comment.md
