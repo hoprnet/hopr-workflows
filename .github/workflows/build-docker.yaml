@@ -332,12 +332,12 @@ jobs:
             echo "|--------|----------|------------|----------|-----|"
 
             jq -r '
-              .Results[]
+              .Results[]?
               | select(.Vulnerabilities != null)
               | .Target as $target
-              | .Vulnerabilities[]
+              | .Vulnerabilities[]?
               | "| \($target) | \(.PkgName) | \(.InstalledVersion) | \(.Severity) | \(.VulnerabilityID) |"
-            ' trivy.json
+            ' trivy.json || echo "| - | Could not process Trivy results | - | - | - |"
 
           } > trivy-comment.md
       - name: Find existing Trivy comment
