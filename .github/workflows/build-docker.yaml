@@ -1,0 +1,460 @@
+#################################################################################
+# Pipeline to build docker
+#################################################################################
+name: Build docker
+env:
+  RUST_BACKTRACE: "1"
+  CARGO_TERM_COLOR: always
+permissions:
+  contents: read
+  id-token: write # Required for cosign keyless attestation and GCP Workload Identity
+on:
+  workflow_call:
+    inputs:
+      source_branch:
+        required: true
+        type: string
+        description: "Source branch to build the binary image from"
+      version_type:
+        required: true
+        type: string
+        description: "Type of version to build: commit, pr, release"
+      build_matrix:
+        description: 'JSON string for the matrix strategy. Must include keys: runner, architecture, build_command, build_debug_command (optional), smoke_test_command (optional)'
+        required: true
+        type: string
+      cachix_cache_name:
+        required: true
+        type: string
+        description: "Cachix cache name to use"
+      build_file:
+        required: false
+        type: string
+        default: "Cargo.toml"
+        description: "File to extract version from"
+      docker_image_name:
+        required: true
+        type: string
+        description: "Docker image name"
+      docker_gcp_registry:
+        required: false
+        type: string
+        default: "europe-west3-docker.pkg.dev/hoprassociation/docker-images"
+        description: "Docker registry to push the image to"
+      docker_hub_registry:
+        required: false
+        type: string
+        default: "docker.io/hoprnet"
+        description: "Docker registry to push the image to"
+      timeout_minutes:
+        required: false
+        type: number
+        default: 60
+        description: "Timeout for the job in minutes"
+      deployment_namespace:
+        required: false
+        type: string
+        description: "Kubernetes namespace for the deployment to restart in staging"
+      deployment_label_selector:
+        required: false
+        type: string
+        description: "Kubernetes label selector for the deployment to restart in staging"
+      fail_on_scan_vulnerabilities:
+        required: false
+        type: string
+        description: "Whether to fail the build if vulnerabilities are found during the scan"
+        default: "true"
+    secrets:
+      gcp_service_account:
+        required: true
+      cachix_auth_token:
+        required: true
+      docker_hub_username:
+        required: false
+      docker_hub_token:
+        required: false
+    outputs:
+      docker_build_version:
+        description: "Docker image version built"
+        value: ${{ jobs.build.outputs.docker_build_version }}
+      docker_debug_version:
+        description: "Docker debug image version built"
+        value: ${{ jobs.build.outputs.docker_debug_version }}
+concurrency:
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}
+  cancel-in-progress: true
+jobs:
+  build:
+    name: Build (${{ matrix.architecture }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include: ${{ fromJSON(inputs.build_matrix) }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    outputs:
+      docker_build_version_platform: ${{ steps.version.outputs.docker_build_version_platform }}
+      docker_build_version: ${{ steps.version.outputs.docker_build_version }}
+      docker_debug_version: ${{ steps.version.outputs.docker_debug_version }}
+      deploy_staging: ${{ steps.version.outputs.deploy_staging }}
+      publish_docker_hub: ${{ steps.docker_hub.outputs.publish_docker_hub }}
+      docker_platform: ${{ steps.version.outputs.docker_platform }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          disable-sudo: true
+          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+      - name: Configure git credentials for private repositories
+        if: ${{ github.event.repository.private }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TOKEN_B64=$(echo -n "x-access-token:${GH_TOKEN}" | base64 | tr -d '\n')
+          CONFIG_FILE="${RUNNER_TEMP}/gitconfig-credentials"
+          printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
+          echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
+      - name: Updates build version
+        id: version
+        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+        with:
+          file: "${{ inputs.build_file }}"
+          version_type: "${{ inputs.version_type }}"
+          architecture: "${{ matrix.architecture }}"
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          login_artifact_registry: 'true'
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+      - name: Determine DockerHub publishing condition
+        id: docker_hub
+        run: |
+          if [ "${{ inputs.version_type }}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
+            echo "publish_docker_hub=true" | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "publish_docker_hub=false" | tee -a "$GITHUB_OUTPUT"
+          fi
+      - name: Log in to DockerHub
+        if: steps.docker_hub.outputs.publish_docker_hub == 'true'
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          username: ${{ secrets.docker_hub_username }}
+          password: ${{ secrets.docker_hub_token }}
+      - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+        run: ${{ matrix.build_command }}
+      - name: Publish docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+        run: |
+          nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
+            set -euo pipefail
+            echo "Publishing image to GCP Artifact Registry: ${GCP_IMAGE_NAME}"
+            skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_IMAGE_NAME}"
+            echo "Published image to GCP Artifact Registry: ${GCP_IMAGE_NAME}"
+            if [[ "${{ steps.version.outputs.deploy_staging }}" == "true" && "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
+              echo "Publishing staging image to GCP Artifact Registry: ${GCP_STAGING_IMAGE_NAME}"
+              skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_STAGING_IMAGE_NAME}"
+              echo "Published staging image to GCP Artifact Registry: ${GCP_STAGING_IMAGE_NAME}"
+            fi
+            if [[ "${{ inputs.version_type }}" == "pr" ]]; then
+              echo "Publishing latest image to GCP Artifact Registry: ${GCP_LATEST_IMAGE_NAME}"
+              skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_LATEST_IMAGE_NAME}"
+              echo "Published latest image to GCP Artifact Registry: ${GCP_LATEST_IMAGE_NAME}"
+            fi
+            if [[ "${{ steps.docker_hub.outputs.publish_docker_hub }}" == "true" ]]; then
+              echo "Publishing image to DockerHub: ${DOCKER_HUB_IMAGE_NAME}"
+              skopeo --insecure-policy copy docker-archive:./result "docker://${DOCKER_HUB_IMAGE_NAME}"
+              echo "Published image to DockerHub: ${DOCKER_HUB_IMAGE_NAME}"
+            fi
+          SKOPEO
+        env:
+          GCP_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+          GCP_STAGING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:staging
+          GCP_LATEST_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
+          DOCKER_HUB_IMAGE_NAME: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+      - name: Build debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
+        if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
+        run: ${{ matrix.build_debug_command }}
+      - name: Publish debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
+        if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
+        run: |
+          nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
+            set -euo pipefail
+            echo "Publishing debug image to GCP Artifact Registry: ${GCP_DEBUG_IMAGE_NAME}"
+            skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_DEBUG_IMAGE_NAME}"
+            echo "Published debug image to GCP Artifact Registry: ${GCP_DEBUG_IMAGE_NAME}"
+          SKOPEO
+        env:
+          GCP_DEBUG_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
+      - name: Remove git credentials
+        if: ${{ github.event.repository.private && always() }}
+        run: |
+          rm -f "${GIT_CONFIG_GLOBAL}" || true
+          echo "GIT_CONFIG_GLOBAL=" >> "${GITHUB_ENV}"
+  manifest:
+    name: Multi-Arch
+    runs-on: self-hosted-hoprnet-small
+    needs: build
+    steps:
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          login_artifact_registry: 'true'
+          install_sdk: 'false'
+      - name: Create multi-arch docker manifest - ${{ needs.build.outputs.docker_build_version }}
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: ${{ needs.build.outputs.docker_build_version }}
+      - name: Create debug multi-arch docker manifest - ${{ needs.build.outputs.docker_debug_version }}
+        if: needs.build.outputs.docker_debug_version != ''
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: ${{ needs.build.outputs.docker_debug_version }}
+      - name: Create multi-arch docker manifest - latest
+        if: inputs.version_type == 'pr'
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: latest
+      - name: Identify Docker hub publish condition
+        id: docker_hub
+        run: |
+          if [ "${{ inputs.version_type }}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
+            echo "publish_dockerhub=true" | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "publish_dockerhub=false" | tee -a "$GITHUB_OUTPUT"
+          fi
+      - name: Log in to Docker Hub
+        if: steps.docker_hub.outputs.publish_dockerhub == 'true'
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          username: ${{ secrets.docker_hub_username }}
+          password: ${{ secrets.docker_hub_token }}
+      - name: Create multi-arch docker manifest - Docker Hub - ${{ needs.build.outputs.docker_build_version }}
+        if: steps.docker_hub.outputs.publish_dockerhub == 'true'
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_hub_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: ${{ needs.build.outputs.docker_build_version }}
+  scan:
+    name: Scan (${{ matrix.architecture }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJSON(inputs.build_matrix) }}
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # Required for cosign keyless attestation and GCP Workload Identity
+    steps:
+      - name: Set up Docker
+        uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4.7.0
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        with:
+          cosign-release: 'v3.0.5'
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          login_artifact_registry: 'true'
+          install_sdk: 'true'
+      - name: Compute platform-specific tags
+        id: platform
+        run: |
+          base_version="${{ needs.build.outputs.docker_build_version }}"
+          if [[ "${{ matrix.architecture }}" == "aarch64-linux" ]]; then
+            echo "docker_build_version_platform=${base_version}-linux-arm64" | tee -a $GITHUB_OUTPUT
+            echo "docker_platform=linux-arm64" | tee -a $GITHUB_OUTPUT
+          elif [[ "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
+            echo "docker_build_version_platform=${base_version}-linux-amd64" | tee -a $GITHUB_OUTPUT
+            echo "docker_platform=linux-amd64" | tee -a $GITHUB_OUTPUT
+          else
+            echo "Unsupported architecture: ${{ matrix.architecture }}"
+            exit 1
+          fi
+      - name: Get docker image digest
+        id: docker
+        run: |
+          gcp_docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}"
+          docker pull "${gcp_docker_image}" # Pull the image to inspect
+          echo "gcp_docker_image=${gcp_docker_image}" | tee -a $GITHUB_OUTPUT
+          gcp_docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${gcp_docker_image}" | awk -F'@' '{print $2}')
+          echo "gcp_docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${gcp_docker_digest}" | tee -a $GITHUB_OUTPUT
+          if [[ "${{ needs.build.outputs.publish_docker_hub }}" == "true" ]]; then
+            docker_hub_image="${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}"
+            docker pull "${docker_hub_image}" # Pull the image to inspect
+            echo "docker_hub_image=${docker_hub_image}" | tee -a $GITHUB_OUTPUT
+            docker_hub_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_hub_image}" | awk -F'@' '{print $2}')
+            echo "docker_hub_digest=${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}@${docker_hub_digest}" | tee -a $GITHUB_OUTPUT
+          fi
+          if [ "${{ inputs.fail_on_scan_vulnerabilities }}" = "true" ]; then
+            echo "trivy_exit_code=1" | tee -a $GITHUB_OUTPUT
+          else
+            echo "trivy_exit_code=0" | tee -a $GITHUB_OUTPUT
+          fi
+      - name: Run Trivy
+        if: inputs.version_type == 'commit'
+        uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
+        with:
+          image-ref: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}
+          format: json
+          exit-code: "${{ steps.docker.outputs.trivy_exit_code }}"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+          output: trivy.json
+      - name: Build Security Report Markdown
+        if: inputs.version_type == 'commit'
+        run: |
+          {
+            echo "## 🔎 Trivy Security Report"
+            echo ""
+            echo "| Target | Package | Installed | Severity | CVE |"
+            echo "|--------|----------|------------|----------|-----|"
+
+            jq -r '
+              .Results[]?
+              | select(.Vulnerabilities != null)
+              | .Target as $target
+              | .Vulnerabilities[]?
+              | "| \($target) | \(.PkgName) | \(.InstalledVersion) | \(.Severity) | \(.VulnerabilityID) |"
+            ' trivy.json || echo "| - | Could not process Trivy results | - | - | - |"
+
+          } > trivy-comment.md
+      - name: Find existing Trivy comment
+        if: inputs.version_type == 'commit'
+        id: find
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad #v4.0.0
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "## 🔎 Trivy Security Report"
+
+      - name: Create or update Trivy comment
+        if: inputs.version_type == 'commit'
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 #v5.0.0
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find.outputs.comment-id }}
+          body-path: trivy-comment.md
+          edit-mode: replace
+      - name: Generate SBOM
+        uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
+        with:
+          scan-type: image
+          image-ref: ${{ steps.docker.outputs.gcp_docker_image }}
+          format: cyclonedx
+          output: sbom.json
+      - name: Attest SBOM on GCP Artifact Registry
+        run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.gcp_docker_digest }}"
+        env:
+          COSIGN_YES: "true"
+      - name: Upload SBOM file to GCS Bucket for Google Artifact vulnerability analysis
+        run: |
+          gcloud artifacts sbom load \
+            --source sbom.json \
+            --uri "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}" \
+            --destination gs://docker-images-sboms
+      - name: Log in to DockerHub
+        if: needs.build.outputs.publish_docker_hub == 'true'
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          username: ${{ secrets.docker_hub_username }}
+          password: ${{ secrets.docker_hub_token }}
+      - name: Attach SBOM to DockerHub for attestation
+        if: needs.build.outputs.publish_docker_hub == 'true'
+        run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.docker_hub_digest }}"
+        env:
+          COSIGN_YES: "true"
+  smoke-test:
+    name: Smoke Test (${{ matrix.architecture }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include: ${{ fromJSON(inputs.build_matrix) }}
+    if: vars.RUN_DOCKER_SMOKE_TESTS == 'true'
+    needs: build
+    steps:
+      - name: Configure git credentials for private repositories
+        if: ${{ github.event.repository.private }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TOKEN_B64=$(echo -n "x-access-token:${GH_TOKEN}" | base64 | tr -d '\n')
+          CONFIG_FILE="${RUNNER_TEMP}/gitconfig-credentials"
+          printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
+          echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+      - name: Run smoke tests
+        if: matrix.smoke_test_command != ''
+        run: ${{ matrix.smoke_test_command }} 2>&1 | tee test.logs
+        env:
+          SOURCE_IMAGE: "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ needs.build.outputs.docker_build_version }}"
+      - name: Upload logs on failure
+        if: failure() && matrix.smoke_test_command != ''
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: smoke-test-logs-${{ matrix.architecture }}
+          path: test.logs
+          retention-days: 7
+      - name: Remove git credentials
+        if: ${{ github.event.repository.private && always() }}
+        run: |
+          rm -f "${GIT_CONFIG_GLOBAL}" || true
+          echo "GIT_CONFIG_GLOBAL=" >> "${GITHUB_ENV}"
+  deploy:
+    name: Deploy
+    needs: [ build, manifest, scan ]
+    if: (needs.build.outputs.deploy_staging == 'true' || (vars.DEPLOY_STAGING_MERGED_PR == 'true' && inputs.version_type == 'pr')) && (inputs.deployment_namespace != '' && inputs.deployment_label_selector != '')
+    runs-on: self-hosted-hoprnet-small
+    steps:
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          install_sdk: 'true'
+          login_gke: 'true'
+          project: hopr-staging
+
+      - name: Deploy in staging
+        run: |
+          echo "Starting deployment restart"
+          if ! kubectl rollout restart deployments -n "${{ inputs.deployment_namespace }}" -l "${{ inputs.deployment_label_selector }}"; then
+            echo "Failed to restart deployment"
+            exit 1
+          fi
+          if ! kubectl rollout status deployments -n "${{ inputs.deployment_namespace }}" -l "${{ inputs.deployment_label_selector }}" --timeout=600s; then
+            echo "Deployment did not complete within the timeout period"
+            exit 1
+          fi
+          echo "Restart completed successfully"
+        timeout-minutes: 15

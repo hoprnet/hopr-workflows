@@ -124,14 +124,14 @@ jobs:
           ref: ${{ inputs.source_branch }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v1
+        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
           architecture: "${{ inputs.architecture }}"
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -214,7 +214,7 @@ jobs:
           sudo mv cosign /usr/local/bin/cosign
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -311,7 +311,7 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           install_sdk: 'true'

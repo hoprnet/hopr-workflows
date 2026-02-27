@@ -34,11 +34,13 @@ runs:
         shell: bash
         id: artifacts
         run: |
+          # Set gcloud config defaults to avoid repeating flags
+          gcloud config set project "${{ inputs.project }}"
+          gcloud config set artifacts/location "${{ inputs.region }}"
+          gcloud config set artifacts/repository "${{ inputs.repository }}"
+
           mkdir -p "${{ inputs.destination }}"
           if ! files=$(gcloud artifacts files list \
-            --project="${{ inputs.project }}" \
-            --location="${{ inputs.region }}" \
-            --repository="${{ inputs.repository }}" \
             --package="${{ inputs.package }}" \
             --version="${{ inputs.version }}" \
             --format=json | jq -r '.[] | .name'); then
@@ -54,9 +56,6 @@ runs:
             # Extract the filename from the full resource path (after the last ':')
             filename="${file##*:}"
             if ! gcloud artifacts generic download \
-              --project="${{ inputs.project }}" \
-              --location="${{ inputs.region }}" \
-              --repository="${{ inputs.repository }}" \
               --package="${{ inputs.package }}" \
               --version="${{ inputs.version }}" \
               --destination="${{ inputs.destination }}" \

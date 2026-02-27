@@ -11,17 +11,19 @@ This action performs the following steps:
 
 ```bash
       - name: Release version
-        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v1
+        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v2
         with:
           source_branch: main
           file: Cargo.toml
           release_type: patch
+          package_name: my-package
+          cachix_cache_name: my-repo
+          cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
           zulip_email: ${{ secrets.ZULIP_EMAIL }}
           zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
           zulip_channel: "MyChannel"
           zulip_topic: "Releases"
           gcp_service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
-          attach_binaries: 'true'
           github_token: "${{ secrets.GH_RUNNER_TOKEN }}"
 ```
 
@@ -34,14 +36,16 @@ This action performs the following steps:
 ## Inputs
 
 - `source_branch`: Source branch for release notes
-- `file`: The filepath to the `Cargo.toml` file.
+- `file`: The filepath to the version file (e.g. `Cargo.toml` or `package.json`).
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
+- `package_name`: Package name from Google Artifact Registry to download binaries from and publish in the release.
+- `cachix_cache_name` (Required): The name of the Cachix cache to use.
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
 - `zulip_email`: Email of the user used to send Zulip notifications.
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.
 - `zulip_topic`: Zulip topic for notifications.
 - `gcp_service_account`: GCP Service Account JSON for Artifact Registry access
-- `attach_binaries`: Whether to attach binaries from Artifact Registry
 - `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch
 
 ## Outputs

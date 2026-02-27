@@ -78,14 +78,12 @@ github_format_changelog() {
     local section_ci="\n### Automation\n\n"
     local section_documentation="\n### Documentation\n\n"
     local section_other="\n### Other\n\n"
-    
+
     local change_log_content="## What's Changed\n"
-    
+
     # Add summary header
     change_log_content+="\nThis release contains the following changes:\n\n"
-    change_log_content+="\n"
 
-    
     # Process each changelog entry
     for entry in "${changelog_entries[@]:-}"; do
         if [[ -z "$entry" ]]; then

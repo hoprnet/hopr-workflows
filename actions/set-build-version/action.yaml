@@ -10,7 +10,7 @@ inputs:
         required: true
     architecture:
         description: 'Target architecture for the docker image'
-        required: true
+        required: false
         default: x86_64-linux
 outputs:
     current_version:
@@ -28,6 +28,9 @@ outputs:
     release_version:
         description: 'Release version'
         value: ${{ steps.versions.outputs.release_version }}
+    prerelease:
+        description: 'Whether the version is a prerelease'
+        value: ${{ steps.versions.outputs.prerelease }}
     build_version:
         description: 'Build version based on version type'
         value: ${{ steps.versions.outputs.build_version }}
@@ -65,13 +68,21 @@ runs:
         id: versions
         run: |
           echo "Gathering version from ${{ inputs.file }} and setting build version type to '${{ inputs.version_type }}'"
-          current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
+          if [[ "${{ inputs.file }}" =~ ^.*\.toml$ ]]; then
+            current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
+          elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
+            current_version=$(jq -r '.version' ${{ inputs.file }})
+          else
+            echo "Unsupported file type: ${{ inputs.file }}"
+            exit 1
+          fi
           commit_version="$current_version+commit.$(git rev-parse --short HEAD)"
           pr_version="$current_version+pr.${{ github.event.pull_request.number }}"
           release_version="$current_version"
           publish_artifact_registry=false
           publish_github_release=false
           deploy_staging=false
+          prerelease=false
           if [[ "${{ inputs.version_type }}" == "commit" ]]; then
             build_version=${commit_version}
             if [ "${GITHUB_PR_LABEL_PUBLISH_BINARIES:-0}" == '1' ]; then
@@ -88,6 +99,9 @@ runs:
             build_version=${release_version}
             publish_github_release=true
             publish_artifact_registry=true
+            if [[ $current_version == *"-rc."* ]]; then
+              prerelease=true
+            fi
           else
             echo "Invalid version type"
             echo "Parameter version_type must be one of the following:"
@@ -114,19 +128,22 @@ runs:
           # Generate Docker compatible version
           docker_build_version=${build_version/+/-}
           if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
-            docker_build_version_platform="${docker_build_version}-linux-arm64"
             docker_platform="linux-arm64"
           elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
-            docker_build_version_platform="${docker_build_version}-linux-amd64"
             docker_platform="linux-amd64"
           else
+            # We are not supporting other architectures for docker images at the moment
+            # But we want to allow the action to be used for other architectures for non-docker builds, so we won't fail the action here. 
+            # Instead, we'll set the docker_platform to the input architecture and let the docker build step fail if it's not supported.
+            docker_platform="${{ inputs.architecture }}"            
             echo "Unsupported architecture: ${{ inputs.architecture }}"
-            exit 1
           fi
+          docker_build_version_platform="${docker_build_version}-${docker_platform}"
           echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
           echo "commit_version=${commit_version}" | tee -a "$GITHUB_OUTPUT"
           echo "pr_version=${pr_version}" | tee -a "$GITHUB_OUTPUT"
           echo "release_version=${release_version}" | tee -a "$GITHUB_OUTPUT"
+          echo "prerelease=${prerelease}" | tee -a "$GITHUB_OUTPUT"
           echo "build_version=${build_version}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_build_version=${docker_build_version}" | tee -a "$GITHUB_OUTPUT"
           echo "docker_build_version_platform=${docker_build_version_platform}" | tee -a "$GITHUB_OUTPUT"
@@ -135,11 +152,18 @@ runs:
           echo "publish_github_release=${publish_github_release}" | tee -a "$GITHUB_OUTPUT"
           echo "deploy_staging=${deploy_staging}" | tee -a "$GITHUB_OUTPUT"
       - name: Update build version
+        # Equivalent to:  inputs.version_type != 'release'
+        if: steps.versions.outputs.current_version != steps.versions.outputs.build_version
         shell: bash
         run: |
-          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${{ steps.versions.outputs.build_version}}\5/" ${{ inputs.file }}
-          if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
-            echo "Regenerating Cargo.lock file"
-            nix develop --command cargo generate-lockfile
+          if [[ "${{ inputs.file }}" =~ .*\.toml$ ]]; then
+            sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${{ steps.versions.outputs.build_version}}\5/" ${{ inputs.file }}
+            rm "${{ inputs.file }}.bak"
+            if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
+              echo "Regenerating Cargo.lock file"
+              nix develop --command cargo generate-lockfile --manifest-path ${{ inputs.file }}
+            fi
+          elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
+            jq --arg build_version "${{ steps.versions.outputs.build_version }}" '.version = $build_version' ${{ inputs.file }} > "${{ inputs.file }}.tmp"
+            mv "${{ inputs.file }}.tmp" ${{ inputs.file }}
           fi
-          rm "${{ inputs.file }}.bak"
