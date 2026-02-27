@@ -152,52 +152,48 @@ jobs:
           password: ${{ secrets.docker_hub_token }}
       - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         run: ${{ matrix.build_command }}
-        env:
-          IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
       - name: Publish docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         run: |
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
-            gcp_image_name="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}"
-            gcp_image="${gcp_image_name}:${{ steps.version.outputs.docker_build_version_platform }}"
-            echo "Publishing image to GCP Artifact Registry: ${gcp_image}"
-            skopeo copy docker-archive:./result "docker://${gcp_image}"
-            echo "Published image to GCP Artifact Registry: ${gcp_image}"
+            echo "Publishing image to GCP Artifact Registry: ${GCP_IMAGE_NAME}"
+            skopeo copy docker-archive:./result "docker://${GCP_IMAGE_NAME}"
+            echo "Published image to GCP Artifact Registry: ${GCP_IMAGE_NAME}"
             if [[ "${{ steps.version.outputs.deploy_staging }}" == "true" && "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
-              staging_image="${gcp_image_name}:staging"
-              echo "Publishing staging image to GCP Artifact Registry: ${staging_image}"
-              skopeo copy docker-archive:./result "docker://${staging_image}"
-              echo "Published staging image to GCP Artifact Registry: ${staging_image}"
+              echo "Publishing staging image to GCP Artifact Registry: ${GCP_STAGING_IMAGE_NAME}"
+              skopeo copy docker-archive:./result "docker://${GCP_STAGING_IMAGE_NAME}"
+              echo "Published staging image to GCP Artifact Registry: ${GCP_STAGING_IMAGE_NAME}"
             fi
             if [[ "${{ inputs.version_type }}" == "pr" ]]; then
-              latest_image="${gcp_image_name}:latest-${{ steps.version.outputs.docker_platform }}"
-              echo "Publishing latest image to GCP Artifact Registry: ${latest_image}"
-              skopeo copy docker-archive:./result "docker://${latest_image}"
-              echo "Published latest image to GCP Artifact Registry: ${latest_image}"
+              echo "Publishing latest image to GCP Artifact Registry: ${GCP_LATEST_IMAGE_NAME}"
+              skopeo copy docker-archive:./result "docker://${GCP_LATEST_IMAGE_NAME}"
+              echo "Published latest image to GCP Artifact Registry: ${GCP_LATEST_IMAGE_NAME}"
             fi
             if [[ "${{ steps.docker_hub.outputs.publish_docker_hub }}" == "true" ]]; then
-              docker_hub_image="${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}"
-              echo "Publishing image to DockerHub: ${docker_hub_image}"
-              skopeo copy docker-archive:./result "docker://${docker_hub_image}"
-              echo "Published image to DockerHub: ${docker_hub_image}"
+              echo "Publishing image to DockerHub: ${DOCKER_HUB_IMAGE_NAME}"
+              skopeo copy docker-archive:./result "docker://${DOCKER_HUB_IMAGE_NAME}"
+              echo "Published image to DockerHub: ${DOCKER_HUB_IMAGE_NAME}"
             fi
           SKOPEO
+        env:
+          GCP_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+          GCP_STAGING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:staging
+          GCP_LATEST_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
+          DOCKER_HUB_IMAGE_NAME: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
       - name: Build debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
         if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
         run: ${{ matrix.build_debug_command }}
-        env:
-          IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
       - name: Publish debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
         if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
         run: |
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
-            gcp_image_name="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}"
-            debug_image="${gcp_image_name}:${{ steps.version.outputs.docker_debug_version_platform }}"
-            echo "Publishing debug image to GCP Artifact Registry: ${debug_image}"
-            skopeo copy docker-archive:./result "docker://${debug_image}"
-            echo "Published debug image to GCP Artifact Registry: ${debug_image}"
+            echo "Publishing debug image to GCP Artifact Registry: ${GCP_DEBUG_IMAGE_NAME}"
+            skopeo copy docker-archive:./result "docker://${GCP_DEBUG_IMAGE_NAME}"
+            echo "Published debug image to GCP Artifact Registry: ${GCP_DEBUG_IMAGE_NAME}"
           SKOPEO
+        env:
+          GCP_DEBUG_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
       - name: Remove git credentials
         if: ${{ github.event.repository.private && always() }}
         run: |
