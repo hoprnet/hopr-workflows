@@ -157,21 +157,21 @@ jobs:
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
             echo "Publishing image to GCP Artifact Registry: ${GCP_IMAGE_NAME}"
-            skopeo copy docker-archive:./result "docker://${GCP_IMAGE_NAME}"
+            skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_IMAGE_NAME}"
             echo "Published image to GCP Artifact Registry: ${GCP_IMAGE_NAME}"
             if [[ "${{ steps.version.outputs.deploy_staging }}" == "true" && "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
               echo "Publishing staging image to GCP Artifact Registry: ${GCP_STAGING_IMAGE_NAME}"
-              skopeo copy docker-archive:./result "docker://${GCP_STAGING_IMAGE_NAME}"
+              skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_STAGING_IMAGE_NAME}"
               echo "Published staging image to GCP Artifact Registry: ${GCP_STAGING_IMAGE_NAME}"
             fi
             if [[ "${{ inputs.version_type }}" == "pr" ]]; then
               echo "Publishing latest image to GCP Artifact Registry: ${GCP_LATEST_IMAGE_NAME}"
-              skopeo copy docker-archive:./result "docker://${GCP_LATEST_IMAGE_NAME}"
+              skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_LATEST_IMAGE_NAME}"
               echo "Published latest image to GCP Artifact Registry: ${GCP_LATEST_IMAGE_NAME}"
             fi
             if [[ "${{ steps.docker_hub.outputs.publish_docker_hub }}" == "true" ]]; then
               echo "Publishing image to DockerHub: ${DOCKER_HUB_IMAGE_NAME}"
-              skopeo copy docker-archive:./result "docker://${DOCKER_HUB_IMAGE_NAME}"
+              skopeo --insecure-policy copy docker-archive:./result "docker://${DOCKER_HUB_IMAGE_NAME}"
               echo "Published image to DockerHub: ${DOCKER_HUB_IMAGE_NAME}"
             fi
           SKOPEO
@@ -189,7 +189,7 @@ jobs:
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
             echo "Publishing debug image to GCP Artifact Registry: ${GCP_DEBUG_IMAGE_NAME}"
-            skopeo copy docker-archive:./result "docker://${GCP_DEBUG_IMAGE_NAME}"
+            skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_DEBUG_IMAGE_NAME}"
             echo "Published debug image to GCP Artifact Registry: ${GCP_DEBUG_IMAGE_NAME}"
           SKOPEO
         env:
