@@ -46,6 +46,11 @@ on:
         type: string
         default: "docker.io/hoprnet"
         description: "Docker registry to push the image to"
+      docker_image_format:
+        required: false
+        type: string
+        default: "docker"
+        description: "Format to use when pushing docker images: 'docker' or 'skopeo'"
       timeout_minutes:
         required: false
         type: number
@@ -156,23 +161,26 @@ jobs:
         run: |
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
-            echo "Publishing image to GCP Artifact Registry: ${GCP_IMAGE_NAME}"
-            skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_IMAGE_NAME}"
-            echo "Published image to GCP Artifact Registry: ${GCP_IMAGE_NAME}"
+            fn publish_image() {
+              local target_image="${1}"
+              echo "Publishing image ${target_image}"
+              if [[ "${{ inputs.docker_image_format }}" eq "skopeo" ]]; then
+                skopeo --insecure-policy copy docker-archive:./result "docker://${target_image}"
+              elif [[ "${{ inputs.docker_image_format }}" eq "docker" ]]; then
+                docker tag ${{ inputs.docker_image_name }}:latest "${target_image}"
+                docker push "${target_image}"
+              fi
+              echo "Published image ${target_image}"
+            }
+            publish_image "${GCP_IMAGE_NAME}"
             if [[ "${{ steps.version.outputs.deploy_staging }}" == "true" && "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
-              echo "Publishing staging image to GCP Artifact Registry: ${GCP_STAGING_IMAGE_NAME}"
-              skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_STAGING_IMAGE_NAME}"
-              echo "Published staging image to GCP Artifact Registry: ${GCP_STAGING_IMAGE_NAME}"
+              publish_image "${GCP_STAGING_IMAGE_NAME}"
             fi
             if [[ "${{ inputs.version_type }}" == "pr" ]]; then
-              echo "Publishing latest image to GCP Artifact Registry: ${GCP_LATEST_IMAGE_NAME}"
-              skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_LATEST_IMAGE_NAME}"
-              echo "Published latest image to GCP Artifact Registry: ${GCP_LATEST_IMAGE_NAME}"
+              publish_image "${GCP_LATEST_IMAGE_NAME}"
             fi
             if [[ "${{ steps.docker_hub.outputs.publish_docker_hub }}" == "true" ]]; then
-              echo "Publishing image to DockerHub: ${DOCKER_HUB_IMAGE_NAME}"
-              skopeo --insecure-policy copy docker-archive:./result "docker://${DOCKER_HUB_IMAGE_NAME}"
-              echo "Published image to DockerHub: ${DOCKER_HUB_IMAGE_NAME}"
+              publish_image "${DOCKER_HUB_IMAGE_NAME}"
             fi
           SKOPEO
         env:
@@ -188,9 +196,14 @@ jobs:
         run: |
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
-            echo "Publishing debug image to GCP Artifact Registry: ${GCP_DEBUG_IMAGE_NAME}"
-            skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_DEBUG_IMAGE_NAME}"
-            echo "Published debug image to GCP Artifact Registry: ${GCP_DEBUG_IMAGE_NAME}"
+            echo "Publishing image ${GCP_DEBUG_IMAGE_NAME}"
+            if [[ "${{ inputs.docker_image_format }}" eq "skopeo" ]]; then
+              skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_DEBUG_IMAGE_NAME}"
+            elif [[ "${{ inputs.docker_image_format }}" eq "docker" ]]; then
+              docker tag ${{ inputs.docker_image_name }}:latest "${GCP_DEBUG_IMAGE_NAME}"
+              docker push "${GCP_DEBUG_IMAGE_NAME}"
+            fi
+            echo "Published image ${GCP_DEBUG_IMAGE_NAME}"
           SKOPEO
         env:
           GCP_DEBUG_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
