@@ -161,7 +161,7 @@ jobs:
         run: |
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
-            fn publish_image() {
+            publish_image() {
               local target_image="${1}"
               echo "Publishing image ${target_image}"
               if [[ "${{ inputs.docker_image_format }}" eq "skopeo" ]]; then
