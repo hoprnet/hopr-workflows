@@ -96,6 +96,7 @@ jobs:
       cachix_cache_name: "blokli"
       build_file: "bloklid/Cargo.toml"
       docker_image_name: "bloklid"
+      docker_image_format: skopeo
       deployment_namespace: blokli
       deployment_label_selector: app.kubernetes.io/name=blokli
     secrets:
@@ -118,6 +119,7 @@ jobs:
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
 - `docker_image_name` (Required): The name of the image.
+- `docker_image_format`: (Optional): Type of format generated for the docker image: `docker` or `skopeo` (Default: `docker`).
 - `docker_gcp_registry` (Optional): Docker registry to push the image to (Default: `europe-west3-docker.pkg.dev/hoprassociation/docker-images`).
 - `docker_hub_registry` (Optional): Docker registry to push the image to (Default: `docker.io/hoprnet`).
 - `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
