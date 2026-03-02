@@ -332,6 +332,7 @@ jobs:
           format: json
           exit-code: "${{ steps.docker.outputs.trivy_exit_code }}"
           ignore-unfixed: true
+          github-pat: ${{ secrets.GITHUB_TOKEN }}
           vuln-type: "os,library"
           severity: "HIGH,CRITICAL"
           output: trivy.json
