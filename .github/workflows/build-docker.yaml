@@ -376,12 +376,11 @@ jobs:
           body-path: trivy-comment.md
           edit-mode: replace
       - name: Generate SBOM
-        uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
-        with:
-          scan-type: image
-          image-ref: ${{ steps.docker.outputs.gcp_docker_image }}
-          format: cyclonedx
-          output: sbom.json
+        run: |
+          nix shell nixpkgs#trivy -c trivy image \
+            --format cyclonedx \
+            --output sbom.json \
+            "${{ steps.docker.outputs.gcp_docker_image }}"
       - name: Attest SBOM on GCP Artifact Registry
         run: cosign attest --predicate "sbom.json" --type cyclonedx "${{ steps.docker.outputs.gcp_docker_digest }}"
         env:
