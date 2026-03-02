@@ -52,7 +52,7 @@ on:
       gpg_private_key:
         required: true
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-binary
   cancel-in-progress: true
 
 permissions:
