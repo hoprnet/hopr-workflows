@@ -98,7 +98,7 @@ on:
         description: "Docker debug image version built"
         value: ${{ jobs.build.outputs.docker_debug_version }}
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-docker
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.docker_image_name }}-docker
   cancel-in-progress: true
 jobs:
   build:
@@ -185,7 +185,6 @@ jobs:
         if: steps.docker_hub.outputs.publish_docker_hub == 'true'
         run: ${{ inputs.build_command }}
         env:
-          GOOGLE_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           IMAGE_TARGET: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
           SKOPEO_INSECURE_POLICY: "1"
   scan:
