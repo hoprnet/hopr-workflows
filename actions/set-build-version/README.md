@@ -8,6 +8,21 @@ Updates the `version` of the project based on the type of build desired.
  - In pull requests merge: `x.y.z+pr.1234`
  - In close release: `x.y.z` . It basically does not modify anything
 
+
+## Version semantics
+
+| Version Type | Semver                   | Docker Platform Image               | Docker Manifest          | Use Case              |
+| ------------ | ------------------------ | ----------------------------------- | ------------------------ | --------------------- |
+| `commit`     | `<semver>+commit.<hash>` | `<semver>-commit.<hash>-<platform>` | `<semver>-commit.<hash>` | Development testing   |
+| `pr`         | `<semver>+pr.<number>`   | `<semver>-pr.<number>-<platform>`   | `<semver>-pr.<number>`   | Pre-merge validation  |
+| `release`    | `<semver>`               | `<semver>-<platform>`               | `<semver>`               | Production deployment |
+
+- `semver`: Refers to https://semver.org/ with <MAJOR>.<MINOR>.<PATCH>
+- `hash`: Refers to the short git commit hash
+- `number`: Refers to the GitHub pull request number
+- `platform`: Refers to the Docker specific platform: `linux-amd64` or `linux-arm64`
+
+
 ## Usage
 ```bash
       - name: Updates build version
