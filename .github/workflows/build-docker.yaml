@@ -164,9 +164,9 @@ jobs:
             publish_image() {
               local target_image="${1}"
               echo "Publishing image ${target_image}"
-              if [[ "${{ inputs.docker_image_format }}" eq "skopeo" ]]; then
+              if [[ "${{ inputs.docker_image_format }}" == "skopeo" ]]; then
                 skopeo --insecure-policy copy docker-archive:./result "docker://${target_image}"
-              elif [[ "${{ inputs.docker_image_format }}" eq "docker" ]]; then
+              elif [[ "${{ inputs.docker_image_format }}" == "docker" ]]; then
                 docker tag ${{ inputs.docker_image_name }}:latest "${target_image}"
                 docker push "${target_image}"
               fi
