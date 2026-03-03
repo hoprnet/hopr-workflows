@@ -67,6 +67,7 @@ runs:
         shell: bash
         id: versions
         run: |
+          set -x
           echo "Gathering version from ${{ inputs.file }} and setting build version type to '${{ inputs.version_type }}'"
           if [[ "${{ inputs.file }}" =~ ^.*\.toml$ ]]; then
             current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
@@ -161,7 +162,9 @@ runs:
             rm "${{ inputs.file }}.bak"
             if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
               echo "Regenerating Cargo.lock file"
-              nix develop --command cargo generate-lockfile --manifest-path ${{ inputs.file }}
+              nix develop --command cargo metadata --no-deps --format-version 1 --manifest-path ${{ inputs.file }} \
+                | jq -r '.packages[] | select(.source == null) | .name' \
+                | xargs -I{} nix develop --command cargo update -p {}
             fi
           elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
             jq --arg build_version "${{ steps.versions.outputs.build_version }}" '.version = $build_version' ${{ inputs.file }} > "${{ inputs.file }}.tmp"
