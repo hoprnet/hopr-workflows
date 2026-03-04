@@ -180,6 +180,7 @@ jobs:
               publish_image "${GCP_LATEST_IMAGE_NAME}"
             fi
             if [[ "${{ steps.docker_hub.outputs.publish_docker_hub }}" == "true" ]]; then
+              publish_image "${GCP_LATEST_RELEASE_IMAGE_NAME}"
               publish_image "${DOCKER_HUB_IMAGE_NAME}"
             fi
           SKOPEO
@@ -187,6 +188,7 @@ jobs:
           GCP_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
           GCP_STAGING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:staging
           GCP_LATEST_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
+          GCP_LATEST_RELEASE_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-release-${{ steps.version.outputs.docker_platform }}
           DOCKER_HUB_IMAGE_NAME: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
       - name: Build debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
         if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
@@ -252,6 +254,13 @@ jobs:
           else
             echo "publish_dockerhub=false" | tee -a "$GITHUB_OUTPUT"
           fi
+      - name: Create multi-arch docker manifest - latest-release
+        if: inputs.version_type == 'release'
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: latest-release
       - name: Log in to Docker Hub
         if: steps.docker_hub.outputs.publish_dockerhub == 'true'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
