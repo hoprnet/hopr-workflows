@@ -1,7 +1,7 @@
 #################################################################################
 # Pipeline to build binaries
 #################################################################################
-name: Build binaries
+name: Build binary
 
 on:
   workflow_call:
@@ -28,10 +28,6 @@ on:
         required: true
         type: string
         description: "Command to build the binary"
-      build_debug_command:
-        required: false
-        type: string
-        description: "Additional build debug flavor to use"
       binary:
         required: true
         type: string
@@ -91,12 +87,11 @@ jobs:
           version_type: "${{ inputs.version_type }}"
           architecture: "${{ inputs.architecture }}"
       - name: Build binary ${{ inputs.architecture }}
+        shell: bash
         run: |
           ${{ inputs.build_command }}
           mkdir -p ./artifacts
           cp ./result/bin/${{ inputs.binary }} ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
-        env:
-          architecture: ${{ inputs.architecture }}
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/upload-artifact@v4
         with:

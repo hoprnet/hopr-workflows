@@ -52,7 +52,6 @@ jobs:
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
 - `build_command` (Required): The command to execute the build.
-- `build_debug_command` (Optional): Additional build debug flavor to use.
 - `binary` (Required): The name of the binary to output.
 - `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
 - `runner` (Required): The runner label to use for the job.
@@ -234,6 +233,43 @@ jobs:
 - `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
 - `docker_hub_username` (Optional): Docker Hub username (Required for release builds).
 - `docker_hub_token` (Optional): Docker Hub token (Required for release builds).
+
+**Outputs:**
+
+- No outputs defined.
+
+### [Build Library](./.github/workflows/build-library.yaml)
+
+Compiles a library for a specific architecture using Nix. Unlike the binary workflow, it does not sign or upload artifacts — it only runs the build command.
+
+**Usage:**
+```yaml
+jobs:
+  build-library:
+    uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@build-library-v1
+    with:
+      source_branch: ${{ github.ref_name }}
+      version_type: commit
+      architecture: x86_64-linux
+      cachix_cache_name: hopr
+      build_command: nix build .#my-library-x86_64-linux
+      runner: self-hosted-hoprnet-bigger
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+```
+
+**Inputs:**
+- `source_branch` (Required): Source branch to build the library from.
+- `version_type` (Required): The strategy for versioning (e.g., `commit`, `pr`, `release`).
+- `architecture` (Required): The target architecture (e.g., `x86_64-linux`).
+- `cachix_cache_name` (Required): The name of the Cachix cache to use.
+- `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
+- `build_command` (Required): The command to execute the build.
+- `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
+- `runner` (Required): The runner label to use for the job.
+
+**Secrets:**
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
 
 **Outputs:**
 
