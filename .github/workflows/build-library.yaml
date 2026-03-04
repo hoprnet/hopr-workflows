@@ -9,9 +9,6 @@ on:
       source_branch:
         required: true
         type: string
-      version_type:
-        required: true
-        type: string
       architecture:
         required: true
         type: string

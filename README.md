@@ -249,7 +249,6 @@ jobs:
     uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@build-library-v1
     with:
       source_branch: ${{ github.ref_name }}
-      version_type: commit
       architecture: x86_64-linux
       cachix_cache_name: hopr
       build_command: nix build .#my-library-x86_64-linux
@@ -260,7 +259,6 @@ jobs:
 
 **Inputs:**
 - `source_branch` (Required): Source branch to build the library from.
-- `version_type` (Required): The strategy for versioning (e.g., `commit`, `pr`, `release`).
 - `architecture` (Required): The target architecture (e.g., `x86_64-linux`).
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
