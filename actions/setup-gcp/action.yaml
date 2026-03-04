@@ -50,6 +50,7 @@ runs:
           if: inputs.workload_identity_provider != '' && inputs.service_account != ''
           uses: google-github-actions/auth@v2
           with:
+            token_format: access_token
             workload_identity_provider: ${{ inputs.workload_identity_provider }}
             service_account: ${{ inputs.service_account }}
         - name: Get GCP Access Token
