@@ -342,13 +342,15 @@ jobs:
             "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}"
       - name: Build Security Report Markdown
         if: inputs.version_type == 'commit'
+        id: trivy_report
         run: |
           {
             echo "## 🔎 Trivy Security Report"
             echo ""
-            echo "| Target | Package | Installed | Severity | CVE |"
+            echo "| Target | Package  | Installed  | Severity | CVE |"
             echo "|--------|----------|------------|----------|-----|"
-
+          } > trivy-header.md
+          {
             jq -r '
               .Results[]?
               | select(.Vulnerabilities != null)
@@ -357,9 +359,16 @@ jobs:
               | "| \($target) | \(.PkgName) | \(.InstalledVersion) | \(.Severity) | \(.VulnerabilityID) |"
             ' trivy.json || echo "| - | Could not process Trivy results | - | - | - |"
 
-          } > trivy-comment.md
+          } > trivy-results.md
+          if [ -s trivy-results.md ]; then
+            cat trivy-header.md trivy-results.md > trivy-comment.md
+            echo "trivy_vulnerabilities_found=true" | tee -a $GITHUB_OUTPUT
+          else
+            echo "No vulnerabilities found or failed to process Trivy results" > trivy-comment.md
+            echo "trivy_vulnerabilities_found=false" | tee -a $GITHUB_OUTPUT
+          fi
       - name: Find existing Trivy comment
-        if: inputs.version_type == 'commit'
+        if: inputs.version_type == 'commit' && steps.trivy_report.outputs.trivy_vulnerabilities_found == 'true'
         id: find
         uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad #v4.0.0
         with:
@@ -368,7 +377,7 @@ jobs:
           body-includes: "## 🔎 Trivy Security Report"
 
       - name: Create or update Trivy comment
-        if: inputs.version_type == 'commit'
+        if: inputs.version_type == 'commit' && steps.trivy_report.outputs.trivy_vulnerabilities_found == 'true'
         uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 #v5.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
