@@ -23,6 +23,57 @@ Updates the `version` of the project based on the type of build desired.
 - `platform`: Refers to the Docker specific platform: `linux-amd64` or `linux-arm64`
 
 
+## Tags semantics
+
+Below is described the tagging convention used for Docker images in Hoprnet.
+
+### Branches
+
+|           Branch          |                 Purpose                                                |
+|---------------------------|------------------------------------------------------------------------|
+| `main`                    | Active development branch. All new features and fixes are merged here. |
+| `release/<MAJOR>.<MINOR>` | Long-term support branch. Receives only critical fixes and backports.  |
+
+### Tags
+
+| Tag            | Branch | Trigger          |                   Description                                           |
+|----------------|--------|------------------|-------------------------------------------------------------------------|
+| `latest`       | `main` | PR merged        | The most recent image built from `main`. Alias of `latest-main`.        |
+| `latest-main`  | `main` | PR merged        | The most recent image built from `main`. Same image as `latest`.        |
+| `latest-lts`   | `lts`  | PR merged        | The most recent image built from the `release/<MAJOR>.<MINOR>` branch.  |
+| `release-main` | `main` | Release cut      | The latest release published from `main`.                               |
+| `release-lts`  | `lts`  | Release cut      | The latest release published from the `release/<MAJOR>.<MINOR>` branch. |
+| `stable`       |   —    | Manual promotion | The image currently running in production.                              |
+
+### Tag Lifecycle
+
+```
+main branch
+├── PR merged  ──► latest, latest-main   (moves on every merge)
+└── Release cut ──► release-main          (moves on every release)
+
+release/<MAJOR>.<MINOR> branch
+├── PR merged  ──► latest-lts            (moves on every merge)
+└── Release cut ──► release-lts           (moves on every release)
+
+Production
+└── Manual promotion ──► stable           (moves only when explicitly promoted)
+```
+
+### Choosing the Right Tag
+
+- **I want the latest code from active development** → `latest` or `latest-main`
+- **I want the latest stable release from active development** → `release-main`
+- **I want the latest code from the LTS branch** → `latest-lts`
+- **I want the latest stable release from the LTS branch** → `release-lts`
+- **I want what is currently running in production** → `stable`
+
+**Notes**
+
+- `latest` and `latest-main` always point to the same image. `latest-main` is provided for explicitness.
+- All above tags move over time. For reproducible deployments, prefer pinning to an immutable tag (`<MAJOR>.<MINOR>.<PATCH>`) or a specific image digest (`@sha256:...`).
+- `stable` is the only tag that is promoted manually. All other tags are updated automatically by CI.
+
 ## Usage
 ```bash
       - name: Updates build version
