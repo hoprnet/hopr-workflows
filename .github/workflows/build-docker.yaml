@@ -161,6 +161,7 @@ jobs:
         run: |
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
+            base_branch=${{ github.event.pull_request.base.ref }}
             publish_image() {
               local target_image="${1}"
               echo "Publishing image ${target_image}"
@@ -172,23 +173,44 @@ jobs:
               fi
               echo "Published image ${target_image}"
             }
+            # Default image tag for all version types
             publish_image "${GCP_IMAGE_NAME}"
+
+            # Staging publish condition: only publish staging image for x86_64 architecture
             if [[ "${{ steps.version.outputs.deploy_staging }}" == "true" && "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
               publish_image "${GCP_STAGING_IMAGE_NAME}"
             fi
+
+            # Close PR tags
             if [[ "${{ inputs.version_type }}" == "pr" ]]; then
               publish_image "${GCP_LATEST_IMAGE_NAME}"
+              if [[ "${base_branch}" == "main" ]] || [[ "${base_branch}" == "master" ]]; then
+                publish_image "${GCP_LATEST_MAIN_IMAGE_NAME}"
+              elif [[ "${base_branch}" =~ ^release/* ]]; then
+                publish_image "${GCP_LATEST_LTS_IMAGE_NAME}"
+              fi
             fi
-            if [[ "${{ steps.docker_hub.outputs.publish_docker_hub }}" == "true" ]]; then
-              publish_image "${GCP_LATEST_RELEASE_IMAGE_NAME}"
-              publish_image "${DOCKER_HUB_IMAGE_NAME}"
+
+            # Release tags
+            if [[ "${{ inputs.version_type }}" == "release" ]]; then
+              if [[ "${base_branch}" == "main" ]] || [[ "${base_branch}" == "master" ]]; then
+                publish_image "${GCP_RELEASE_MAIN_IMAGE_NAME}"
+              elif [[ "${base_branch}" =~ ^release/* ]]; then
+                publish_image "${GCP_RELEASE_LTS_IMAGE_NAME}"
+              fi
+              if [[ "${{ steps.docker_hub.outputs.publish_docker_hub }}" == "true" ]]; then
+                publish_image "${DOCKER_HUB_IMAGE_NAME}"
+              fi
             fi
           SKOPEO
         env:
           GCP_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
           GCP_STAGING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:staging
           GCP_LATEST_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
-          GCP_LATEST_RELEASE_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-release-${{ steps.version.outputs.docker_platform }}
+          GCP_LATEST_MAIN_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-main-${{ steps.version.outputs.docker_platform }}
+          GCP_LATEST_LTS_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-lts-${{ steps.version.outputs.docker_platform }}
+          GCP_RELEASE_MAIN_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:release-main-${{ steps.version.outputs.docker_platform }}
+          GCP_RELEASE_LTS_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:release-lts-${{ steps.version.outputs.docker_platform }}
           DOCKER_HUB_IMAGE_NAME: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
       - name: Build debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
         if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
@@ -246,29 +268,50 @@ jobs:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest
-      - name: Identify Docker hub publish condition
-        id: docker_hub
-        run: |
-          if [ "${{ inputs.version_type }}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
-            echo "publish_dockerhub=true" | tee -a "$GITHUB_OUTPUT"
-          else
-            echo "publish_dockerhub=false" | tee -a "$GITHUB_OUTPUT"
-          fi
-      - name: Create multi-arch docker manifest - latest-release
-        if: inputs.version_type == 'release'
+      - name: Create multi-arch docker manifest - latest-main
+        if: inputs.version_type == 'pr' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
-          version: latest-release
+          version: latest-main
+      - name: Create multi-arch docker manifest - latest-lts
+        if: inputs.version_type == 'pr' && contains(github.event.pull_request.base.ref, 'release/')
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: latest-lts
+      - name: Create multi-arch docker manifest - release-main
+        if: inputs.version_type == 'release' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: release-main
+      - name: Create multi-arch docker manifest - release-lts
+        if: inputs.version_type == 'release' && contains(github.event.pull_request.base.ref, 'release/')
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: release-lts
+      - name: Determine DockerHub publishing condition
+        id: docker_hub
+        run: |
+          if [ "${{ inputs.version_type }}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
+            echo "publish_docker_hub=true" | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "publish_docker_hub=false" | tee -a "$GITHUB_OUTPUT"
+          fi
       - name: Log in to Docker Hub
-        if: steps.docker_hub.outputs.publish_dockerhub == 'true'
+        if: steps.docker_hub.outputs.publish_docker_hub == 'true'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.docker_hub_username }}
           password: ${{ secrets.docker_hub_token }}
       - name: Create multi-arch docker manifest - Docker Hub - ${{ needs.build.outputs.docker_build_version }}
-        if: steps.docker_hub.outputs.publish_dockerhub == 'true'
+        if: steps.docker_hub.outputs.publish_docker_hub == 'true'
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_hub_registry }}
