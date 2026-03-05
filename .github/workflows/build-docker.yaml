@@ -221,9 +221,9 @@ jobs:
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
             echo "Publishing image ${GCP_DEBUG_IMAGE_NAME}"
-            if [[ "${{ inputs.docker_image_format }}" eq "skopeo" ]]; then
+            if [[ "${{ inputs.docker_image_format }}" == "skopeo" ]]; then
               skopeo --insecure-policy copy docker-archive:./result "docker://${GCP_DEBUG_IMAGE_NAME}"
-            elif [[ "${{ inputs.docker_image_format }}" eq "docker" ]]; then
+            elif [[ "${{ inputs.docker_image_format }}" == "docker" ]]; then
               docker tag ${{ inputs.docker_image_name }}:latest "${GCP_DEBUG_IMAGE_NAME}"
               docker push "${GCP_DEBUG_IMAGE_NAME}"
             fi

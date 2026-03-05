@@ -76,9 +76,15 @@ runs:
             echo "Unsupported file type: ${{ inputs.file }}"
             exit 1
           fi
-          commit_version="$current_version+commit.$(git rev-parse --short HEAD)"
-          pr_version="$current_version+pr.${{ github.event.pull_request.number }}"
-          release_version="$current_version"
+          if [[ "${{ github.event.pull_request.merged }}" == "true" ]]; then
+            commit_version="${current_version}+commit.${{ github.event.pull_request.merge_commit_sha }}"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            commit_version="${current_version}+commit.${{ github.event.pull_request.head.sha }}"
+          else
+            commit_version="${current_version}+commit.$(git rev-parse --short HEAD)"
+          fi
+          pr_version="${current_version}+pr.${{ github.event.pull_request.number }}"
+          release_version="${current_version}"
           publish_artifact_registry=false
           publish_github_release=false
           deploy_staging=false
