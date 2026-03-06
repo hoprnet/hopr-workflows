@@ -30,7 +30,7 @@ Compiles binaries for a specific architecture using Nix. It handles version nami
 ```yaml
 jobs:
   build:
-    uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v1
+    uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v2
     with:
       source_branch: ${{ github.ref_name }}
       version_type: commit
@@ -52,7 +52,6 @@ jobs:
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
 - `build_command` (Required): The command to execute the build.
-- `build_debug_command` (Optional): Additional build debug flavor to use.
 - `binary` (Required): The name of the binary to output.
 - `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
 - `runner` (Required): The runner label to use for the job.
@@ -65,6 +64,79 @@ jobs:
 **Outputs:**
 
 - No outputs defined.
+
+### [Build Docker](./.github/workflows/build-docker.yaml)
+
+Constructs a platform-specific Docker image for the project and its multi-architecture manifest.
+
+**Usage:**
+```yaml
+jobs:
+  build-docker:
+    name: Docker
+    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v1
+    needs: build-binaries
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+    with:
+      source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+      version_type: "commit"
+      build_matrix: >-
+        [
+          {
+            "runner": "self-hosted-hoprnet-bigger",
+            "architecture": "x86_64-linux",
+            "build_command": "nix run -L .#docker-blokli-x86_64-linux",
+            "smoke_test_command": "nix develop -c just smoke-test"
+          }
+        ]
+      cachix_cache_name: "blokli"
+      build_file: "bloklid/Cargo.toml"
+      docker_image_name: "bloklid"
+      docker_image_format: skopeo
+      deployment_namespace: blokli
+      deployment_label_selector: app.kubernetes.io/name=blokli
+    secrets:
+      gcp_service_account: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY}}
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      docker_hub_username: ${{ secrets.DOCKER_HUB_USERNAME }}
+      docker_hub_token: ${{ secrets.DOCKER_HUB_TOKEN }}
+```
+
+**Key Features:**
+- Builds Docker images using Nix or standard commands.
+- Scan docker images for vulnerabilities.
+- Support for pushing to Google Artifact Registry and Docker Hub.
+- Outputs version tags for downstream jobs.
+
+**Inputs:**
+- `source_branch` (Required): Source branch to build the docker image from.
+- `version_type` (Required): The strategy for versioning (e.g., `commit`, `pr`, `release`).
+- `build_matrix`: It's a JSON array containing an object with the parameters for each matrix parallel execution.
+- `cachix_cache_name` (Required): The name of the Cachix cache to use.
+- `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
+- `docker_image_name` (Required): The name of the image.
+- `docker_image_format`: (Optional): Type of format generated for the docker image: `docker` or `skopeo` (Default: `docker`).
+- `docker_gcp_registry` (Optional): Docker registry to push the image to (Default: `europe-west3-docker.pkg.dev/hoprassociation/docker-images`).
+- `docker_hub_registry` (Optional): Docker registry to push the image to (Default: `docker.io/hoprnet`).
+- `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
+- `runner` (Optional): Runner to use for the job (Default: `self-hosted-hoprnet-bigger`).
+- `deployment_namespace` (Optional): Kubernetes namespace for the deployment to restart in staging.
+- `deployment_label_selector` (Optional): Kubernetes label selector for the deployment to restart in staging.
+- `fail_on_scan_vulnerabilities`: Whether to fail the build if vulnerabilities are found during the scan (Default: `true`)
+
+**Secrets:**
+- `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
+- `docker_hub_username` (Optional): Docker Hub username (Required for release builds).
+- `docker_hub_token` (Optional): Docker Hub token (Required for release builds).
+
+**Outputs:**
+- `docker_build_version`: Docker image version built.
+- `docker_debug_version`: Docker debug image version built.
+
 
 ### [Build Docker Image](./.github/workflows/build-docker-image.yaml)
 
@@ -161,6 +233,41 @@ jobs:
 - `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
 - `docker_hub_username` (Optional): Docker Hub username (Required for release builds).
 - `docker_hub_token` (Optional): Docker Hub token (Required for release builds).
+
+**Outputs:**
+
+- No outputs defined.
+
+### [Build Library](./.github/workflows/build-library.yaml)
+
+Compiles a library for a specific architecture using Nix. Unlike the binary workflow, it does not sign or upload artifacts — it only runs the build command.
+
+**Usage:**
+```yaml
+jobs:
+  build-library:
+    uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@build-library-v1
+    with:
+      source_branch: ${{ github.ref_name }}
+      architecture: x86_64-linux
+      cachix_cache_name: hopr
+      build_command: nix build .#my-library-x86_64-linux
+      runner: self-hosted-hoprnet-bigger
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+```
+
+**Inputs:**
+- `source_branch` (Required): Source branch to build the library from.
+- `architecture` (Required): The target architecture (e.g., `x86_64-linux`).
+- `cachix_cache_name` (Required): The name of the Cachix cache to use.
+- `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
+- `build_command` (Required): The command to execute the build.
+- `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
+- `runner` (Required): The runner label to use for the job.
+
+**Secrets:**
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
 
 **Outputs:**
 

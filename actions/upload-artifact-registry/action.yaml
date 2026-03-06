@@ -34,9 +34,13 @@ runs:
         shell: bash
         id: artifacts
         run: |
-          source_path="${{ inputs.source }}"
+          # Set gcloud config defaults to avoid repeating flags
+          gcloud config set project "${{ inputs.project }}"
+          gcloud config set artifacts/location "${{ inputs.region }}"
+          gcloud config set artifacts/repository "${{ inputs.repository }}"
           
           # Validate source exists
+          source_path="${{ inputs.source }}"
           if [ ! -e "$source_path" ]; then
             echo "Error: Source path does not exist: $source_path"
             exit 1
@@ -59,11 +63,23 @@ runs:
             exit 1
           fi
 
+          # List existing files in the registry once
+          existing_files=$(gcloud artifacts files list \
+            --package="${{ inputs.package }}" \
+            --version="${{ inputs.version }}" \
+            --format="value(name)" 2>/dev/null || true)
+
           for artifact in "${files[@]}"; do
+            # Check if the file already exists in the cached list
+            existing_name=$(echo "$existing_files" | grep "${artifact}$" || true)
+            if [ -n "$existing_name" ]; then
+              echo "File ${artifact} already exists, deleting before re-upload..."
+              gcloud artifacts files delete \
+                "${existing_name}" --quiet || {
+                  echo "Warning: Failed to delete existing ${artifact}, attempting upload anyway"
+                }
+            fi
             gcloud artifacts generic upload \
-              --project="${{ inputs.project }}" \
-              --location="${{ inputs.region }}" \
-              --repository="${{ inputs.repository }}" \
               --package="${{ inputs.package }}" \
               --version="${{ inputs.version }}" \
               --source="${source_dir}/${artifact}" || {
