@@ -77,9 +77,11 @@ runs:
             exit 1
           fi
           if [[ "${{ github.event.pull_request.merged }}" == "true" ]]; then
-            commit_version="${current_version}+commit.${{ github.event.pull_request.merge_commit_sha }}"
+            sha="${{ github.event.pull_request.merge_commit_sha }}"
+            commit_version="${current_version}+commit.${sha:0:7}"
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            commit_version="${current_version}+commit.${{ github.event.pull_request.head.sha }}"
+            sha="${{ github.event.pull_request.head.sha }}"
+            commit_version="${current_version}+commit.${sha:0:7}"
           else
             commit_version="${current_version}+commit.$(git rev-parse --short HEAD)"
           fi

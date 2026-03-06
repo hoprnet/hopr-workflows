@@ -62,11 +62,11 @@ Production
 
 ### Choosing the Right Tag
 
-- **I want the latest code from active development** → `latest` or `latest-main`
-- **I want the latest stable release from active development** → `release-main`
-- **I want the latest code from the LTS branch** → `latest-lts`
-- **I want the latest stable release from the LTS branch** → `release-lts`
-- **I want what is currently running in production** → `stable`
+- I want the latest code from active development → `latest` or `latest-main`
+- I want the latest stable release from active development → `release-main`
+- I want the latest code from the LTS branch → `latest-lts`
+- I want the latest stable release from the LTS branch → `release-lts`
+- I want what is currently running in production → `stable`
 
 **Notes**
 
