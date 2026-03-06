@@ -123,6 +123,11 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Updates build version
         id: version
         uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
@@ -130,17 +135,6 @@ jobs:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
           architecture: "${{ matrix.architecture }}"
-      - name: Setup GCP
-        id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
-        with:
-          google_credentials: ${{ secrets.gcp_service_account }}
-          login_artifact_registry: 'true'
-      - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
-        with:
-          cachix_cache_name: ${{ inputs.cachix_cache_name }}
-          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Determine DockerHub publishing condition
         id: docker_hub
         run: |
@@ -149,14 +143,23 @@ jobs:
           else
             echo "publish_docker_hub=false" | tee -a "$GITHUB_OUTPUT"
           fi
+      - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+        run: ${{ matrix.build_command }}
+      - name: Build debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
+        if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
+        run: ${{ matrix.build_debug_command }}
+      - name: Setup GCP
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        with:
+          google_credentials: ${{ secrets.gcp_service_account }}
+          login_artifact_registry: 'true'
       - name: Log in to DockerHub
         if: steps.docker_hub.outputs.publish_docker_hub == 'true'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.docker_hub_username }}
           password: ${{ secrets.docker_hub_token }}
-      - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-        run: ${{ matrix.build_command }}
       - name: Publish docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         run: |
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
@@ -212,9 +215,6 @@ jobs:
           GCP_RELEASE_MAIN_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:release-main-${{ steps.version.outputs.docker_platform }}
           GCP_RELEASE_LTS_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:release-lts-${{ steps.version.outputs.docker_platform }}
           DOCKER_HUB_IMAGE_NAME: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-      - name: Build debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
-        if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
-        run: ${{ matrix.build_debug_command }}
       - name: Publish debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
         if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
         run: |
