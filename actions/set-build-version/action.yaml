@@ -78,13 +78,14 @@ runs:
           fi
           if [[ "${{ github.event.pull_request.merged }}" == "true" ]]; then
             sha="${{ github.event.pull_request.merge_commit_sha }}"
-            commit_version="${current_version}+commit.${sha:0:7}"
+            commit_sha="${sha:0:7}"
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             sha="${{ github.event.pull_request.head.sha }}"
-            commit_version="${current_version}+commit.${sha:0:7}"
+            commit_sha="${sha:0:7}"
           else
-            commit_version="${current_version}+commit.$(git rev-parse --short HEAD)"
+            commit_sha=$(git rev-parse --short HEAD)
           fi
+          commit_version="${current_version}+commit.${commit_sha}"
           pr_version="${current_version}+pr.${{ github.event.pull_request.number }}"
           release_version="${current_version}"
           publish_artifact_registry=false
@@ -121,7 +122,7 @@ runs:
 
           ## Debug build flavor
           if [[ "${{ inputs.version_type }}" == "commit" ]] && [[ "${GITHUB_PR_LABEL_BUILD_FLAVOR_DEBUG:-0}" == '1' ]]; then
-              debug_version="$current_version+debug.$(git rev-parse --short HEAD)"
+              debug_version="${current_version}+debug.${commit_sha}"
               docker_debug_version=${debug_version/+/-}
               if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
                 docker_debug_version_platform="${docker_debug_version}-linux-arm64"
