@@ -12,7 +12,7 @@ This action performs the following steps:
 The release process follows a two-branch model: `main` for active development and `release/<MAJOR>.<MINOR>` for long-term support (LTS).
 
 ```
-main
+(branch: main )
   │
   o  Cargo.toml = 1.0.0-rc.1
   ✔  PR merged [latest, latest-main]
