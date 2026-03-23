@@ -76,14 +76,20 @@ runs:
             echo "Unsupported file type: ${{ inputs.file }}"
             exit 1
           fi
+          echo "Current version: ${current_version}"
+
+          echo "Resolving commit SHA (event=${{ github.event_name }}, merged=${{ github.event.pull_request.merged }})"
           if [[ "${{ github.event.pull_request.merged }}" == "true" ]]; then
             sha="${{ github.event.pull_request.merge_commit_sha }}"
             commit_sha="${sha:0:7}"
+            echo "Using merge commit SHA: ${commit_sha}"
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             sha="${{ github.event.pull_request.head.sha }}"
             commit_sha="${sha:0:7}"
+            echo "Using PR head SHA: ${commit_sha}"
           else
             commit_sha=$(git rev-parse --short HEAD)
+            echo "Using HEAD SHA: ${commit_sha}"
           fi
           commit_version="${current_version}+commit.${commit_sha}"
           pr_version="${current_version}+pr.${{ github.event.pull_request.number }}"
@@ -92,6 +98,8 @@ runs:
           publish_github_release=false
           deploy_staging=false
           prerelease=false
+
+          echo "Resolving build version for version_type='${{ inputs.version_type }}'"
           if [[ "${{ inputs.version_type }}" == "commit" ]]; then
             build_version=${commit_version}
             if [ "${GITHUB_PR_LABEL_PUBLISH_BINARIES:-0}" == '1' ]; then
@@ -119,6 +127,7 @@ runs:
             echo "- 'release': To set version for release"
             exit 1
           fi
+          echo "Build version: ${build_version}"
 
           ## Debug build flavor
           if [[ "${{ inputs.version_type }}" == "commit" ]] && [[ "${GITHUB_PR_LABEL_BUILD_FLAVOR_DEBUG:-0}" == '1' ]]; then
@@ -129,6 +138,7 @@ runs:
               elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
                 docker_debug_version_platform="${docker_debug_version}-linux-amd64"
               fi
+              echo "Debug version: ${debug_version} (docker: ${docker_debug_version_platform})"
               echo "debug_version=${debug_version}" | tee -a "$GITHUB_OUTPUT"
               echo "docker_debug_version=${docker_debug_version}" | tee -a "$GITHUB_OUTPUT"
               echo "docker_debug_version_platform=${docker_debug_version_platform}" | tee -a "$GITHUB_OUTPUT"
@@ -136,18 +146,20 @@ runs:
 
           # Generate Docker compatible version
           docker_build_version=${build_version/+/-}
+          echo "Resolving docker platform for architecture='${{ inputs.architecture }}'"
           if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
             docker_platform="linux-arm64"
           elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
             docker_platform="linux-amd64"
           else
             # We are not supporting other architectures for docker images at the moment
-            # But we want to allow the action to be used for other architectures for non-docker builds, so we won't fail the action here. 
+            # But we want to allow the action to be used for other architectures for non-docker builds, so we won't fail the action here.
             # Instead, we'll set the docker_platform to the input architecture and let the docker build step fail if it's not supported.
-            docker_platform="${{ inputs.architecture }}"            
+            docker_platform="${{ inputs.architecture }}"
             echo "Unsupported architecture: ${{ inputs.architecture }}"
           fi
           docker_build_version_platform="${docker_build_version}-${docker_platform}"
+          echo "Docker build version: ${docker_build_version_platform}"
           echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
           echo "commit_version=${commit_version}" | tee -a "$GITHUB_OUTPUT"
           echo "pr_version=${pr_version}" | tee -a "$GITHUB_OUTPUT"
