@@ -1,0 +1,69 @@
+#################################################################################
+# Pipeline to build libraries
+#################################################################################
+name: Build library
+
+on:
+  workflow_call:
+    inputs:
+      source_branch:
+        required: true
+        type: string
+      architecture:
+        required: true
+        type: string
+      cachix_cache_name:
+        required: true
+        type: string
+        description: "Cachix cache name to use"
+      build_file:
+        required: false
+        type: string
+        default: "Cargo.toml"
+        description: "File to extract version from"
+      build_command:
+        required: true
+        type: string
+        description: "Command to build the binary"
+      timeout_minutes:
+        required: false
+        type: number
+        default: 60
+        description: "Timeout for the job in minutes"
+      runner:
+        required: true
+        type: string
+    secrets:
+      cachix_auth_token:
+        required: true
+concurrency:
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-library
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}  
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          disable-sudo: true
+          egress-policy: audit
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+      - name: Build library
+        shell: bash
+        run: ${{ inputs.build_command }}

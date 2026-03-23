@@ -1,7 +1,7 @@
 #################################################################################
 # Pipeline to build binaries
 #################################################################################
-name: Build binaries
+name: Build binary
 
 on:
   workflow_call:
@@ -28,10 +28,6 @@ on:
         required: true
         type: string
         description: "Command to build the binary"
-      build_debug_command:
-        required: false
-        type: string
-        description: "Additional build debug flavor to use"
       binary:
         required: true
         type: string
@@ -44,6 +40,11 @@ on:
       runner:
         required: true
         type: string
+      enabled:
+        required: false
+        type: boolean
+        default: true
+        description: "Whether to run this job"
     secrets:
       gcp_service_account:
         required: true
@@ -52,7 +53,7 @@ on:
       gpg_private_key:
         required: true
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-binary
   cancel-in-progress: true
 
 permissions:
@@ -61,6 +62,7 @@ permissions:
 jobs:
   build:
     name: Build
+    if: inputs.enabled
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     outputs:
@@ -85,20 +87,19 @@ jobs:
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v1
+        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
           architecture: "${{ inputs.architecture }}"
       - name: Build binary ${{ inputs.architecture }}
+        shell: bash
         run: |
           ${{ inputs.build_command }}
           mkdir -p ./artifacts
           cp ./result/bin/${{ inputs.binary }} ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
-        env:
-          architecture: ${{ inputs.architecture }}
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
@@ -109,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download binary ${{ inputs.binary }}-${{ inputs.architecture }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts
@@ -119,18 +120,18 @@ jobs:
           file: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
           gpg_private_key: ${{ secrets.gpg_private_key }}
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} signed binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.asc
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.asc
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} sha256 binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.sha256
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.sha256
       - name: Setup GCP
         if: needs.build.outputs.publish_artifact == 'true'
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v1
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           install_sdk: "true"
