@@ -7,6 +7,78 @@ This action performs the following steps:
 - Bumps the base branch to the next `release_type`.
 - Sends a notification in Zulip
 
+## Release Process
+
+The release process follows a two-branch model: `main` for active development and `release/<MAJOR>.<MINOR>` for long-term support (LTS).
+
+```
+main
+  │
+  o  Cargo.toml = 1.0.0-rc.1
+  ✔  PR merged [latest, latest-main]
+  ✔  PR merged [latest, latest-main]
+  ✔  Close Release (Version type after release: 'rc') [release-main, 1.0.0-rc.1]
+  |  Bump commit 1.0.0-rc.2 [latest, latest-main]
+  ✔  PR merged [latest, latest-main]
+  ✔  PR merged [latest, latest-main]
+  ✔  Close Release (Version type after release: 'rc') [release-main, 1.0.0-rc.2]
+  |  Bump commit 1.0.0-rc.3 [latest, latest-main]
+  ✔  PR merged [latest, latest-main]
+  ✔  PR merged [latest, latest-main]
+  ✔  Close Release (Version type after release: 'patch') [release-main, 1.0.0-rc.3]
+  |  Bump commit 1.0.0 [latest, latest-main]
+  ✔  PR merged [latest, latest-main]
+  ✔  PR merged [latest, latest-main]
+  ✔  Close Release (Version type after release: 'rc') [release-main, 1.0.0]
+  |  Bump commit 1.1.0-rc.1 [latest, latest-main]
+  ⑂  Promote Release from tag_name '1.0.0' ─────────────────────────────────────────── (branch: release/1.0) [latest-lts, release-lts]
+  |                                                                                  │  Bump commit 1.0.1 [latest-lts]
+  ✔  PR merged [latest, latest-main]                                                 |
+  │                                                                                  ✔  PR merged [latest-lts]
+  │                                                                                  ✔  PR merged [latest-lts]
+  ✔  PR merged [latest, latest-main]                                                 |
+  │                                                                                  ✔  Close Release (Version type after release: 'patch') [latest-lts, release-lts, tag: 1.0.1]
+  |                                                                                  │  Bump commit 1.0.2 [latest-lts]
+  │                                                                                  ✔  PR merged [latest-lts]
+  │                                                                                  ✔  PR merged [latest-lts]
+  ✔  PR merged [latest, latest-main]                                                 |
+  ✔  Close Release (Version type after release: 'rc') [release-main, 1.1.0-rc.1]     |
+  |  Bump commit 1.1.0-rc.2 [latest, latest-main]                                    |
+  │                                                                                  ✔  PR merged [latest-lts]
+  │                                                                                  ✔  Close Release (Version type after release: 'patch') [latest-lts, release-lts, tag: 1.0.2]
+  |                                                                                  │  Bump commit 1.0.3 [latest-lts]
+  ✔  PR merged [latest, latest-main]                                                 |
+  ✔  PR merged [latest, latest-main]                                                 |
+  ✔  Close Release (Version type after release: 'patch') [release-main, 1.1.0-rc.2]  |
+  |  Bump commit 1.1.0 [latest, latest-main]                                         |
+  ✔  PR merged [latest, latest-main]                                                 |
+  ✔  PR merged [latest, latest-main]                                                 |
+  ✔  Close Release (Version type after release: 'rc') [release-main, 1.1.0]          |
+  |  Bump commit 1.2.0-rc.1 [latest, latest-main]                                    |
+  ⑂  Promote Release from tag_name '1.1.0' ─────────────────────────────────────────── (branch: release/1.1) [latest-lts, release-lts]
+  |                                                                                  │  Bump commit 1.1.1 [latest-lts]
+  ✔  PR merged [latest, latest-main]                                                 |
+  │                                                                                  ✔  PR merged [latest-lts]
+  │                                                                                  ✔  PR merged [latest-lts]
+  ✔  PR merged [latest, latest-main]                                                 |
+  │                                                                                  ✔  Close Release (Version type after release: 'patch') [latest-lts, release-lts, tag: 1.1.1]
+  |                                                                                  │  Bump commit 1.1.2 [latest-lts]
+  │                                                                                  ✔  PR merged [latest-lts]
+  │                                                                                  ✔  PR merged [latest-lts]
+  ✔  PR merged [latest, latest-main]                                                 |
+  ✔  Close Release (Version type after release: 'rc') [release-main, 1.2.0-rc.1]     |
+  |  Bump commit 1.2.0-rc.2 [latest, latest-main]                                    |
+```
+
+### Release Types
+
+| `release_type` | Example: before → after  | When to use                                       |
+|----------------|--------------------------|---------------------------------------------------|
+| `rc`           | `1.0.0` → `1.1.0-rc.1`  | Start a release candidate cycle on `main`         |
+| `patch`        | `1.0.0` → `1.0.1`       | Bug fix on a `release/<MAJOR>.<MINOR>` branch     |
+| `minor`        | `1.0.1` → `1.1.0`       | Finalize a minor release from a release candidate |
+| `major`        | `1.1.0` → `2.0.0`       | Finalize a major release from a release candidate |
+
 ## Usage
 
 ```bash
