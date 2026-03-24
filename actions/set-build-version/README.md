@@ -36,14 +36,14 @@ Below is described the tagging convention used for Docker images in Hoprnet.
 
 ### Tags
 
-| Tag            | Branch | Trigger          |                   Description                                           |
-|----------------|--------|------------------|-------------------------------------------------------------------------|
-| `latest`       | `main` | PR merged        | The most recent image built from `main`. Alias of `latest-main`.        |
-| `latest-main`  | `main` | PR merged        | The most recent image built from `main`. Same image as `latest`.        |
-| `latest-lts`   | `lts`  | PR merged        | The most recent image built from the `release/<MAJOR>.<MINOR>` branch.  |
-| `release-main` | `main` | Release cut      | The latest release published from `main`.                               |
-| `release-lts`  | `lts`  | Release cut      | The latest release published from the `release/<MAJOR>.<MINOR>` branch. |
-| `stable`       |   —    | Manual promotion | The image currently running in production.                              |
+| Tag            | Branch     | Trigger          |                   Description                                           |
+|----------------|------------|------------------|-------------------------------------------------------------------------|
+| `latest`       | `main`     | PR merged        | The most recent image built from `main`. Alias of `latest-main`.        |
+| `latest-main`  | `main`     | PR merged        | The most recent image built from `main`. Same image as `latest`.        |
+| `latest-lts`   | `release`  | PR merged        | The most recent image built from the `release/<MAJOR>.<MINOR>` branch.  |
+| `release-main` | `main`     | Release cut      | The latest release published from `main`.                               |
+| `release-lts`  | `release`  | Release cut      | The latest release published from the `release/<MAJOR>.<MINOR>` branch. |
+| `stable`       |     —      | Manual promotion | The image currently running in production.                              |
 
 ### Tag Lifecycle
 

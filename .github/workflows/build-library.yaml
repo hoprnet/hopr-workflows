@@ -33,6 +33,11 @@ on:
       runner:
         required: true
         type: string
+      enabled:
+        required: false
+        type: boolean
+        default: true
+        description: "Whether to run this job"
     secrets:
       cachix_auth_token:
         required: true
@@ -46,6 +51,7 @@ permissions:
 jobs:
   build:
     name: Build
+    if: inputs.enabled
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}  
     steps:
