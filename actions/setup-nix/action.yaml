@@ -1,5 +1,8 @@
 name: Setup Nix
-description: Setup Nix environment
+# DEPRECATED: Use hoprnet/hopr-workflows/actions/nix-action instead.
+# This action only handles nix install + cachix. nix-action also includes
+# harden-runner, checkout, and command execution.
+description: "[DEPRECATED] Setup Nix environment — use nix-action instead"
 inputs:
     cachix_cache_name:
         description: Name of the Cachix cache to use
