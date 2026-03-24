@@ -7,10 +7,11 @@ It also commits the change on the `${{ github.ref_name}}` branch. If the branch 
 ```bash
       - name: Bump version
         id: bump_version
-        uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v1
+        uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v2
         with:
           file: Cargo.toml
           release_type: patch
+          github_token: ${{ secrets.GH_RUNNER_TOKEN }}
 ```
 
 ## Requirements
@@ -23,6 +24,7 @@ It also commits the change on the `${{ github.ref_name}}` branch. If the branch 
 
 - `file`: The filepath to the `Cargo.toml` file
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
+- `github_token`: The github token used to bump the version
 
 ## Outputs
 

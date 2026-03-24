@@ -9,6 +9,9 @@ inputs:
         description: Release type to bump (major, minor, patch, rc)
         required: false
         default: patch
+    github_token:
+        description: GitHub Token from the Bot with permission to make direct commits into the branch
+        required: true
 outputs:
     current_version:
         description: Current version extracted from file
@@ -116,3 +119,5 @@ runs:
           new_branch: ${{ github.ref_name }}
           message: "ci: Bump to version ${{ steps.versions.outputs.bump_version }}"
           pathspec_error_handling: ignore
+          default_author: user_info
+          github_token: ${{ inputs.github_token }}
