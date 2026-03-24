@@ -114,5 +114,5 @@ runs:
         with:
           add: '${{ steps.versions.outputs.commit_files }}'
           new_branch: ${{ github.ref_name }}
-          message: "Bump to version ${{ steps.versions.outputs.bump_version }}"
+          message: "ci: Bump to version ${{ steps.versions.outputs.bump_version }}"
           pathspec_error_handling: ignore
