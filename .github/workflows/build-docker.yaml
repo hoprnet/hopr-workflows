@@ -70,6 +70,11 @@ on:
         type: string
         description: "Whether to fail the build if vulnerabilities are found during the scan"
         default: "true"
+      concurrency_group_suffix:
+        required: false
+        type: string
+        default: ""
+        description: "Additional string to group concurrency by. The final concurrency group will be in the format: {repository}-{source_branch}-{workflow}-docker-{concurrency_group}"
     secrets:
       gcp_service_account:
         required: true
@@ -87,7 +92,7 @@ on:
         description: "Docker debug image version built"
         value: ${{ jobs.build.outputs.docker_debug_version }}
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-docker
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-docker-${{ inputs.concurrency_group_suffix }}
   cancel-in-progress: true
 jobs:
   build:
