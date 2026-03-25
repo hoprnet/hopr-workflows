@@ -18,8 +18,8 @@ jq_decode() {
 fetch_merged_prs() {
     local repo_name="$1"
     local branch="$2"
-    local start_datetime="${3}" # Full ISO timestamp
-    local start_date="${3%% *}" # Extract YYYY-MM-DD from full ISO timestamp
+    local start_datetime="${3}" # Full ISO timestamp: YYYY-MM-DDTHH:MM:SSZ
+    local start_date="${3%%T*}" # Extract YYYY-MM-DD from ISO timestamp
     
     echo "[INFO] Fetching PRs for ${repo_name} (branch: ${branch}) since ${start_datetime}..." >&2
 
