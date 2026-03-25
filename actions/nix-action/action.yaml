@@ -1,7 +1,7 @@
 name: Nix Action
 description: >
   Composite action that handles the common CI boilerplate: harden runner,
-  checkout, optional Nix install, optional Cachix setup, and command execution.
+  checkout, Nix/Cachix setup (via setup-nix), and command execution.
 
 inputs:
   command:
@@ -11,24 +11,12 @@ inputs:
     description: Git branch to checkout
     required: false
     default: main
-  install_nix:
-    description: Whether to install Nix (set to false for self-hosted runners with Nix pre-installed)
-    required: false
-    default: "true"
-  use_cachix:
-    description: Whether to set up Cachix
-    required: false
-    default: "false"
   cachix_cache_name:
-    description: Cachix cache name
+    description: Cachix cache name (passed to setup-nix)
     required: false
     default: hoprnet
   cachix_auth_token:
-    description: Cachix authentication token
-    required: false
-    default: ""
-  github_access_token:
-    description: GitHub token for Nix install
+    description: Cachix authentication token (passed to setup-nix)
     required: false
     default: ""
   disable_sudo:
@@ -56,11 +44,10 @@ runs:
         ref: ${{ inputs.source_branch }}
 
     - name: Setup Nix
-      if: inputs.install_nix == 'true'
       uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
       with:
-        cachix_cache_name: ${{ inputs.use_cachix == 'true' && inputs.cachix_cache_name || '' }}
-        cachix_auth_token: ${{ inputs.use_cachix == 'true' && inputs.cachix_auth_token || '' }}
+        cachix_cache_name: ${{ inputs.cachix_cache_name }}
+        cachix_auth_token: ${{ inputs.cachix_auth_token }}
 
     - name: Run command
       shell: bash
