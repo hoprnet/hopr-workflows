@@ -7,14 +7,10 @@ inputs:
   command:
     description: Shell command(s) to execute (supports multi-line)
     required: true
-  repository:
-    description: Repository to checkout
+  source_branch:
+    description: Git branch to checkout
     required: false
-    default: ${{ github.repository }}
-  ref:
-    description: Git ref to checkout
-    required: false
-    default: ${{ github.ref }}
+    default: main
   install_nix:
     description: Whether to install Nix (set to false for self-hosted runners with Nix pre-installed)
     required: false
@@ -57,8 +53,7 @@ runs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: ${{ inputs.persist_credentials }}
-        repository: ${{ inputs.repository }}
-        ref: ${{ inputs.ref }}
+        ref: ${{ inputs.source_branch }}
 
     - name: Setup Nix
       if: inputs.install_nix == 'true'

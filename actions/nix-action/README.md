@@ -9,8 +9,7 @@ steps:
   - name: Run tests
     uses: hoprnet/hopr-workflows/actions/nix-action@nix-action-v1
     with:
-      repository: ${{ inputs.source_repo }}
-      ref: ${{ inputs.source_branch }}
+      source_branch: ${{ inputs.source_branch }}
       use_cachix: "true"
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       github_access_token: ${{ secrets.GITHUB_TOKEN }}
@@ -22,8 +21,7 @@ steps:
 | Input | Required | Default | Description |
 |---|---|---|---|
 | `command` | Yes | — | Shell command(s) to execute (supports multi-line) |
-| `repository` | No | `github.repository` | Repository to checkout |
-| `ref` | No | `github.ref` | Git ref to checkout |
+| `source_branch` | No | `main` | Git branch to checkout |
 | `install_nix` | No | `"true"` | Whether to install Nix via `setup-nix` |
 | `use_cachix` | No | `"false"` | Whether to set up Cachix |
 | `cachix_cache_name` | No | `hoprnet` | Cachix cache name |
