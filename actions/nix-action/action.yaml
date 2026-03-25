@@ -60,21 +60,12 @@ runs:
         repository: ${{ inputs.repository }}
         ref: ${{ inputs.ref }}
 
-    - name: Install Nix
+    - name: Setup Nix
       if: inputs.install_nix == 'true'
-      uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+      uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
       with:
-        github_access_token: ${{ inputs.github_access_token }}
-
-    - name: Setup Cachix
-      if: inputs.use_cachix == 'true'
-      uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
-      continue-on-error: true
-      with:
-        name: ${{ inputs.cachix_cache_name }}
-        authToken: ${{ inputs.cachix_auth_token }}
-      env:
-        USER: runner
+        cachix_cache_name: ${{ inputs.use_cachix == 'true' && inputs.cachix_cache_name || '' }}
+        cachix_auth_token: ${{ inputs.use_cachix == 'true' && inputs.cachix_auth_token || '' }}
 
     - name: Run command
       shell: bash

@@ -12,6 +12,7 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 - [Release Version](./actions/release-version/README.md): Creates a GitHub release
 - [Set Build Version](./actions/set-build-version/README.md): Updates project version before building
 - [Setup GCP](./actions/setup-gcp/README.md): Setup GCP tools and permissions
+- [Nix Action](./actions/nix-action/README.md): All-in-one CI step: harden runner, checkout, Nix setup, and command execution
 - [Setup Nix](./actions/setup-nix/README.md): Setup a Nix environment in the runner
 - [Setup Node Js](./actions/setup-node-js/README.md): Setup Node Js and Yarn
 - [Sign file](./actions/sign-file/README.md): Creates a GPG signature of the file and SHA256
