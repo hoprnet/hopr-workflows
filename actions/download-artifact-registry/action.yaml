@@ -65,6 +65,11 @@ runs:
             fi
           done
           # Create a comma-separated list of downloaded files
-          IFS=','; downloaded_files="${files_array[*]}"; unset IFS
+          local_files=()
+          for file in "${files_array[@]}"; do
+            filename="${file##*:}"
+            local_files+=("${destination}/${filename}")
+          done
+          downloaded_files=$(IFS=','; echo "${local_files[*]}")
           echo "downloaded_files=$downloaded_files" | tee -a $GITHUB_OUTPUT
 
