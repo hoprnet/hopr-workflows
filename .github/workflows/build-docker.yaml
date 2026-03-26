@@ -25,7 +25,7 @@ on:
         required: true
         type: string
       cachix_cache_name:
-        required: true
+        required: false
         type: string
         description: "Cachix cache name to use"
       build_file:
