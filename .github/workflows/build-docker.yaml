@@ -196,7 +196,7 @@ jobs:
               if [[ "${base_branch}" == "main" ]] || [[ "${base_branch}" == "master" ]]; then
                 publish_image "${GCP_LATEST_MAIN_IMAGE_NAME}"
               elif [[ "${base_branch}" =~ ^release/* ]]; then
-                publish_image "${GCP_LATEST_LTS_IMAGE_NAME}"
+                publish_image "${GCP_LATEST_TESTING_IMAGE_NAME}"
               fi
             fi
 
@@ -205,7 +205,7 @@ jobs:
               if [[ "${base_branch}" == "main" ]] || [[ "${base_branch}" == "master" ]]; then
                 publish_image "${GCP_RELEASE_MAIN_IMAGE_NAME}"
               elif [[ "${base_branch}" =~ ^release/* ]]; then
-                publish_image "${GCP_RELEASE_LTS_IMAGE_NAME}"
+                publish_image "${GCP_RELEASE_TESTING_IMAGE_NAME}"
               fi
               if [[ "${{ steps.docker_hub.outputs.publish_docker_hub }}" == "true" ]]; then
                 publish_image "${DOCKER_HUB_IMAGE_NAME}"
@@ -217,9 +217,9 @@ jobs:
           GCP_STAGING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:staging
           GCP_LATEST_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
           GCP_LATEST_MAIN_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-main-${{ steps.version.outputs.docker_platform }}
-          GCP_LATEST_LTS_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-lts-${{ steps.version.outputs.docker_platform }}
+          GCP_LATEST_TESTING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-testing-${{ steps.version.outputs.docker_platform }}
           GCP_RELEASE_MAIN_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:release-main-${{ steps.version.outputs.docker_platform }}
-          GCP_RELEASE_LTS_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:release-lts-${{ steps.version.outputs.docker_platform }}
+          GCP_RELEASE_TESTING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:release-testing-${{ steps.version.outputs.docker_platform }}
           DOCKER_HUB_IMAGE_NAME: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
       - name: Publish debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
         if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
@@ -281,13 +281,13 @@ jobs:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest-main
-      - name: Create multi-arch docker manifest - latest-lts
+      - name: Create multi-arch docker manifest - latest-testing
         if: inputs.version_type == 'pr' && contains(github.event.pull_request.base.ref, 'release/')
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
-          version: latest-lts
+          version: latest-testing
       - name: Create multi-arch docker manifest - release-main
         if: inputs.version_type == 'release' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
@@ -295,13 +295,13 @@ jobs:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: release-main
-      - name: Create multi-arch docker manifest - release-lts
+      - name: Create multi-arch docker manifest - release-testing
         if: inputs.version_type == 'release' && contains(github.event.pull_request.base.ref, 'release/')
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
-          version: release-lts
+          version: release-testing
       - name: Determine DockerHub publishing condition
         id: docker_hub
         run: |
