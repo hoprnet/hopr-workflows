@@ -91,8 +91,8 @@ jobs:
 - `integration_test_command` (Optional): Command for integration tests (Default: `nix build -L .#test-integration`).
 - `nightly_test_command` (Optional): Command for nightly tests (Default: `nix build -L .#test-nightly`).
 - `benchmark_command` (Optional): Command for benchmarks (Default: `nix build .#bench-build`).
-- `unit_coverage_command` (Optional): Command for unit coverage (Default: `nix run .#coverage-unit`).
-- `integration_coverage_command` (Optional): Command for integration coverage (Default: `nix run .#coverage-integration`).
+- `unit_coverage_command` (Optional): Command for unit coverage (Default: `nix build -L .#coverage-unit && cp result coverage.lcov`).
+- `integration_coverage_command` (Optional): Command for integration coverage (Default: `nix build -L .#coverage-integration && cp result coverage.lcov`).
 - `runner` (Optional): Runner for all test jobs (Default: `ubuntu-latest`).
 - `test_timeout` (Optional): Timeout in minutes for test jobs (Default: `60`).
 - `benchmark_timeout` (Optional): Timeout in minutes for benchmark job (Default: `20`).

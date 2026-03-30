@@ -55,11 +55,15 @@ on:
       unit_coverage_command:
         required: false
         type: string
-        default: "nix run .#coverage-unit"
+        default: |
+          nix build -L .#coverage-unit
+          cp result coverage.lcov
       integration_coverage_command:
         required: false
         type: string
-        default: "nix run .#coverage-integration"
+        default: |
+          nix build -L .#coverage-integration
+          cp result coverage.lcov
       runner:
         required: false
         type: string
