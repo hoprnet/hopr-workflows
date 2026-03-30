@@ -46,6 +46,7 @@ jobs:
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          persist_credentials: "true"
           command: ${{ inputs.zizmor_command }}
 
       - name: Upload SARIF file
