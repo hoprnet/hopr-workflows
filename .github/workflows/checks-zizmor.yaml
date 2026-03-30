@@ -5,8 +5,9 @@
 # Runs zizmor to scan GitHub Actions workflows for security issues and
 # uploads the results as a SARIF file to the GitHub Security tab.
 #
-# Note: Callers must declare `security-events: write` permission at the
-# job level for the SARIF upload to succeed.
+# This workflow declares its own `security-events: write` permission at
+# the job level for the SARIF upload. No additional permissions are
+# required from the caller.
 ################################################################################
 name: Zizmor
 

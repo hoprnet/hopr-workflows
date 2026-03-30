@@ -58,11 +58,15 @@ on:
       cachix_auth_token:
         required: true
 
+permissions: {}
+
 jobs:
   check:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ matrix.timeout }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:

@@ -4,6 +4,9 @@
 #
 # Tests and benchmarks run concurrently.
 # Coverage runs after all tests pass.
+#
+# When `coverage` is enabled, the `codecov_token` secret must be provided
+# for the upload to succeed.
 ################################################################################
 name: Tests
 
@@ -40,7 +43,7 @@ on:
       integration_test_command:
         required: false
         type: string
-        default: "nix develop -c cargo nextest run --test '*' -j 1"
+        default: "nix develop -c cargo nextest run --no-pager --test '*' -j 1"
       nightly_test_command:
         required: false
         type: string
@@ -59,7 +62,7 @@ on:
         required: false
         type: string
         default: |
-          nix develop .#coverage -c cargo llvm-cov nextest \
+          nix develop .#coverage -c cargo llvm-cov nextest --no-pager \
             --workspace \
             --test '*' \
             --lcov --output-path coverage.lcov \
@@ -86,6 +89,8 @@ on:
       codecov_token:
         required: false
 
+permissions: {}
+
 env:
   RUST_BACKTRACE: "1"
   FOUNDRY_PROFILE: ci
@@ -96,6 +101,8 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.test_timeout }}
+    permissions:
+      contents: read
     env:
       CI: "true"
     strategy:
@@ -124,6 +131,8 @@ jobs:
     name: Benchmark
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.benchmark_timeout }}
+    permissions:
+      contents: read
     if: inputs.benchmarks && github.event_name == 'merge_group'
     steps:
       - name: Build benchmarks
@@ -139,6 +148,8 @@ jobs:
     needs: [test]
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.coverage_timeout }}
+    permissions:
+      contents: read
     if: inputs.coverage && (github.event_name == 'push' || (github.event.pull_request.draft == false))
     env:
       CI: "true"
