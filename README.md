@@ -23,6 +23,116 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 
 This repository provides reusable workflows designed to simplify the build and release process for HOPR projects. These workflows can be called from other repositories to standardize binary compilation, Docker image creation, and multi-architecture support.
 
+### [Checks](./.github/workflows/checks.yaml)
+
+Runs configurable code-quality checks (pre-commit, lint, deps, audit) via a matrix strategy. Each check can be individually enabled/disabled and its command overridden.
+
+**Usage:**
+```yaml
+jobs:
+  checks:
+    name: Check
+    uses: hoprnet/hopr-workflows/.github/workflows/checks.yaml@checks-v1
+    with:
+      source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+      runner_small: self-hosted-hoprnet-small
+      runner_large: self-hosted-hoprnet-bigger
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+```
+
+**Inputs:**
+- `source_branch` (Required): Source branch to check out.
+- `pre_commit` (Optional): Enable pre-commit check (Default: `true`).
+- `lint` (Optional): Enable lint check (Default: `true`).
+- `deps` (Optional): Enable dependency check (Default: `true`).
+- `audit` (Optional): Enable security audit (Default: `true`).
+- `pre_commit_command` (Optional): Command for pre-commit (Default: `nix build -L .#pre-commit-check`).
+- `lint_command` (Optional): Command for linting (Default: `nix run -L .#check`).
+- `deps_command` (Optional): Command for dependency check (Default: `nix develop .#ci -c bash -c "cargo machete && cargo shear"`).
+- `audit_command` (Optional): Command for security audit (Default: `nix run .#audit`).
+- `runner_small` (Optional): Runner for lightweight checks (Default: `ubuntu-latest`).
+- `runner_large` (Optional): Runner for heavy checks (Default: `ubuntu-latest`).
+
+**Secrets:**
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
+
+---
+
+### [Tests](./.github/workflows/tests.yaml)
+
+Runs configurable test suites (unit, integration, nightly) and optionally builds benchmarks and generates coverage reports. Tests and benchmarks run concurrently; coverage runs after tests pass.
+
+**Usage:**
+```yaml
+jobs:
+  tests:
+    name: Test
+    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@tests-v1
+    with:
+      source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+      unit_tests: true
+      integration_tests: true
+      coverage: true
+      runner: self-hosted-hoprnet-bigger
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+```
+
+**Inputs:**
+- `source_branch` (Required): Source branch to check out.
+- `unit_tests` (Optional): Enable unit tests (Default: `true`).
+- `integration_tests` (Optional): Enable integration tests (Default: `false`).
+- `nightly_tests` (Optional): Enable nightly tests (Default: `false`).
+- `benchmarks` (Optional): Enable benchmark builds on merge_group (Default: `false`).
+- `coverage` (Optional): Enable coverage reports (Default: `false`).
+- `unit_test_command` (Optional): Command for unit tests (Default: `nix build -L .#test-unit`).
+- `integration_test_command` (Optional): Command for integration tests (Default: `nix develop -c cargo nextest run --no-pager --test '*' -j 1`).
+- `nightly_test_command` (Optional): Command for nightly tests (Default: `nix build -L .#test-nightly`).
+- `benchmark_command` (Optional): Command for benchmarks (Default: `nix build .#bench-build`).
+- `unit_coverage_command` (Optional): Command for unit coverage.
+- `integration_coverage_command` (Optional): Command for integration coverage.
+- `runner` (Optional): Runner for all test jobs (Default: `ubuntu-latest`).
+- `test_timeout` (Optional): Timeout in minutes for test jobs (Default: `60`).
+- `benchmark_timeout` (Optional): Timeout in minutes for benchmark job (Default: `20`).
+- `coverage_timeout` (Optional): Timeout in minutes for coverage jobs (Default: `60`).
+
+**Secrets:**
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
+- `codecov_token` (Optional): Codecov token. Required when `coverage` is enabled.
+
+---
+
+### [Zizmor](./.github/workflows/checks-zizmor.yaml)
+
+Scans GitHub Actions workflow files for security issues using [zizmor](https://docs.zizmor.sh/) and uploads results as SARIF to the GitHub Security tab.
+
+**Usage:**
+```yaml
+jobs:
+  zizmor:
+    uses: hoprnet/hopr-workflows/.github/workflows/checks-zizmor.yaml@checks-zizmor-v1
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+      runner: self-hosted-hoprnet-bigger
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+```
+
+**Inputs:**
+- `source_branch` (Required): Source branch to check out.
+- `runner` (Optional): Runner for the job (Default: `ubuntu-latest`).
+- `zizmor_command` (Optional): Command to run zizmor (Default: `nix develop -L .#ci -c bash -c "zizmor --format sarif . > results.sarif"`).
+
+**Secrets:**
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
+
+---
+
 ### [Build Binaries](./.github/workflows/build-binaries.yaml)
 
 Compiles binaries for a specific architecture using Nix. It handles version naming, signing and upload files to artifact registry.
