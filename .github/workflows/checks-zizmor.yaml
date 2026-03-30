@@ -1,0 +1,54 @@
+---
+################################################################################
+# Reusable zizmor security check pipeline
+#
+# Runs zizmor to scan GitHub Actions workflows for security issues and
+# uploads the results as a SARIF file to the GitHub Security tab.
+#
+# Note: Callers must declare `security-events: write` permission at the
+# job level for the SARIF upload to succeed.
+################################################################################
+name: Zizmor
+
+on:
+  workflow_call:
+    inputs:
+      source_branch:
+        required: true
+        type: string
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      zizmor_command:
+        required: false
+        type: string
+        default: 'nix develop -L .#ci -c bash -c "zizmor --format sarif . > results.sarif"'
+    secrets:
+      cachix_auth_token:
+        required: true
+
+permissions: {}
+
+jobs:
+  zizmor:
+    name: Zizmor
+    runs-on: ${{ inputs.runner }}
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Run zizmor
+        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          source_branch: ${{ inputs.source_branch }}
+          cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          command: ${{ inputs.zizmor_command }}
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
+        with:
+          sarif_file: results.sarif
+          category: zizmor
