@@ -42,11 +42,11 @@ jobs:
       - name: Run zizmor
         uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          NIX_CONFIG: "access-tokens = github.com=${{ github.token }}"
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          persist_credentials: "true"
           command: ${{ inputs.zizmor_command }}
 
       - name: Upload SARIF file
