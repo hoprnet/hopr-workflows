@@ -43,7 +43,7 @@ on:
       integration_test_command:
         required: false
         type: string
-        default: "nix develop -c cargo nextest run --no-pager --test '*' -j 1"
+        default: "nix develop -c cargo nextest run --no-pager --show-progress=none --test '*' -j 1"
       nightly_test_command:
         required: false
         type: string
@@ -63,6 +63,7 @@ on:
         type: string
         default: |
           nix develop .#coverage -c cargo llvm-cov nextest \
+            --no-pager --show-progress=none \
             --workspace \
             --test '*' \
             --lcov --output-path coverage.lcov \
