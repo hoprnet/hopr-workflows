@@ -32,7 +32,7 @@ Runs configurable code-quality checks (pre-commit, lint, deps, audit) via a matr
 jobs:
   checks:
     name: Check
-    uses: hoprnet/hopr-workflows/.github/workflows/checks.yaml@checks-v1
+    uses: hoprnet/hopr-workflows/.github/workflows/checks.yaml@workflow-checks-v1
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
       runner_small: self-hosted-hoprnet-small
@@ -68,7 +68,7 @@ Runs configurable test suites (unit, integration, nightly) and optionally builds
 jobs:
   tests:
     name: Test
-    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@tests-v1
+    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v1
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
       unit_tests: true
@@ -91,8 +91,8 @@ jobs:
 - `integration_test_command` (Optional): Command for integration tests (Default: `nix develop -c cargo nextest run --no-pager --test '*' -j 1`).
 - `nightly_test_command` (Optional): Command for nightly tests (Default: `nix build -L .#test-nightly`).
 - `benchmark_command` (Optional): Command for benchmarks (Default: `nix build .#bench-build`).
-- `unit_coverage_command` (Optional): Command for unit coverage.
-- `integration_coverage_command` (Optional): Command for integration coverage.
+- `unit_coverage_command` (Optional): Command for unit coverage (Default: `nix build -L .#coverage-unit && cp result coverage.lcov`).
+- `integration_coverage_command` (Optional): Command for integration coverage (Default: `nix develop .#coverage -c cargo llvm-cov nextest --no-pager ...`).
 - `runner` (Optional): Runner for all test jobs (Default: `ubuntu-latest`).
 - `test_timeout` (Optional): Timeout in minutes for test jobs (Default: `60`).
 - `benchmark_timeout` (Optional): Timeout in minutes for benchmark job (Default: `20`).
@@ -112,7 +112,7 @@ Scans GitHub Actions workflow files for security issues using [zizmor](https://d
 ```yaml
 jobs:
   zizmor:
-    uses: hoprnet/hopr-workflows/.github/workflows/checks-zizmor.yaml@checks-zizmor-v1
+    uses: hoprnet/hopr-workflows/.github/workflows/checks-zizmor.yaml@workflow-checks-zizmor-v1
     permissions:
       contents: read
       security-events: write
