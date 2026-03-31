@@ -9,7 +9,7 @@ This action performs the following steps:
 
 ## Release Process
 
-The release process follows a two-branch model: `main` for active development and `release/<MAJOR>.<MINOR>` for long-term support (LTS).
+The release process follows a two-branch model: `main` for active development and `release/<MAJOR>.<MINOR>` for testing and maintenance.
 
 ```
 (branch: main )
@@ -31,22 +31,22 @@ The release process follows a two-branch model: `main` for active development an
   ✔  PR merged [latest, latest-main]
   ✔  Close Release (Version type after release: 'rc') [release-main, 1.0.0]
   |  Bump commit 1.1.0-rc.1 [latest, latest-main]
-  ⑂  Promote Release from tag_name '1.0.0' ─────────────────────────────────────────── (branch: release/1.0) [latest-lts, release-lts]
-  |                                                                                  │  Bump commit 1.0.1 [latest-lts]
+  ⑂  Promote Release from tag_name '1.0.0' ─────────────────────────────────────────── (branch: release/1.0) [latest-testing, release-testing]
+  |                                                                                  │  Bump commit 1.0.1 [latest-testing]
   ✔  PR merged [latest, latest-main]                                                 |
-  │                                                                                  ✔  PR merged [latest-lts]
-  │                                                                                  ✔  PR merged [latest-lts]
+  │                                                                                  ✔  PR merged [latest-testing]
+  │                                                                                  ✔  PR merged [latest-testing]
   ✔  PR merged [latest, latest-main]                                                 |
-  │                                                                                  ✔  Close Release (Version type after release: 'patch') [latest-lts, release-lts, tag: 1.0.1]
-  |                                                                                  │  Bump commit 1.0.2 [latest-lts]
-  │                                                                                  ✔  PR merged [latest-lts]
-  │                                                                                  ✔  PR merged [latest-lts]
+  │                                                                                  ✔  Close Release (Version type after release: 'patch') [latest-testing, release-testing, tag: 1.0.1]
+  |                                                                                  │  Bump commit 1.0.2 [latest-testing]
+  │                                                                                  ✔  PR merged [latest-testing]
+  │                                                                                  ✔  PR merged [latest-testing]
   ✔  PR merged [latest, latest-main]                                                 |
   ✔  Close Release (Version type after release: 'rc') [release-main, 1.1.0-rc.1]     |
   |  Bump commit 1.1.0-rc.2 [latest, latest-main]                                    |
-  │                                                                                  ✔  PR merged [latest-lts]
-  │                                                                                  ✔  Close Release (Version type after release: 'patch') [latest-lts, release-lts, tag: 1.0.2]
-  |                                                                                  │  Bump commit 1.0.3 [latest-lts]
+  │                                                                                  ✔  PR merged [latest-testing]
+  │                                                                                  ✔  Close Release (Version type after release: 'patch') [latest-testing, release-testing, tag: 1.0.2]
+  |                                                                                  │  Bump commit 1.0.3 [latest-testing]
   ✔  PR merged [latest, latest-main]                                                 |
   ✔  PR merged [latest, latest-main]                                                 |
   ✔  Close Release (Version type after release: 'patch') [release-main, 1.1.0-rc.2]  |
@@ -55,16 +55,16 @@ The release process follows a two-branch model: `main` for active development an
   ✔  PR merged [latest, latest-main]                                                 |
   ✔  Close Release (Version type after release: 'rc') [release-main, 1.1.0]          |
   |  Bump commit 1.2.0-rc.1 [latest, latest-main]                                    |
-  ⑂  Promote Release from tag_name '1.1.0' ─────────────────────────────────────────── (branch: release/1.1) [latest-lts, release-lts]
-  |                                                                                  │  Bump commit 1.1.1 [latest-lts]
+  ⑂  Promote Release from tag_name '1.1.0' ─────────────────────────────────────────── (branch: release/1.1) [latest-testing, release-testing]
+  |                                                                                  │  Bump commit 1.1.1 [latest-testing]
   ✔  PR merged [latest, latest-main]                                                 |
-  │                                                                                  ✔  PR merged [latest-lts]
-  │                                                                                  ✔  PR merged [latest-lts]
+  │                                                                                  ✔  PR merged [latest-testing]
+  │                                                                                  ✔  PR merged [latest-testing]
   ✔  PR merged [latest, latest-main]                                                 |
-  │                                                                                  ✔  Close Release (Version type after release: 'patch') [latest-lts, release-lts, tag: 1.1.1]
-  |                                                                                  │  Bump commit 1.1.2 [latest-lts]
-  │                                                                                  ✔  PR merged [latest-lts]
-  │                                                                                  ✔  PR merged [latest-lts]
+  │                                                                                  ✔  Close Release (Version type after release: 'patch') [latest-testing, release-testing, tag: 1.1.1]
+  |                                                                                  │  Bump commit 1.1.2 [latest-testing]
+  │                                                                                  ✔  PR merged [latest-testing]
+  │                                                                                  ✔  PR merged [latest-testing]
   ✔  PR merged [latest, latest-main]                                                 |
   ✔  Close Release (Version type after release: 'rc') [release-main, 1.2.0-rc.1]     |
   |  Bump commit 1.2.0-rc.2 [latest, latest-main]                                    |

@@ -17,7 +17,7 @@ inputs:
         required: false
         description: "Google artifact registry package name"
     cachix_cache_name:
-        required: true
+        required: false
         description: "Cachix cache name to use"
     cachix_auth_token:
         required: true

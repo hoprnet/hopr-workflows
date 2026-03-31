@@ -40,9 +40,9 @@ Below is described the tagging convention used for Docker images in Hoprnet.
 |----------------|------------|------------------|-------------------------------------------------------------------------|
 | `latest`       | `main`     | PR merged        | The most recent image built from `main`. Alias of `latest-main`.        |
 | `latest-main`  | `main`     | PR merged        | The most recent image built from `main`. Same image as `latest`.        |
-| `latest-lts`   | `release`  | PR merged        | The most recent image built from the `release/<MAJOR>.<MINOR>` branch.  |
+| `latest-testing`   | `release`  | PR merged        | The most recent image built from the `release/<MAJOR>.<MINOR>` branch.  |
 | `release-main` | `main`     | Release cut      | The latest release published from `main`.                               |
-| `release-lts`  | `release`  | Release cut      | The latest release published from the `release/<MAJOR>.<MINOR>` branch. |
+| `release-testing`  | `release`  | Release cut      | The latest release published from the `release/<MAJOR>.<MINOR>` branch. |
 | `stable`       |     —      | Manual promotion | The image currently running in production.                              |
 
 ### Tag Lifecycle
@@ -53,8 +53,8 @@ main branch
 └── Release cut ──► release-main          (moves on every release)
 
 release/<MAJOR>.<MINOR> branch
-├── PR merged  ──► latest-lts            (moves on every merge)
-└── Release cut ──► release-lts           (moves on every release)
+├── PR merged  ──► latest-testing            (moves on every merge)
+└── Release cut ──► release-testing           (moves on every release)
 
 Production
 └── Manual promotion ──► stable           (moves only when explicitly promoted)
@@ -64,8 +64,8 @@ Production
 
 - I want the latest code from active development → `latest` or `latest-main`
 - I want the latest stable release from active development → `release-main`
-- I want the latest code from the LTS branch → `latest-lts`
-- I want the latest stable release from the LTS branch → `release-lts`
+- I want the latest code from the release branch → `latest-testing`
+- I want the latest stable release from the release branch → `release-testing`
 - I want what is currently running in production → `stable`
 
 **Notes**
