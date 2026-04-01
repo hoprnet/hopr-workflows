@@ -39,7 +39,7 @@ on:
       unit_coverage:
         required: false
         type: boolean
-        default: true
+        default: false
         description: Run unit coverage when coverage is enabled.
       integration_coverage:
         required: false

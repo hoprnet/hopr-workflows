@@ -87,7 +87,7 @@ jobs:
 - `nightly_tests` (Optional): Enable nightly tests (Default: `false`).
 - `benchmarks` (Optional): Enable benchmark builds on merge_group (Default: `false`).
 - `coverage` (Optional): Enable coverage reports (Default: `false`).
-- `unit_coverage` (Optional): Run unit coverage when coverage is enabled (Default: `true`).
+- `unit_coverage` (Optional): Run unit coverage when coverage is enabled (Default: `false`).
 - `integration_coverage` (Optional): Run integration coverage when coverage is enabled (Default: `false`).
 - `unit_test_command` (Optional): Command for unit tests (Default: `nix build -L .#test-unit`).
 - `integration_test_command` (Optional): Command for integration tests (Default: `nix build -L .#test-integration`).
