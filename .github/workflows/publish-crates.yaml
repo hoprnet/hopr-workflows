@@ -81,7 +81,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          args=(cargo release publish --no-tag --no-push --package "$PACKAGE")
+          args=(cargo release publish --package "$PACKAGE")
           if [[ "$DRY_RUN" != "true" ]]; then
             args+=(--execute)
           fi
