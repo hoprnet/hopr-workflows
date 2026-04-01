@@ -73,7 +73,8 @@ jobs:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
       unit_tests: true
       integration_tests: true
-      coverage: true
+      unit_coverage: true
+      integration_coverage: true
       runner: self-hosted-hoprnet-bigger
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -86,7 +87,8 @@ jobs:
 - `integration_tests` (Optional): Enable integration tests (Default: `false`).
 - `nightly_tests` (Optional): Enable nightly tests (Default: `false`).
 - `benchmarks` (Optional): Enable benchmark builds on merge_group (Default: `false`).
-- `coverage` (Optional): Enable coverage reports (Default: `false`).
+- `unit_coverage` (Optional): Enable unit coverage report (Default: `false`).
+- `integration_coverage` (Optional): Enable integration coverage report (Default: `false`).
 - `unit_test_command` (Optional): Command for unit tests (Default: `nix build -L .#test-unit`).
 - `integration_test_command` (Optional): Command for integration tests (Default: `nix build -L .#test-integration`).
 - `nightly_test_command` (Optional): Command for nightly tests (Default: `nix build -L .#test-nightly`).
@@ -97,11 +99,11 @@ jobs:
 - `test_timeout` (Optional): Timeout in minutes for test jobs (Default: `60`).
 - `benchmark_timeout` (Optional): Timeout in minutes for benchmark job (Default: `20`).
 - `coverage_timeout` (Optional): Timeout in minutes for coverage jobs (Default: `60`).
-- `unconditional` (Optional): When `true`, coverage runs regardless of test results and is enabled for all coverage types even if their corresponding test flags are off (Default: `false`).
+- `unconditional` (Optional): When `true`, coverage runs regardless of test results. Use `unit_coverage` and `integration_coverage` to control which types run (Default: `false`).
 
 **Secrets:**
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
-- `codecov_token` (Optional): Codecov token. Required when `coverage` is enabled.
+- `codecov_token` (Optional): Codecov token. Required when `unit_coverage` or `integration_coverage` is enabled.
 
 **Coverage-only usage (e.g. post-merge pipeline):**
 ```yaml
@@ -113,8 +115,8 @@ jobs:
       source_branch: ${{ github.ref_name }}
       unit_tests: false
       integration_tests: false
-      coverage: true
       unconditional: true
+      unit_coverage: true
       runner: self-hosted-hoprnet-bigger
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
