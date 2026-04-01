@@ -44,8 +44,8 @@ on:
       cachix_auth_token:
         required: true
       cargo_registry_token:
-        required: true
-        description: "crates.io API token"
+        required: false
+        description: "crates.io API token (required when dry_run is false)"
 
 permissions: {}
 
