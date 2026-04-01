@@ -110,7 +110,7 @@ jobs:
     name: Coverage
     uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v1
     with:
-      source_branch: ${{ github.event.pull_request.base.ref }}
+      source_branch: ${{ github.ref_name }}
       unit_tests: false
       integration_tests: false
       coverage: true

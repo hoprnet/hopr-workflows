@@ -154,7 +154,11 @@ jobs:
       always() &&
       inputs.coverage &&
       (inputs.unconditional || needs.test.result == 'success') &&
-      (github.event_name == 'push' || (github.event.pull_request.draft == false))
+      (
+        github.event_name == 'push' ||
+        github.event_name == 'merge_group' ||
+        (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+      )
     env:
       CI: "true"
     strategy:
