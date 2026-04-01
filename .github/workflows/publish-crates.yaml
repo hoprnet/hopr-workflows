@@ -81,11 +81,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          args=(cargo release publish --package "$PACKAGE")
-          if [[ "$DRY_RUN" != "true" ]]; then
-            args+=(--execute)
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo "::group::cargo publish --dry-run -p $PACKAGE"
+            nix develop -c cargo publish --dry-run -p "$PACKAGE"
+            echo "::endgroup::"
+          else
+            echo "::group::cargo release publish -p $PACKAGE --execute"
+            nix develop -c nix shell nixpkgs#cargo-release -c \
+              cargo release publish --package "$PACKAGE" --execute
+            echo "::endgroup::"
           fi
-
-          echo "::group::cargo-release ${args[*]:2}"
-          nix develop -c nix shell nixpkgs#cargo-release -c "${args[@]}"
-          echo "::endgroup::"
