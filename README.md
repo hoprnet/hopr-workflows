@@ -61,7 +61,7 @@ jobs:
 
 ### [Tests](./.github/workflows/tests.yaml)
 
-Runs configurable test suites (unit, integration, nightly) and optionally builds benchmarks and generates coverage reports. Tests and benchmarks run concurrently; coverage runs after tests pass.
+Runs configurable test suites (unit, integration, nightly) and optionally builds benchmarks and generates coverage reports. Tests and benchmarks run concurrently; coverage runs after tests pass. Set `unconditional: true` to run coverage regardless of test results.
 
 **Usage:**
 ```yaml
@@ -97,10 +97,29 @@ jobs:
 - `test_timeout` (Optional): Timeout in minutes for test jobs (Default: `60`).
 - `benchmark_timeout` (Optional): Timeout in minutes for benchmark job (Default: `20`).
 - `coverage_timeout` (Optional): Timeout in minutes for coverage jobs (Default: `60`).
+- `unconditional` (Optional): When `true`, coverage runs regardless of test results and is enabled for all coverage types even if their corresponding test flags are off (Default: `false`).
 
 **Secrets:**
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 - `codecov_token` (Optional): Codecov token. Required when `coverage` is enabled.
+
+**Coverage-only usage (e.g. post-merge pipeline):**
+```yaml
+jobs:
+  coverage:
+    name: Coverage
+    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v1
+    with:
+      source_branch: ${{ github.event.pull_request.base.ref }}
+      unit_tests: false
+      integration_tests: false
+      coverage: true
+      unconditional: true
+      runner: self-hosted-hoprnet-bigger
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+```
 
 ---
 
@@ -379,6 +398,72 @@ jobs:
 
 **Secrets:**
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
+
+**Outputs:**
+
+- No outputs defined.
+
+### [Publish Crates](./.github/workflows/publish-crates.yaml)
+
+Publishes a single Rust crate to crates.io using [cargo-release](https://github.com/crate-ci/cargo-release) in publish-only mode (no git tags, no push). Dry-run is the default. For workspace repos publishing multiple crates, use a matrix strategy with `max-parallel: 1` to respect dependency ordering.
+
+**Usage (single crate):**
+```yaml
+jobs:
+  publish:
+    name: Publish
+    uses: hoprnet/hopr-workflows/.github/workflows/publish-crates.yaml@workflow-publish-crates-v1
+    permissions:
+      contents: read
+    with:
+      source_branch: ${{ github.ref_name }}
+      package: hopr-types
+      dry_run: false
+      runner: self-hosted-hoprnet-small
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      cargo_registry_token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+```
+
+**Usage (workspace with matrix):**
+```yaml
+jobs:
+  publish:
+    name: Publish / ${{ matrix.package }}
+    strategy:
+      max-parallel: 1
+      matrix:
+        package:
+          - hopr-primitive-types
+          - hopr-crypto-types
+          - hopr-chain-types
+          - hopr-internal-types
+          - hopr-crypto-random
+          - hopr-types
+    uses: hoprnet/hopr-workflows/.github/workflows/publish-crates.yaml@workflow-publish-crates-v1
+    permissions:
+      contents: read
+    with:
+      source_branch: ${{ github.ref_name }}
+      package: ${{ matrix.package }}
+      dry_run: false
+      runner: self-hosted-hoprnet-small
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      cargo_registry_token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+```
+
+**Inputs:**
+- `source_branch` (Required): Source branch to check out.
+- `package` (Required): Crate name to publish (e.g. `hopr-types`).
+- `dry_run` (Optional): Simulates publish without uploading (Default: `true`).
+- `cachix_cache_name` (Optional): Cachix cache name to use.
+- `runner` (Optional): Runner for the job (Default: `ubuntu-latest`).
+- `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `30`).
+
+**Secrets:**
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
+- `cargo_registry_token` (Required): crates.io API token.
 
 **Outputs:**
 

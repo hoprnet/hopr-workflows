@@ -3,7 +3,7 @@
 # Reusable test + coverage pipeline
 #
 # Tests and benchmarks run concurrently.
-# Coverage runs after all tests pass.
+# Coverage runs after all tests pass, unless `unconditional` is set.
 #
 # When `coverage` is enabled, the `codecov_token` secret must be provided
 # for the upload to succeed.
@@ -76,6 +76,13 @@ on:
         required: false
         type: number
         default: 60
+      unconditional:
+        required: false
+        type: boolean
+        default: false
+        description: >-
+          When true, coverage runs regardless of test results and is enabled
+          for all coverage types even if their corresponding test flags are off.
     secrets:
       cachix_auth_token:
         required: true
@@ -135,7 +142,7 @@ jobs:
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           command: ${{ inputs.benchmark_command }}
 
-  # ── Coverage (after tests pass) ────────────────────────────────────────────
+  # ── Coverage (after tests pass, unless unconditional) ──────────────────────
   coverage:
     name: Coverage / ${{ matrix.name }}
     needs: [test]
@@ -143,7 +150,11 @@ jobs:
     timeout-minutes: ${{ inputs.coverage_timeout }}
     permissions:
       contents: read
-    if: inputs.coverage && (github.event_name == 'push' || (github.event.pull_request.draft == false))
+    if: >-
+      always() &&
+      inputs.coverage &&
+      (inputs.unconditional || needs.test.result == 'success') &&
+      (github.event_name == 'push' || (github.event.pull_request.draft == false))
     env:
       CI: "true"
     strategy:
@@ -151,11 +162,11 @@ jobs:
       matrix:
         include:
           - name: Unit
-            enabled: ${{ inputs.unit_tests }}
+            enabled: ${{ inputs.unconditional || inputs.unit_tests }}
             command: ${{ inputs.unit_coverage_command }}
             flag: unit
           - name: Integration
-            enabled: ${{ inputs.integration_tests }}
+            enabled: ${{ inputs.unconditional || inputs.integration_tests }}
             command: ${{ inputs.integration_coverage_command }}
             flag: integration
     steps:
