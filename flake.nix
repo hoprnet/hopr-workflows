@@ -16,7 +16,7 @@
         devShell = pkgs.mkShell {
           buildInputs = [
             pythonEnv
-            pkgs.gcloud
+            pkgs.google-cloud-sdk
             pkgs.jq
           ];
         };

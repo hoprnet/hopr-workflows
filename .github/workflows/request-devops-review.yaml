@@ -1,0 +1,49 @@
+---
+################################################################################
+# Reusable workflow: request hopr-devops review for CI changes
+#
+# Automatically requests a review from the hopr-devops team when a pull
+# request touches files under .github/. Intended to be called from any
+# repository in the hoprnet organization.
+#
+# Example caller workflow:
+#
+#   name: DevOps Review
+#   on:
+#     pull_request:
+#       paths:
+#         - '.github/**'
+#         - 'flake.*'
+#   jobs:
+#     request-review:
+#       uses: hoprnet/hopr-workflows/.github/workflows/request-devops-review.yaml@main
+#
+################################################################################
+name: Request DevOps Review
+
+on:
+  workflow_call:
+    inputs:
+      team_slug:
+        description: "Team slug to request review from"
+        required: false
+        type: string
+        default: "hopr-devops"
+
+permissions: {}
+
+jobs:
+  request-review:
+    name: Request review
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Request team review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          TEAM_SLUG: ${{ inputs.team_slug }}
+        run: |
+          ORG="${GITHUB_REPOSITORY%%/*}"
+          gh pr edit "$PR_URL" --add-reviewer "${ORG}/${TEAM_SLUG}"
