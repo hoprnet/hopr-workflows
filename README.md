@@ -87,6 +87,8 @@ jobs:
 - `nightly_tests` (Optional): Enable nightly tests (Default: `false`).
 - `benchmarks` (Optional): Enable benchmark builds on merge_group (Default: `false`).
 - `coverage` (Optional): Enable coverage reports (Default: `false`).
+- `unit_coverage` (Optional): Run unit coverage when coverage is enabled (Default: `true`).
+- `integration_coverage` (Optional): Run integration coverage when coverage is enabled (Default: `false`).
 - `unit_test_command` (Optional): Command for unit tests (Default: `nix build -L .#test-unit`).
 - `integration_test_command` (Optional): Command for integration tests (Default: `nix build -L .#test-integration`).
 - `nightly_test_command` (Optional): Command for nightly tests (Default: `nix build -L .#test-nightly`).
@@ -97,7 +99,7 @@ jobs:
 - `test_timeout` (Optional): Timeout in minutes for test jobs (Default: `60`).
 - `benchmark_timeout` (Optional): Timeout in minutes for benchmark job (Default: `20`).
 - `coverage_timeout` (Optional): Timeout in minutes for coverage jobs (Default: `60`).
-- `unconditional` (Optional): When `true`, coverage runs regardless of test results and is enabled for all coverage types even if their corresponding test flags are off (Default: `false`).
+- `unconditional` (Optional): When `true`, coverage runs regardless of test results. Use `unit_coverage` and `integration_coverage` to control which types run (Default: `false`).
 
 **Secrets:**
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
@@ -115,6 +117,7 @@ jobs:
       integration_tests: false
       coverage: true
       unconditional: true
+      unit_coverage: true
       runner: self-hosted-hoprnet-bigger
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}

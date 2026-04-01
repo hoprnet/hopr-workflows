@@ -36,6 +36,16 @@ on:
         required: false
         type: boolean
         default: false
+      unit_coverage:
+        required: false
+        type: boolean
+        default: true
+        description: Run unit coverage when coverage is enabled.
+      integration_coverage:
+        required: false
+        type: boolean
+        default: false
+        description: Run integration coverage when coverage is enabled.
       unit_test_command:
         required: false
         type: string
@@ -81,8 +91,8 @@ on:
         type: boolean
         default: false
         description: >-
-          When true, coverage runs regardless of test results and is enabled
-          for all coverage types even if their corresponding test flags are off.
+          When true, coverage runs regardless of test results.
+          Use unit_coverage and integration_coverage to control which types run.
     secrets:
       cachix_auth_token:
         required: true
@@ -166,11 +176,11 @@ jobs:
       matrix:
         include:
           - name: Unit
-            enabled: ${{ inputs.unconditional || inputs.unit_tests }}
+            enabled: ${{ inputs.unit_coverage }}
             command: ${{ inputs.unit_coverage_command }}
             flag: unit
           - name: Integration
-            enabled: ${{ inputs.unconditional || inputs.integration_tests }}
+            enabled: ${{ inputs.integration_coverage }}
             command: ${{ inputs.integration_coverage_command }}
             flag: integration
     steps:
