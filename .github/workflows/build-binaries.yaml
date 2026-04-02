@@ -106,6 +106,7 @@ jobs:
           architecture: "${{ inputs.architecture }}"
       - name: Build binary ${{ inputs.architecture }}
         shell: bash
+        id: build
         run: |
           ${{ inputs.build_command }}
           mkdir -p ./artifacts
