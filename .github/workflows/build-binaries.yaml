@@ -28,6 +28,10 @@ on:
         required: true
         type: string
         description: "Command to build the binary"
+      build_debug_command:
+        required: false
+        type: string
+        description: "Command to build the binary with debug symbols"
       binary:
         required: true
         type: string
@@ -103,7 +107,18 @@ jobs:
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
-
+      - name: Build debug binary - ${{ inputs.architecture }}
+        if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
+        run: |
+          ${{ inputs.build_debug_command }}
+          mkdir -p ./artifacts
+          cp ./result/bin/${{ inputs.binary }} ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}-debug
+      - name: Upload debug binary ${{ inputs.binary }}-${{ inputs.architecture }}-debug
+        if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: ${{ inputs.binary }}-${{ inputs.architecture }}-debug
+          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}-debug
   sign:
     name:  Sign and Publish
     needs: build
