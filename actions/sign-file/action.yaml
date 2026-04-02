@@ -1,28 +1,36 @@
 name: Sign File
 description: Signs a file using a GPG private key
 inputs:
-    file:
-        description: File to sign
+    path:
+        description: Path to the file to sign
+        required: true
+    architecture:
+        description: Architecture of the file to sign (e.g. x86_64-linux, aarch64-linux, x86_64-darwin, etc.)
         required: true
     gpg_private_key:
         description: GPG private key for signing
-        required: true
+        required: false
+    apple_certificate:
+        description: Apple developer certificate p12 for signing in base64
+        required: false
+    apple_certificate_password:
+        description: Apple developer certificate password
+        required: false
 runs:
     using: composite
     steps:
-      - name: Install packages
+      - name: Sign linux file
+        if: contains(inputs.architecture, 'linux')
         shell: bash
-        run: |
-          if ! command -v gpg &> /dev/null; then
-            echo "gpg could not be found, installing..."
-            sudo apt-get update
-            sudo apt-get install -y gpg
-          else
-            echo "gpg is already installed"
-          fi
-      - name: Sign file
-        shell: bash
-        run: ${{ github.action_path }}/sign-file.sh "${{ inputs.file }}"
+        run: ${{ github.action_path }}/sign-linux-file.sh "${{ inputs.path }}"
         env:
           GPG_PRIVATE_KEY: ${{ inputs.gpg_private_key }}
+        working-directory: ${{ github.workspace }}
+      - name: Sign darwin file
+        if: contains(inputs.architecture, 'darwin')
+        shell: bash
+        run: ${{ github.action_path }}/sign-darwin-file.sh "${{ inputs.path }}"
+        env:
+          APPLE_CERTIFICATE: ${{ inputs.apple_certificate }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ inputs.apple_certificate_password }}
         working-directory: ${{ github.workspace }}
