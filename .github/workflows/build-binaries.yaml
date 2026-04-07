@@ -140,7 +140,7 @@ jobs:
   sign:
     name:  Sign and Publish
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     if: needs.build.outputs.enable_sign == 'true'
     steps:
       - name: Download binary ${{ inputs.binary }}-${{ inputs.architecture }}
