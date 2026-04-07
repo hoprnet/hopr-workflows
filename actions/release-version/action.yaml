@@ -37,6 +37,18 @@ inputs:
     gcp_service_account:
         description: GCP Service Account JSON for Artifact Registry access
         required: false
+    gcp_project:
+        description: GCP Project name for Artifact Registry
+        required: false
+        default: hoprassociation
+    gcp_region:
+        description: GCP region for Artifact Registry
+        required: false
+        default: europe-west3
+    gcp_repository:
+        description: GCP Artifact Registry repository name
+        required: false
+        default: rust-binaries
     github_token:
         description: GitHub Token from the Bot with permission to make direct commits into the branch
         required: true
@@ -81,6 +93,9 @@ runs:
         id: download
         uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
         with:
+          project: ${{ inputs.gcp_project }}
+          region: ${{ inputs.gcp_region }}
+          repository: ${{ inputs.gcp_repository }}
           package: ${{ inputs.package_name }}
           version: ${{ steps.version.outputs.current_version }}
       - name: Generate Release Notes
