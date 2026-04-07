@@ -112,7 +112,7 @@ jobs:
           mkdir -p ./artifacts
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp "$file" "${{ github.workspace }}/artifacts/${binary_name}-${{ inputs.architecture }}"
+            cp -f "$file" "${{ github.workspace }}/artifacts/${binary_name}-${{ inputs.architecture }}"
           done
           enable_sign=${{ secrets.gpg_private_key != '' || (secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
           echo "enable_sign=$enable_sign" | tee -a "$GITHUB_OUTPUT"
@@ -126,17 +126,17 @@ jobs:
         if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
         run: |
           ${{ inputs.build_debug_command }}
-          mkdir -p ./artifacts
+          mkdir -p ./artifacts-debug
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp "$file" "${{ github.workspace }}/artifacts/${binary_name}-${{ inputs.architecture }}"
+            cp -f "$file" "${{ github.workspace }}/artifacts-debug/${binary_name}-${{ inputs.architecture }}"
           done
       - name: Upload debug binary ${{ inputs.binary }}-${{ inputs.architecture }}-debug
         if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}-debug
-          path: ${{ github.workspace }}/artifacts
+          path: ${{ github.workspace }}/artifacts-debug
   sign:
     name:  Sign and Publish
     needs: build
