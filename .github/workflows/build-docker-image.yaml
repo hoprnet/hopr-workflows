@@ -66,8 +66,23 @@ on:
       runner:
         required: false
         type: string
-        description: "Runner to use for the job"
+        description: "Runner to use for the build job"
         default: "self-hosted-hoprnet-bigger"
+      runner_scan:
+        required: false
+        type: string
+        description: "Runner to use for the scan job"
+        default: "ubuntu-latest"
+      runner_smoke_test:
+        required: false
+        type: string
+        description: "Runner to use for the smoke test job"
+        default: "self-hosted-hoprnet-big"
+      runner_deploy:
+        required: false
+        type: string
+        description: "Runner to use for the deploy job"
+        default: "self-hosted-hoprnet-small"
       deployment_namespace:
         required: false
         type: string
@@ -190,7 +205,7 @@ jobs:
   scan:
     name: Scan
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner_scan }}
     permissions:
       contents: read
       id-token: write # Allows to request an identity token. Fetches an OIDC token from GitHub OAuth OIDC provider
@@ -280,7 +295,7 @@ jobs:
     name: Smoke Test
     if: vars.RUN_DOCKER_SMOKE_TESTS == 'true' && inputs.architecture == 'x86_64-linux' && inputs.smoke_test_command != ''
     needs: build
-    runs-on: self-hosted-hoprnet-big
+    runs-on: ${{ inputs.runner_smoke_test }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -307,7 +322,7 @@ jobs:
     name: Deploy
     needs: build
     if: (needs.build.outputs.deploy_staging == 'true' || (vars.DEPLOY_STAGING_MERGED_PR == 'true' && inputs.version_type == 'pr')) && (inputs.deployment_namespace != '' && inputs.deployment_label_selector != '')
-    runs-on: self-hosted-hoprnet-small
+    runs-on: ${{ inputs.runner_deploy }}
     steps:
       - name: Setup GCP
         id: gcp

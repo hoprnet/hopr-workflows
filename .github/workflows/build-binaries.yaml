@@ -40,6 +40,11 @@ on:
       runner:
         required: true
         type: string
+      runner_sign:
+        required: false
+        type: string
+        default: "ubuntu-latest"
+        description: "Runner to use for the sign job"
       enabled:
         required: false
         type: boolean
@@ -107,7 +112,7 @@ jobs:
   sign:
     name:  Sign and Publish
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner_sign }}
     steps:
       - name: Download binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0

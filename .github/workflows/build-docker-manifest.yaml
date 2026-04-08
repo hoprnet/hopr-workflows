@@ -31,6 +31,11 @@ on:
         type: string
         default: "docker.io/hoprnet"
         description: "Docker registry to push the image to"
+      runner:
+        required: false
+        type: string
+        default: "self-hosted-hoprnet-small"
+        description: "Runner to use for the job"
     secrets:
       gcp_service_account:
         required: true
@@ -44,7 +49,7 @@ concurrency:
 jobs:
   manifest:
     name: Multi-Arch
-    runs-on: self-hosted-hoprnet-small
+    runs-on: ${{ inputs.runner }}
     steps:
       - name: Setup GCP
         id: gcp
