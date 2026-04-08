@@ -122,13 +122,6 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
-      - name: Updates build version
-        id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
-        with:
-          file: "${{ inputs.build_file }}"
-          version_type: "${{ inputs.version_type }}"
-          architecture: "${{ inputs.architecture }}"
       - name: Setup GCP
         id: gcp
         uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
@@ -140,6 +133,13 @@ jobs:
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+      - name: Updates build version
+        id: version
+        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+        with:
+          file: "${{ inputs.build_file }}"
+          version_type: "${{ inputs.version_type }}"
+          architecture: "${{ inputs.architecture }}"
       - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         run: ${{ inputs.build_command }}
         env:
