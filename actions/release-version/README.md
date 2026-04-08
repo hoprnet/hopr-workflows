@@ -88,7 +88,6 @@ The release process follows a two-branch model: `main` for active development an
           source_branch: main
           file: Cargo.toml
           release_type: patch
-          package_name: my-package
           cachix_cache_name: my-repo
           cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
           zulip_email: ${{ secrets.ZULIP_EMAIL }}
@@ -96,6 +95,7 @@ The release process follows a two-branch model: `main` for active development an
           zulip_channel: "MyChannel"
           zulip_topic: "Releases"
           gcp_service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
+          gcp_artifact_package: my-package
           github_token: "${{ secrets.GH_RUNNER_TOKEN }}"
 ```
 
@@ -110,7 +110,6 @@ The release process follows a two-branch model: `main` for active development an
 - `source_branch`: Source branch for release notes
 - `file`: The filepath to the version file (e.g. `Cargo.toml` or `package.json`).
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
-- `package_name`: Package name from Google Artifact Registry to download binaries from and publish in the release.
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 - `zulip_email`: Email of the user used to send Zulip notifications.
@@ -118,8 +117,9 @@ The release process follows a two-branch model: `main` for active development an
 - `zulip_channel`: Zulip channel for notifications.
 - `zulip_topic`: Zulip topic for notifications.
 - `gcp_service_account`: GCP Service Account JSON for Artifact Registry access.
-- `gcp_region`: GCP region for Artifact Registry.
-- `gcp_repository`: GCP Artifact Registry repository name.
+- `gcp_artifact_region`: GCP region for Artifact Registry.
+- `gcp_artifact_repository`: GCP Artifact Registry repository name.
+- `gcp_artifact_package`: Package name from Google Artifact Registry to download binaries from and publish in the release.
 - `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch.
 
 ## Outputs

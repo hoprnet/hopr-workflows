@@ -13,9 +13,6 @@ inputs:
         description: Release type to bump (major, minor, patch, rc)
         required: false
         default: patch
-    package_name:
-        required: false
-        description: "Google artifact registry package name"
     cachix_cache_name:
         required: false
         description: "Cachix cache name to use"
@@ -37,14 +34,17 @@ inputs:
     gcp_service_account:
         description: GCP Service Account JSON for Artifact Registry access
         required: false
-    gcp_region:
+    gcp_artifact_region:
         description: GCP region for Artifact Registry
         required: false
         default: europe-west3
-    gcp_repository:
+    gcp_artifact_repository:
         description: GCP Artifact Registry repository name
         required: false
         default: rust-binaries
+    gcp_artifact_package:
+        required: false
+        description: "Google artifact registry package name"
     github_token:
         description: GitHub Token from the Bot with permission to make direct commits into the branch
         required: true
@@ -85,13 +85,13 @@ runs:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ inputs.cachix_auth_token }}"
       - name: Download binary files
-        if: inputs.package_name != ''
+        if: inputs.gcp_artifact_package != ''
         id: download
         uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v2
         with:
-          region: ${{ inputs.gcp_region }}
-          repository: ${{ inputs.gcp_repository }}
-          package: ${{ inputs.package_name }}
+          region: ${{ inputs.gcp_artifact_region }}
+          repository: ${{ inputs.gcp_artifact_repository }}
+          package: ${{ inputs.gcp_artifact_package }}
           version: ${{ steps.version.outputs.current_version }}
       - name: Generate Release Notes
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
