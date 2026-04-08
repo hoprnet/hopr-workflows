@@ -184,6 +184,8 @@ jobs:
 - `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
 - `build_command` (Required): The command to execute the build.
 - `binary` (Required): The name of the binary to output.
+- `gcp_region`: GCP region for Artifact Registry.
+- `gcp_repository`: GCP Artifact Registry repository name.
 - `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
 - `runner` (Required): The runner label to use for the job.
 

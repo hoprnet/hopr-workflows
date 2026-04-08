@@ -37,10 +37,6 @@ inputs:
     gcp_service_account:
         description: GCP Service Account JSON for Artifact Registry access
         required: false
-    gcp_project:
-        description: GCP Project name for Artifact Registry
-        required: false
-        default: hoprassociation
     gcp_region:
         description: GCP region for Artifact Registry
         required: false
@@ -78,7 +74,7 @@ runs:
       - name: Setup GCP
         if: inputs.gcp_service_account != ''
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
         with:
           google_credentials: ${{ inputs.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -91,9 +87,8 @@ runs:
       - name: Download binary files
         if: inputs.package_name != ''
         id: download
-        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
+        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v2
         with:
-          project: ${{ inputs.gcp_project }}
           region: ${{ inputs.gcp_region }}
           repository: ${{ inputs.gcp_repository }}
           package: ${{ inputs.package_name }}

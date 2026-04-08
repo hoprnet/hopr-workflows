@@ -36,6 +36,16 @@ on:
         required: true
         type: string
         description: "Binary name to build"
+      gcp_region:
+        description: GCP region for Artifact Registry
+        type: string
+        required: false
+        default: europe-west3
+      gcp_repository:
+        description: GCP Artifact Registry repository name
+        type: string
+        required: false
+        default: rust-binaries
       timeout_minutes:
         required: false
         type: number
@@ -176,7 +186,7 @@ jobs:
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.sha256
       - name: Setup GCP
         if: needs.build.outputs.publish_artifact_registry == 'true'
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
@@ -184,8 +194,10 @@ jobs:
           install_sdk: "true"
       - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
         if: needs.build.outputs.publish_artifact_registry == 'true'
-        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v1
+        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v2
         with:
           source: ${{ github.workspace }}/artifacts
+          region: ${{ inputs.gcp_region }}
+          repository: ${{ inputs.gcp_repository }}
           package: ${{ inputs.binary }}
           version: ${{ needs.build.outputs.build_version }}

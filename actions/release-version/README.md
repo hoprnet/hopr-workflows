@@ -117,8 +117,10 @@ The release process follows a two-branch model: `main` for active development an
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.
 - `zulip_topic`: Zulip topic for notifications.
-- `gcp_service_account`: GCP Service Account JSON for Artifact Registry access
-- `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch
+- `gcp_service_account`: GCP Service Account JSON for Artifact Registry access.
+- `gcp_region`: GCP region for Artifact Registry.
+- `gcp_repository`: GCP Artifact Registry repository name.
+- `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch.
 
 ## Outputs
 
