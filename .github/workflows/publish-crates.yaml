@@ -18,15 +18,15 @@ on:
         required: true
         type: string
         description: "Source branch to check out"
-      package:
-        required: true
-        type: string
-        description: "Crate name to publish (e.g. hopr-types)"
       version_type:
         required: false
         type: string
         default: "pr"
         description: "Version type (commit, pr, release). Only 'release' publishes to crates.io; others perform a dry run"
+      package:
+        required: true
+        type: string
+        description: "Crate name to publish (e.g. hopr-types)"
       cachix_cache_name:
         required: false
         type: string
@@ -82,8 +82,9 @@ jobs:
           set -euo pipefail
 
           if [[ "$VERSION_TYPE" != "release" ]]; then
-            echo "::group::cargo publish --dry-run -p $PACKAGE"
-            nix develop -c cargo publish --dry-run -p "$PACKAGE"
+            echo "::group::cargo release publish -p $PACKAGE (dry-run)"
+            nix develop -c nix shell nixpkgs#cargo-release -c \
+              cargo release publish --package "$PACKAGE"
             echo "::endgroup::"
           else
             echo "::group::cargo release publish -p $PACKAGE --execute"
