@@ -45,6 +45,10 @@ inputs:
     gcp_artifact_package:
         required: false
         description: "Google artifact registry package name"
+    release_notes:
+        description: Path to a file containing release notes. If empty, release notes will be auto-generated.
+        required: false
+        default: ''
     github_token:
         description: GitHub Token from the Bot with permission to make direct commits into the branch
         required: true
@@ -94,6 +98,7 @@ runs:
           package: ${{ inputs.gcp_artifact_package }}
           version: ${{ steps.version.outputs.current_version }}
       - name: Generate Release Notes
+        if: inputs.release_notes == ''
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
         with:
           source_branch: ${{ inputs.source_branch }}
@@ -104,7 +109,7 @@ runs:
             tag_name: "v${{ steps.version.outputs.current_version }}"
             prerelease: ${{ steps.version.outputs.prerelease }}
             name: "v${{ steps.version.outputs.current_version }}"
-            body_path: ./release-notes.txt
+            body_path: ${{ inputs.release_notes != '' && inputs.release_notes || './release-notes.txt' }}
             files: ${{ steps.download.outputs.downloaded_files || '' }}
       - name: Bump version
         id: bump

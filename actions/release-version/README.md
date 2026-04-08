@@ -1,7 +1,7 @@
 # Release Github version
 
 This action performs the following steps:
-- Generating the release notes
+- Generating the release notes (unless `release_notes` input is provided)
 - Download the release binaries from Google Artifact registry
 - Creates a github release
 - Bumps the base branch to the next `release_type`.
@@ -120,6 +120,7 @@ The release process follows a two-branch model: `main` for active development an
 - `gcp_artifact_region`: GCP region for Artifact Registry.
 - `gcp_artifact_repository`: GCP Artifact Registry repository name.
 - `gcp_artifact_package`: Package name from Google Artifact Registry to download binaries from and publish in the release.
+- `release_notes`: Path to a file containing release notes. If empty (default), release notes are auto-generated from the git history using the `generate-release-notes` action.
 - `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch.
 
 ## Outputs
