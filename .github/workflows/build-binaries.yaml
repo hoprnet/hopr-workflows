@@ -159,7 +159,7 @@ jobs:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts
       - name: Sign binary ${{ inputs.binary }}-${{ inputs.architecture }}
-        uses: hoprnet/hopr-workflows/actions/sign-file@ausias/adapt-gnosisvpn # sign-file-v2
+        uses: hoprnet/hopr-workflows/actions/sign-file@sign-file-v2
         with:
           path: ${{ github.workspace }}/artifacts/
           architecture: ${{ inputs.architecture }}

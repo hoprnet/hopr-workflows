@@ -83,7 +83,7 @@ The release process follows a two-branch model: `main` for active development an
 
 ```bash
       - name: Release version
-        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v2
+        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v3
         with:
           source_branch: main
           file: Cargo.toml
