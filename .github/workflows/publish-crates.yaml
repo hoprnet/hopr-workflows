@@ -1,0 +1,99 @@
+---
+################################################################################
+# Reusable crate-publish pipeline
+#
+# Publishes a single Rust crate to crates.io using cargo-release in
+# publish-only mode (no git tags, no git push). Dry-run is the default;
+# set version_type to 'release' to actually publish.
+#
+# For workspace repos publishing multiple crates, use a matrix strategy
+# with max-parallel: 1 to control dependency ordering.
+################################################################################
+name: Publish crates
+
+on:
+  workflow_call:
+    inputs:
+      source_branch:
+        required: true
+        type: string
+        description: "Source branch to check out"
+      version_type:
+        required: false
+        type: string
+        default: "pr"
+        description: "Version type (commit, pr, release). Only 'release' publishes to crates.io; others perform a dry run"
+      package:
+        required: true
+        type: string
+        description: "Crate name to publish (e.g. hopr-types)"
+      cachix_cache_name:
+        required: false
+        type: string
+        description: "Cachix cache name to use"
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      timeout_minutes:
+        required: false
+        type: number
+        default: 30
+        description: "Timeout for the job in minutes"
+    secrets:
+      cachix_auth_token:
+        required: true
+      cargo_registry_token:
+        required: false
+        description: "crates.io API token (required when version_type is 'release')"
+
+permissions: {}
+
+jobs:
+  publish:
+    name: ${{ inputs.version_type == 'release' && 'Publish' || 'Dry run' }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: true
+          egress-policy: audit
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: ${{ secrets.cachix_auth_token }}
+      - name: Publish crate
+        shell: bash
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.cargo_registry_token }}
+          PACKAGE: ${{ inputs.package }}
+          VERSION_TYPE: ${{ inputs.version_type }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$VERSION_TYPE" == "release" && -z "${CARGO_REGISTRY_TOKEN:-}" ]]; then
+            echo "::error::secrets.cargo_registry_token is required when version_type='release'"
+            exit 1
+          fi
+
+          if [[ "$VERSION_TYPE" != "release" ]]; then
+            echo "::group::cargo release publish -p $PACKAGE (dry-run)"
+            nix develop -c nix shell nixpkgs#cargo-release -c \
+              cargo release publish --package "$PACKAGE"
+            echo "::endgroup::"
+          else
+            echo "::group::cargo release publish -p $PACKAGE --execute"
+            nix develop -c nix shell nixpkgs#cargo-release -c \
+              cargo release publish --package "$PACKAGE" --execute
+            echo "::endgroup::"
+          fi
