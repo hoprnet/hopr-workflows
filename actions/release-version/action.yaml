@@ -13,6 +13,10 @@ inputs:
         description: Release type to bump (major, minor, patch, rc)
         required: false
         default: patch
+    draft:
+        description: Whether to create a draft release
+        required: false
+        default: 'false'
     cachix_cache_name:
         required: false
         description: "Cachix cache name to use"
@@ -111,6 +115,7 @@ runs:
             name: "v${{ steps.version.outputs.current_version }}"
             body_path: ${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}
             files: ${{ steps.download.outputs.downloaded_files || '' }}
+            draft: ${{ inputs.draft }}
       - name: Bump version
         id: bump
         uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v2

@@ -97,6 +97,7 @@ The release process follows a two-branch model: `main` for active development an
           gcp_service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
           gcp_artifact_package: my-package
           github_token: "${{ secrets.GH_RUNNER_TOKEN }}"
+          draft: 'true'
 ```
 
 ## Requirements
@@ -122,6 +123,7 @@ The release process follows a two-branch model: `main` for active development an
 - `gcp_artifact_package`: Package name from Google Artifact Registry to download binaries from and publish in the release.
 - `release_notes_file`: Path to a file containing release notes. If empty (default), release notes are auto-generated from the git history using the `generate-release-notes` action.
 - `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch.
+- `draft`: Whether to create a draft release
 
 ## Outputs
 
