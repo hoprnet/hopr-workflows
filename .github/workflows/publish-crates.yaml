@@ -89,7 +89,7 @@ jobs:
           if [[ "$VERSION_TYPE" != "release" ]]; then
             echo "::group::cargo release publish -p $PACKAGE (dry-run)"
             nix develop -c nix shell nixpkgs#cargo-release -c \
-              cargo release publish --package "$PACKAGE"
+              cargo release publish --package "$PACKAGE" --all-features
             echo "::endgroup::"
           else
             echo "::group::cargo release publish -p $PACKAGE --execute"
