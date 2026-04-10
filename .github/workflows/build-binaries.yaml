@@ -126,7 +126,7 @@ jobs:
           done
           enable_sign_linux=${{ (contains(inputs.architecture, 'linux') && secrets.gpg_private_key != '') }}
           enable_sign_mac=${{ (contains(inputs.architecture, 'darwin') && secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
-          enable_sign=$enable_sign_linux || $enable_sign_mac
+          enable_sign=$([[ "$enable_sign_linux" == "true" || "$enable_sign_mac" == "true" ]] && echo "true" || echo "false")
           echo "enable_sign=$enable_sign" | tee -a "$GITHUB_OUTPUT"
 
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
