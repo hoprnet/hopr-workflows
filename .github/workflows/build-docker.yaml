@@ -528,7 +528,7 @@ jobs:
           install_sdk: 'true'
           login_gke: 'true'
           gke_project: hopr-staging
-          gke_cluster: cluster-staging
+          gke_cluster_name: cluster-staging
       - name: Deploy in staging
         run: |
           echo "Starting deployment restart"

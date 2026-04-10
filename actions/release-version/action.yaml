@@ -127,10 +127,11 @@ runs:
         shell: bash
         if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
         run: |
+          release_notes_path="${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}"
           {
             echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ steps.version.outputs.current_version }}\` has been released."
             echo ""
-            cat ./release-notes.txt
+            cat "$release_notes_path"
           } > notification_message.txt
 
           # Store content in environment variable for the Zulip action

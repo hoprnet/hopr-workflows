@@ -1,7 +1,7 @@
 # Release Github version
 
 This action performs the following steps:
-- Generating the release notes (unless `release_notes` input is provided)
+- Generating the release notes (unless `release_notes_file` input is provided)
 - Download the release binaries from Google Artifact registry
 - Creates a github release
 - Bumps the base branch to the next `release_type`.

@@ -31,7 +31,7 @@ None
 - `login_artifact_registry`: Determines if the service account needs to login in the Google Artifact registry to be able to publish new artifacts.
 - `login_gke`: Determines if the service account needs to be logged in into the Kubernetes cluster.
 - `gke_project`: Id of the GCP project where the Kubernetes cluster exists.
-- ``gke_cluster_name`: Name of the GKE Cluster.
+- `gke_cluster_name`: Name of the GKE Cluster.
 - `artifact_registry`: Google Artifact Registry host.
 
 ## Outputs
