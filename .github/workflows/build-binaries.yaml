@@ -124,7 +124,9 @@ jobs:
             binary_name=$(basename "$file")
             cp -f "$file" "${{ github.workspace }}/artifacts/${binary_name}-${{ inputs.architecture }}"
           done
-          enable_sign=${{ secrets.gpg_private_key != '' || (secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
+          enable_sign_linux=${{ (contains(inputs.architecture, 'linux') && secrets.gpg_private_key != '') }}
+          enable_sign_mac=${{ (contains(inputs.architecture, 'darwin') && secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
+          enable_sign=$enable_sign_linux || $enable_sign_mac
           echo "enable_sign=$enable_sign" | tee -a "$GITHUB_OUTPUT"
 
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
