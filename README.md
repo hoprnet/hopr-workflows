@@ -20,7 +20,7 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 
 ## Reusable Workflows
 
-This repository provides reusable workflows designed to simplify the build and release process for HOPR projects. These workflows can be called from other repositories to standardize binary compilation, Docker image creation, and multi-architecture support.
+This repository provides reusable workflows designed to simplify the build and release process for HOPR projects. These workflows can be called from other repositories to standardize binary compilation, Docker image creation, multi-architecture support, and crate publishing.
 
 ### [Checks](./.github/workflows/checks.yaml)
 
