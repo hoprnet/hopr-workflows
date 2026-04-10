@@ -70,6 +70,12 @@ on:
         required: false
         type: string
         default: "ubuntu-latest"
+      runner_integration:
+        required: false
+        type: string
+        default: ""
+        description: >-
+          Runner for integration tests and coverage. Falls back to `runner` if empty.
       test_timeout:
         required: false
         type: number
@@ -105,7 +111,7 @@ jobs:
   # ── Tests + Benchmarks (concurrent) ────────────────────────────────────────
   test:
     name: ${{ matrix.name }}
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ inputs.test_timeout }}
     permissions:
       contents: read
@@ -118,12 +124,15 @@ jobs:
           - name: Unit
             enabled: ${{ inputs.unit_tests }}
             command: ${{ inputs.unit_test_command }}
+            runner: ${{ inputs.runner }}
           - name: Integration
             enabled: ${{ inputs.integration_tests }}
             command: ${{ inputs.integration_test_command }}
+            runner: ${{ inputs.runner_integration || inputs.runner }}
           - name: Unit Nightly
             enabled: ${{ inputs.nightly_tests }}
             command: ${{ inputs.nightly_test_command }}
+            runner: ${{ inputs.runner }}
     steps:
       - name: Run ${{ matrix.name }}
         if: matrix.enabled
@@ -152,7 +161,7 @@ jobs:
   coverage:
     name: Coverage / ${{ matrix.name }}
     needs: [test]
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ inputs.coverage_timeout }}
     permissions:
       contents: read
@@ -175,10 +184,12 @@ jobs:
             enabled: ${{ inputs.unit_coverage }}
             command: ${{ inputs.unit_coverage_command }}
             flag: unit
+            runner: ${{ inputs.runner }}
           - name: Integration
             enabled: ${{ inputs.integration_coverage }}
             command: ${{ inputs.integration_coverage_command }}
             flag: integration
+            runner: ${{ inputs.runner_integration || inputs.runner }}
     steps:
       - name: Generate ${{ matrix.name }} report
         if: matrix.enabled
