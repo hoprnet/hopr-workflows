@@ -155,7 +155,7 @@ jobs:
   # ── Benchmark ──────────────────────────────────────────────────────────────
   benchmark:
     name: Benchmark
-    if: inputs.enable_benchmarks
+    if: inputs.enable_benchmarks && github.event_name == 'merge_group'
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.benchmark_timeout }}
     permissions:
@@ -175,7 +175,7 @@ jobs:
     if: >-
       always() &&
       inputs.enable_unit_coverage &&
-      (needs.unit-test.result == 'success' || needs.unit-test.result == 'skipped') &&
+      (needs['unit-test'].result == 'success' || needs['unit-test'].result == 'skipped') &&
       (
         github.event_name == 'push' ||
         github.event_name == 'merge_group' ||
@@ -198,7 +198,7 @@ jobs:
       - name: Upload Unit report
         uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         if: >-
-          github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+          github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         with:
           files: coverage.lcov
           flags: unit
@@ -211,7 +211,7 @@ jobs:
     if: >-
       always() &&
       inputs.enable_integration_coverage &&
-      (needs.integration-test.result == 'success' || needs.integration-test.result == 'skipped') &&
+      (needs['integration-test'].result == 'success' || needs['integration-test'].result == 'skipped') &&
       (
         github.event_name == 'push' ||
         github.event_name == 'merge_group' ||
@@ -234,7 +234,7 @@ jobs:
       - name: Upload Integration report
         uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         if: >-
-          github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+          github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         with:
           files: coverage.lcov
           flags: integration
