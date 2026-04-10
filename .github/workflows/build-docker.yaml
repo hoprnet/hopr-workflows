@@ -156,7 +156,7 @@ jobs:
         run: ${{ matrix.build_debug_command }}
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -249,7 +249,7 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -348,7 +348,7 @@ jobs:
           cosign-release: 'v3.0.5'
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -522,13 +522,13 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           install_sdk: 'true'
           login_gke: 'true'
-          project: hopr-staging
-
+          gke_project: hopr-staging
+          gke_cluster_name: cluster-staging
       - name: Deploy in staging
         run: |
           echo "Starting deployment restart"

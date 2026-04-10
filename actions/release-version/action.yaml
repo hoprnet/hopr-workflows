@@ -13,9 +13,10 @@ inputs:
         description: Release type to bump (major, minor, patch, rc)
         required: false
         default: patch
-    package_name:
+    draft:
+        description: Whether to create a draft release
         required: false
-        description: "Google artifact registry package name"
+        default: 'false'
     cachix_cache_name:
         required: false
         description: "Cachix cache name to use"
@@ -37,6 +38,21 @@ inputs:
     gcp_service_account:
         description: GCP Service Account JSON for Artifact Registry access
         required: false
+    gcp_artifact_region:
+        description: GCP region for Artifact Registry
+        required: false
+        default: europe-west3
+    gcp_artifact_repository:
+        description: GCP Artifact Registry repository name
+        required: false
+        default: rust-binaries
+    gcp_artifact_package:
+        required: false
+        description: "Google artifact registry package name"
+    release_notes_file:
+        description: Path to a file containing release notes. If empty, release notes will be auto-generated.
+        required: false
+        default: ''
     github_token:
         description: GitHub Token from the Bot with permission to make direct commits into the branch
         required: true
@@ -66,7 +82,7 @@ runs:
       - name: Setup GCP
         if: inputs.gcp_service_account != ''
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
         with:
           google_credentials: ${{ inputs.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -77,13 +93,16 @@ runs:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ inputs.cachix_auth_token }}"
       - name: Download binary files
-        if: inputs.package_name != ''
+        if: inputs.gcp_artifact_package != ''
         id: download
-        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
+        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v2
         with:
-          package: ${{ inputs.package_name }}
+          region: ${{ inputs.gcp_artifact_region }}
+          repository: ${{ inputs.gcp_artifact_repository }}
+          package: ${{ inputs.gcp_artifact_package }}
           version: ${{ steps.version.outputs.current_version }}
       - name: Generate Release Notes
+        if: inputs.release_notes_file == ''
         uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
         with:
           source_branch: ${{ inputs.source_branch }}
@@ -94,8 +113,9 @@ runs:
             tag_name: "v${{ steps.version.outputs.current_version }}"
             prerelease: ${{ steps.version.outputs.prerelease }}
             name: "v${{ steps.version.outputs.current_version }}"
-            body_path: ./release-notes.txt
+            body_path: ${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}
             files: ${{ steps.download.outputs.downloaded_files || '' }}
+            draft: ${{ inputs.draft }}
       - name: Bump version
         id: bump
         uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v2
@@ -107,10 +127,11 @@ runs:
         shell: bash
         if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
         run: |
+          release_notes_path="${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}"
           {
             echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ steps.version.outputs.current_version }}\` has been released."
             echo ""
-            cat ./release-notes.txt
+            cat "$release_notes_path"
           } > notification_message.txt
 
           # Store content in environment variable for the Zulip action
