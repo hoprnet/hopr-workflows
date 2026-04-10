@@ -155,7 +155,7 @@ jobs:
   # ── Benchmark ──────────────────────────────────────────────────────────────
   benchmark:
     name: Benchmark
-    if: inputs.enable_benchmarks && github.event_name == 'merge_group'
+    if: inputs.enable_benchmarks
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.benchmark_timeout }}
     permissions:
