@@ -2,11 +2,10 @@
 ################################################################################
 # Reusable test + coverage pipeline
 #
-# Tests and benchmarks run concurrently.
-# Coverage runs after all tests pass, unless `unconditional` is set.
-#
-# When `unit_coverage` or `integration_coverage` is enabled, the
-# `codecov_token` secret must be provided for the upload to succeed.
+# Each job is individually conditional via `enable_*` inputs.
+# Coverage runs after the corresponding test passes, or if the test was
+# disabled (skipped). Coverage is gated to non-draft PRs, push, and
+# merge_group events.
 ################################################################################
 name: Tests
 
@@ -16,28 +15,28 @@ on:
       source_branch:
         required: true
         type: string
-      unit_tests:
+      enable_unit_tests:
         required: false
         type: boolean
         default: true
-      integration_tests:
+      enable_integration_tests:
         required: false
         type: boolean
         default: false
-      nightly_tests:
+      enable_nightly_tests:
         required: false
         type: boolean
         default: false
-      benchmarks:
+      enable_benchmarks:
         required: false
         type: boolean
         default: false
-      unit_coverage:
+      enable_unit_coverage:
         required: false
         type: boolean
         default: false
         description: Enable unit coverage report generation and upload.
-      integration_coverage:
+      enable_integration_coverage:
         required: false
         type: boolean
         default: false
@@ -88,13 +87,6 @@ on:
         required: false
         type: number
         default: 60
-      unconditional:
-        required: false
-        type: boolean
-        default: false
-        description: >-
-          When true, coverage runs regardless of test results.
-          Use unit_coverage and integration_coverage to control which types run.
     secrets:
       cachix_auth_token:
         required: true
@@ -108,103 +100,143 @@ env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  # ── Tests + Benchmarks (concurrent) ────────────────────────────────────────
-  test:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
+  # ── Tests ──────────────────────────────────────────────────────────────────
+  unit-test:
+    name: Unit
+    if: inputs.enable_unit_tests
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.test_timeout }}
     permissions:
       contents: read
     env:
       CI: "true"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Unit
-            enabled: ${{ inputs.unit_tests }}
-            command: ${{ inputs.unit_test_command }}
-            runner: ${{ inputs.runner }}
-          - name: Integration
-            enabled: ${{ inputs.integration_tests }}
-            command: ${{ inputs.integration_test_command }}
-            runner: ${{ inputs.runner_integration || inputs.runner }}
-          - name: Unit Nightly
-            enabled: ${{ inputs.nightly_tests }}
-            command: ${{ inputs.nightly_test_command }}
-            runner: ${{ inputs.runner }}
     steps:
-      - name: Run ${{ matrix.name }}
-        if: matrix.enabled
+      - name: Run Unit
         uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ matrix.command }}
+          command: ${{ inputs.unit_test_command }}
 
-  build-benchmarks:
+  integration-test:
+    name: Integration
+    if: inputs.enable_integration_tests
+    runs-on: ${{ inputs.runner_integration || inputs.runner }}
+    timeout-minutes: ${{ inputs.test_timeout }}
+    permissions:
+      contents: read
+    env:
+      CI: "true"
+    steps:
+      - name: Run Integration
+        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        with:
+          source_branch: ${{ inputs.source_branch }}
+          cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          command: ${{ inputs.integration_test_command }}
+
+  nightly-test:
+    name: Unit Nightly
+    if: inputs.enable_nightly_tests
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.test_timeout }}
+    permissions:
+      contents: read
+    env:
+      CI: "true"
+    steps:
+      - name: Run Unit Nightly
+        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        with:
+          source_branch: ${{ inputs.source_branch }}
+          cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          command: ${{ inputs.nightly_test_command }}
+
+  # ── Benchmark ──────────────────────────────────────────────────────────────
+  benchmark:
     name: Benchmark
+    if: inputs.enable_benchmarks
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.benchmark_timeout }}
     permissions:
       contents: read
-    if: inputs.benchmarks && github.event_name == 'merge_group'
     steps:
-      - name: Build benchmarks
+      - name: Run Benchmark
         uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           command: ${{ inputs.benchmark_command }}
 
-  # ── Coverage (after tests pass, unless unconditional) ──────────────────────
-  coverage:
-    name: Coverage / ${{ matrix.name }}
-    needs: [test]
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: ${{ inputs.coverage_timeout }}
-    permissions:
-      contents: read
+  # ── Coverage ───────────────────────────────────────────────────────────────
+  unit-coverage:
+    name: Coverage / Unit
+    needs: [unit-test]
     if: >-
       always() &&
-      (inputs.unit_coverage || inputs.integration_coverage) &&
-      (inputs.unconditional || needs.test.result == 'success') &&
+      inputs.enable_unit_coverage &&
+      (needs.unit-test.result == 'success' || needs.unit-test.result == 'skipped') &&
       (
         github.event_name == 'push' ||
         github.event_name == 'merge_group' ||
         (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
       )
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.coverage_timeout }}
+    permissions:
+      contents: read
     env:
       CI: "true"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Unit
-            enabled: ${{ inputs.unit_coverage }}
-            command: ${{ inputs.unit_coverage_command }}
-            flag: unit
-            runner: ${{ inputs.runner }}
-          - name: Integration
-            enabled: ${{ inputs.integration_coverage }}
-            command: ${{ inputs.integration_coverage_command }}
-            flag: integration
-            runner: ${{ inputs.runner_integration || inputs.runner }}
     steps:
-      - name: Generate ${{ matrix.name }} report
-        if: matrix.enabled
+      - name: Generate Unit report
         uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ matrix.command }}
+          command: ${{ inputs.unit_coverage_command }}
 
-      - name: Upload ${{ matrix.name }} report
+      - name: Upload Unit report
         uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         if: >-
-          matrix.enabled && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+          github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         with:
           files: coverage.lcov
-          flags: ${{ matrix.flag }}
+          flags: unit
+          fail_ci_if_error: true
+          token: ${{ secrets.codecov_token }}
+
+  integration-coverage:
+    name: Coverage / Integration
+    needs: [integration-test]
+    if: >-
+      always() &&
+      inputs.enable_integration_coverage &&
+      (needs.integration-test.result == 'success' || needs.integration-test.result == 'skipped') &&
+      (
+        github.event_name == 'push' ||
+        github.event_name == 'merge_group' ||
+        (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+      )
+    runs-on: ${{ inputs.runner_integration || inputs.runner }}
+    timeout-minutes: ${{ inputs.coverage_timeout }}
+    permissions:
+      contents: read
+    env:
+      CI: "true"
+    steps:
+      - name: Generate Integration report
+        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        with:
+          source_branch: ${{ inputs.source_branch }}
+          cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          command: ${{ inputs.integration_coverage_command }}
+
+      - name: Upload Integration report
+        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        if: >-
+          github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          files: coverage.lcov
+          flags: integration
           fail_ci_if_error: true
           token: ${{ secrets.codecov_token }}
