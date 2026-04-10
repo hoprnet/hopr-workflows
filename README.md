@@ -61,21 +61,22 @@ jobs:
 
 ### [Tests](./.github/workflows/tests.yaml)
 
-Runs configurable test suites (unit, integration, nightly) and optionally builds benchmarks and generates coverage reports. Tests and benchmarks run concurrently; coverage runs after tests pass. Set `unconditional: true` to run coverage regardless of test results.
+Runs configurable test suites (unit, integration, nightly), benchmarks, and coverage reports as individual conditional jobs. Each coverage job depends only on its corresponding test — it runs when the test passes or when the test is disabled (skipped).
 
 **Usage:**
 ```yaml
 jobs:
   tests:
     name: Test
-    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v1
+    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v4
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
-      unit_tests: true
-      integration_tests: true
-      unit_coverage: true
-      integration_coverage: true
-      runner: self-hosted-hoprnet-bigger
+      enable_unit_tests: true
+      enable_integration_tests: true
+      enable_unit_coverage: true
+      enable_integration_coverage: true
+      runner: depot-ubuntu-24.04-16
+      runner_integration: depot-ubuntu-24.04-8
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
@@ -83,41 +84,42 @@ jobs:
 
 **Inputs:**
 - `source_branch` (Required): Source branch to check out.
-- `unit_tests` (Optional): Enable unit tests (Default: `true`).
-- `integration_tests` (Optional): Enable integration tests (Default: `false`).
-- `nightly_tests` (Optional): Enable nightly tests (Default: `false`).
-- `benchmarks` (Optional): Enable benchmark builds on merge_group (Default: `false`).
-- `unit_coverage` (Optional): Enable unit coverage report (Default: `false`).
-- `integration_coverage` (Optional): Enable integration coverage report (Default: `false`).
+- `enable_unit_tests` (Optional): Enable unit tests (Default: `true`).
+- `enable_integration_tests` (Optional): Enable integration tests (Default: `false`).
+- `enable_nightly_tests` (Optional): Enable nightly tests (Default: `false`).
+- `enable_benchmarks` (Optional): Enable benchmarks (Default: `false`).
+- `enable_unit_coverage` (Optional): Enable unit coverage report (Default: `false`).
+- `enable_integration_coverage` (Optional): Enable integration coverage report (Default: `false`).
 - `unit_test_command` (Optional): Command for unit tests (Default: `nix build -L .#test-unit`).
 - `integration_test_command` (Optional): Command for integration tests (Default: `nix build -L .#test-integration`).
 - `nightly_test_command` (Optional): Command for nightly tests (Default: `nix build -L .#test-nightly`).
 - `benchmark_command` (Optional): Command for benchmarks (Default: `nix build .#bench-build`).
-- `unit_coverage_command` (Optional): Command for unit coverage (Default: `nix build -L .#coverage-unit && cp result coverage.lcov`).
-- `integration_coverage_command` (Optional): Command for integration coverage (Default: `nix build -L .#coverage-integration && cp result coverage.lcov`).
-- `runner` (Optional): Runner for all test jobs (Default: `ubuntu-latest`).
+- `unit_coverage_command` (Optional): Command for unit coverage (Default: `nix run .#coverage-unit`).
+- `integration_coverage_command` (Optional): Command for integration coverage (Default: `nix run .#coverage-integration`).
+- `runner` (Optional): Runner for unit tests, nightly tests, benchmarks, and unit coverage (Default: `ubuntu-latest`).
+- `runner_integration` (Optional): Runner for integration tests and integration coverage. Falls back to `runner` if empty (Default: `""`).
 - `test_timeout` (Optional): Timeout in minutes for test jobs (Default: `60`).
 - `benchmark_timeout` (Optional): Timeout in minutes for benchmark job (Default: `20`).
 - `coverage_timeout` (Optional): Timeout in minutes for coverage jobs (Default: `60`).
-- `unconditional` (Optional): When `true`, coverage runs regardless of test results. Use `unit_coverage` and `integration_coverage` to control which types run (Default: `false`).
 
 **Secrets:**
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
-- `codecov_token` (Optional): Codecov token. Required when `unit_coverage` or `integration_coverage` is enabled.
+- `codecov_token` (Optional): Codecov token. Required when `enable_unit_coverage` or `enable_integration_coverage` is enabled.
 
 **Coverage-only usage (e.g. post-merge pipeline):**
 ```yaml
 jobs:
   coverage:
     name: Coverage
-    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v1
+    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v4
     with:
       source_branch: ${{ github.ref_name }}
-      unit_tests: false
-      integration_tests: false
-      unconditional: true
-      unit_coverage: true
-      runner: self-hosted-hoprnet-bigger
+      enable_unit_tests: false
+      enable_integration_tests: false
+      enable_unit_coverage: true
+      enable_integration_coverage: true
+      runner: depot-ubuntu-24.04-16
+      runner_integration: depot-ubuntu-24.04-8
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
