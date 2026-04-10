@@ -75,7 +75,7 @@ jobs:
       enable_integration_tests: true
       enable_unit_coverage: true
       enable_integration_coverage: true
-      runner: depot-ubuntu-24.04-16
+      runner_unit: depot-ubuntu-24.04-16
       runner_integration: depot-ubuntu-24.04-8
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -96,8 +96,8 @@ jobs:
 - `benchmark_command` (Optional): Command for benchmarks (Default: `nix build .#bench-build`).
 - `unit_coverage_command` (Optional): Command for unit coverage (Default: `nix run .#coverage-unit`).
 - `integration_coverage_command` (Optional): Command for integration coverage (Default: `nix run .#coverage-integration`).
-- `runner` (Optional): Runner for unit tests, nightly tests, benchmarks, and unit coverage (Default: `ubuntu-latest`).
-- `runner_integration` (Optional): Runner for integration tests and integration coverage. Falls back to `runner` if empty (Default: `""`).
+- `runner_unit` (Optional): Runner for unit tests, nightly tests, benchmarks, and unit coverage (Default: `ubuntu-latest`).
+- `runner_integration` (Optional): Runner for integration tests and integration coverage. Falls back to `runner_unit` if empty (Default: `""`).
 - `test_timeout` (Optional): Timeout in minutes for test jobs (Default: `60`).
 - `benchmark_timeout` (Optional): Timeout in minutes for benchmark job (Default: `20`).
 - `coverage_timeout` (Optional): Timeout in minutes for coverage jobs (Default: `60`).
@@ -118,7 +118,7 @@ jobs:
       enable_integration_tests: false
       enable_unit_coverage: true
       enable_integration_coverage: true
-      runner: depot-ubuntu-24.04-16
+      runner_unit: depot-ubuntu-24.04-16
       runner_integration: depot-ubuntu-24.04-8
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
