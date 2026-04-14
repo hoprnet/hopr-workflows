@@ -100,7 +100,7 @@ runs:
               echo "Regenerating Cargo.lock file"
               nix develop --command bash -c "cargo metadata --no-deps --format-version 1 --manifest-path ${{ inputs.file }} \
                 | jq -r '.packages[] | select(.source == null) | .name' \
-                | xargs -I{} cargo update -p {}"
+                | xargs -I{} cargo update --manifest-path ${{ inputs.file }} -p {}"
             fi
           elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
             jq --arg bump_version "${bump_version}" '.version = $bump_version' ${{ inputs.file }} > "${{ inputs.file }}.tmp"
