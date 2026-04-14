@@ -136,6 +136,7 @@ jobs:
           path: ${{ github.workspace }}/artifacts
       - name: Build debug binary - ${{ inputs.architecture }}
         if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
+        shell: bash
         run: |
           ${{ inputs.build_debug_command }}
           mkdir -p ./artifacts-debug
