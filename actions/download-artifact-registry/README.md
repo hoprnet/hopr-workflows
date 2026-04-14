@@ -6,10 +6,9 @@ This action download files from Google Artifact registry, avoiding to interact d
 
 ```bash
       - name: Download files
-        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v1
+        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v2
         with:
           destination: ./artifacts
-          project: hoprassociation
           region: europe-west3
           repository: rust-binaries
           package: hoprd
@@ -23,7 +22,6 @@ This action download files from Google Artifact registry, avoiding to interact d
 ## Inputs
 
 - `destination`: The filepath where the artifacts will be downloaded. If the directory does no exist it will be created.
-- `project`: The GCP project. Default value: `hoprassociation`.
 - `region`: The GCP region. Default value: `europe-west3`.
 - `repository`: The Google Artifact repository name. Default value: `rust-binaries`.
 - `package`: The name of the package stored in Google Artifact Registry.

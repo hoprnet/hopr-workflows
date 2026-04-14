@@ -26,36 +26,50 @@ sign() {
 }
 
 checks() {
-    local input_file="${1:-}"
+    local input_path="${1:-}"
 
     if [[ -z "${GPG_PRIVATE_KEY:-}" ]]; then
         echo "Error: GPG_PRIVATE_KEY environment variable is not set."
         exit 1
     fi
 
-    if [[ -z "${input_file}" ]]; then
-        echo "Usage: $0 <file-to-sign>"
+    if [[ -z "${input_path}" ]]; then
+        echo "Usage: $0 <file-or-directory-to-sign>"
         exit 1
     fi
 
-    if [[ ! -f "${input_file}" ]]; then
-        echo "Error: File '${input_file}' does not exist."
-        exit 1
-    fi
-
-    if ! command -v gpg >/dev/null 2>&1; then
-        echo "Error: gpg is not installed. Please install gpg to use this script."
+    if [[ ! -f "${input_path}" && ! -d "${input_path}" ]]; then
+        echo "Error: '${input_path}' does not exist or is not a file/directory."
         exit 1
     fi
 
 }
 
+packages() {
+    if ! command -v gpg &> /dev/null; then
+        echo "gpg could not be found, installing..."
+        sudo apt-get update
+        sudo apt-get install -y gpg
+    else
+        echo "gpg is already installed"
+    fi
+}
+
+
 # Main function
 main() {
-    local input_file="${1:-}"
+    local input_path="${1:-}"
 
     checks "$@"
-    sign "$input_file"
+    packages
+
+    if [[ -d "${input_path}" ]]; then
+        for file in "${input_path}"/*; do
+            sign "$file"
+        done
+    else
+        sign "$input_path"
+    fi
 }
 
 # Run main function with all arguments

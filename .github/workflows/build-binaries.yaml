@@ -28,10 +28,24 @@ on:
         required: true
         type: string
         description: "Command to build the binary"
+      build_debug_command:
+        required: false
+        type: string
+        description: "Command to build the binary with debug symbols"
       binary:
         required: true
         type: string
         description: "Binary name to build"
+      gcp_region:
+        description: GCP region for Artifact Registry
+        type: string
+        required: false
+        default: europe-west3
+      gcp_repository:
+        description: GCP Artifact Registry repository name
+        type: string
+        required: false
+        default: rust-binaries
       timeout_minutes:
         required: false
         type: number
@@ -47,11 +61,19 @@ on:
         description: "Whether to run this job"
     secrets:
       gcp_service_account:
-        required: true
+        required: false
+      gcp_workload_identity_provider:
+        required: false
+      gcp_workload_identity_service_account:
+        required: false
       cachix_auth_token:
         required: true
       gpg_private_key:
-        required: true
+        required: false
+      apple_certificate:
+        required: false
+      apple_certificate_password:
+        required: false
 concurrency:
   group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-binary
   cancel-in-progress: true
@@ -66,9 +88,9 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     outputs:
-      publish_artifact: ${{ steps.version.outputs.publish_artifact_registry || steps.version.outputs.publish_github_release }}
+      publish_artifact_registry: ${{ steps.version.outputs.publish_artifact_registry }}
       build_version: ${{ steps.version.outputs.build_version }}
-  
+      enable_sign: ${{ steps.build.outputs.enable_sign }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
@@ -94,20 +116,45 @@ jobs:
           architecture: "${{ inputs.architecture }}"
       - name: Build binary ${{ inputs.architecture }}
         shell: bash
+        id: build
         run: |
           ${{ inputs.build_command }}
           mkdir -p ./artifacts
-          cp ./result/bin/${{ inputs.binary }} ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
+          for file in ./result/bin/*; do
+            binary_name=$(basename "$file")
+            cp -f "$file" "${{ github.workspace }}/artifacts/${binary_name}-${{ inputs.architecture }}"
+          done
+          enable_sign_linux=${{ (contains(inputs.architecture, 'linux') && secrets.gpg_private_key != '') }}
+          enable_sign_mac=${{ (contains(inputs.architecture, 'darwin') && secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
+          enable_sign=$([[ "$enable_sign_linux" == "true" || "$enable_sign_mac" == "true" ]] && echo "true" || echo "false")
+          echo "enable_sign=$enable_sign" | tee -a "$GITHUB_OUTPUT"
+
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
-          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
-
+          path: ${{ github.workspace }}/artifacts
+      - name: Build debug binary - ${{ inputs.architecture }}
+        if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
+        shell: bash
+        run: |
+          ${{ inputs.build_debug_command }}
+          mkdir -p ./artifacts-debug
+          for file in ./result/bin/*; do
+            binary_name=$(basename "$file")
+            cp -f "$file" "${{ github.workspace }}/artifacts-debug/${binary_name}-${{ inputs.architecture }}"
+          done
+      - name: Upload debug binary ${{ inputs.binary }}-${{ inputs.architecture }}-debug
+        if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: ${{ inputs.binary }}-${{ inputs.architecture }}-debug
+          path: ${{ github.workspace }}/artifacts-debug
   sign:
     name:  Sign and Publish
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
+    if: needs.build.outputs.enable_sign == 'true'
     steps:
       - name: Download binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
@@ -115,31 +162,45 @@ jobs:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts
       - name: Sign binary ${{ inputs.binary }}-${{ inputs.architecture }}
-        uses: hoprnet/hopr-workflows/actions/sign-file@sign-file-v1
+        uses: hoprnet/hopr-workflows/actions/sign-file@sign-file-v2
         with:
-          file: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
+          path: ${{ github.workspace }}/artifacts/
+          architecture: ${{ inputs.architecture }}
           gpg_private_key: ${{ secrets.gpg_private_key }}
+          apple_certificate: ${{ secrets.apple_certificate }}
+          apple_certificate_password: ${{ secrets.apple_certificate_password }}
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} signed binary
+        if: contains(inputs.architecture, 'darwin')
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: ${{ inputs.binary }}-${{ inputs.architecture }}
+          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture }}
+          overwrite: true
+      - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} binary signature
+        if: contains(inputs.architecture, 'linux')
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.asc
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.asc
-      - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} sha256 binary
+      - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} binary checksum
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.sha256
           path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.sha256
       - name: Setup GCP
-        if: needs.build.outputs.publish_artifact == 'true'
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v2
+        if: needs.build.outputs.publish_artifact_registry == 'true'
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
+          workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
+          service_account: ${{ secrets.gcp_workload_identity_service_account }}
           install_sdk: "true"
-
       - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
-        if: needs.build.outputs.publish_artifact == 'true'
-        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v1
+        if: needs.build.outputs.publish_artifact_registry == 'true'
+        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v2
         with:
           source: ${{ github.workspace }}/artifacts
+          region: ${{ inputs.gcp_region }}
+          repository: ${{ inputs.gcp_repository }}
           package: ${{ inputs.binary }}
           version: ${{ needs.build.outputs.build_version }}

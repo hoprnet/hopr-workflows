@@ -22,11 +22,15 @@ inputs:
         description: Authenticate to GKE
         required: false
         default: 'false'
-    project:
+    gke_project:
         description: GCP Project name
         required: false
-        default: hoprassociation
-    registry:
+        default: hopr-staging
+    gke_cluster_name:
+        description: GKE Cluster name
+        required: false
+        default: cluster-staging
+    artifact_registry:
         description: Artifact Registry URL
         required: false
         default: europe-west3-docker.pkg.dev
@@ -44,7 +48,6 @@ runs:
           with:
               token_format: access_token
               credentials_json: ${{ inputs.google_credentials }}
-
         - name: Authenticate in Google Cloud using Workload Identity
           id: auth_workload_identity
           if: inputs.workload_identity_provider != '' && inputs.service_account != ''
@@ -69,26 +72,18 @@ runs:
           if: inputs.install_sdk == 'true'
           uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
           with:
-              project_id: ${{ inputs.project }}
               install_components: beta
-        - name: Set up Kubernetes cluster variables
-          id: variables
-          if: inputs.login_gke == 'true'
-          shell: bash
-          run: |
-            CLUSTER_NAME=$(echo "cluster-${{ inputs.project }}" | sed 's/hopr-//g')
-            echo "cluster_name=$CLUSTER_NAME" | tee -a "$GITHUB_OUTPUT"
         - name: Connect to GKE
           uses: google-github-actions/get-gke-credentials@3da1e46a907576cefaa90c484278bb5b259dd395 # v3.0.0
           if: inputs.login_gke == 'true'
           with:
-            cluster_name: ${{ steps.variables.outputs.cluster_name }}
+            cluster_name: ${{ inputs.gke_cluster_name }}
             location: europe-west3
-            project_id: ${{ inputs.project }}
+            project_id: ${{ inputs.gke_project }}
         - name: Login Google Container Registry
           if: inputs.login_artifact_registry == 'true'
           uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
           with:
-            registry: ${{ inputs.registry }}
+            registry: ${{ inputs.artifact_registry }}
             username: oauth2accesstoken
             password: ${{ steps.auth.outputs.access_token }}
