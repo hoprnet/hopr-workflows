@@ -209,7 +209,7 @@ Constructs a platform-specific Docker image for the project and its multi-archit
 jobs:
   build-docker:
     name: Docker
-    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v1
+    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v2
     needs: build-binaries
     permissions:
       contents: read
