@@ -244,7 +244,7 @@ jobs:
           echo "GIT_CONFIG_GLOBAL=" >> "${GITHUB_ENV}"
   manifest:
     name: Multi-Arch
-    runs-on: self-hosted-hoprnet-small
+    runs-on: depot-ubuntu-22.04-4
     needs: build
     steps:
       - name: Setup GCP
