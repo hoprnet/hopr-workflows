@@ -249,7 +249,7 @@ jobs:
 **Inputs:**
 - `source_branch` (Required): Source branch to build the docker image from.
 - `version_type` (Required): The strategy for versioning (e.g., `commit`, `pr`, `release`).
-- `build_matrix`: It's a JSON array containing an object with the parameters for each matrix parallel execution.
+- `build_matrix`: It's a JSON array containing an object with the parameters for each matrix parallel execution. Each matrix entry must include its `runner`; this controls the `build` and `smoke-test` jobs
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
 - `docker_image_name` (Required): The name of the image.
@@ -258,11 +258,10 @@ jobs:
 - `docker_gcp_registry` (Optional): Docker registry to push the image to (Default: `europe-west3-docker.pkg.dev/hoprassociation/docker-images`).
 - `docker_hub_registry` (Optional): Docker registry to push the image to (Default: `docker.io/hoprnet`).
 - `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
-- `runner` (Optional): Runner to use for the job (Default: `self-hosted-hoprnet-bigger`).
 - `deployment_namespace` (Optional): Kubernetes namespace for the deployment to restart in staging.
 - `deployment_label_selector` (Optional): Kubernetes label selector for the deployment to restart in staging.
 - `fail_on_scan_vulnerabilities`: Whether to fail the build if vulnerabilities are found during the scan (Default: `true`)
-- `job_runner`: Runner to use for the build job
+- `job_runner` (Optional): Runner to use for non-matrix jobs (`manifest`, `scan`, `deploy`) (Default: `depot-ubuntu-22.04-4`)
 
 **Secrets:**
 - `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
