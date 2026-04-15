@@ -254,6 +254,7 @@ jobs:
 - `build_file` (Optional): File to extract version from (Default: `Cargo.toml`).
 - `docker_image_name` (Required): The name of the image.
 - `docker_image_format`: (Optional): Type of format generated for the docker image: `docker` or `skopeo` (Default: `docker`).
+- `docker_bucket_sboms`: GCS bucket to upload SBOM files to for Google Artifact vulnerability analysis
 - `docker_gcp_registry` (Optional): Docker registry to push the image to (Default: `europe-west3-docker.pkg.dev/hoprassociation/docker-images`).
 - `docker_hub_registry` (Optional): Docker registry to push the image to (Default: `docker.io/hoprnet`).
 - `timeout_minutes` (Optional): Timeout for the job in minutes (Default: `60`).
@@ -261,6 +262,7 @@ jobs:
 - `deployment_namespace` (Optional): Kubernetes namespace for the deployment to restart in staging.
 - `deployment_label_selector` (Optional): Kubernetes label selector for the deployment to restart in staging.
 - `fail_on_scan_vulnerabilities`: Whether to fail the build if vulnerabilities are found during the scan (Default: `true`)
+- `job_runner`: Runner to use for the build job
 
 **Secrets:**
 - `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.

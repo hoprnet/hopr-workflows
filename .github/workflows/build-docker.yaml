@@ -52,6 +52,11 @@ on:
         type: string
         default: "docker"
         description: "Format to use when pushing docker images: 'docker' or 'skopeo'"
+      docker_bucket_sboms:
+        required: false
+        type: string
+        default: "docker-images-sboms"
+        description: "GCS bucket to upload SBOM files to for Google Artifact vulnerability analysis"
       timeout_minutes:
         required: false
         type: number
@@ -462,7 +467,7 @@ jobs:
           gcloud artifacts sbom load \
             --source sbom.json \
             --uri "${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}" \
-            --destination gs://docker-images-sboms
+            --destination gs://${{ inputs.docker_bucket_sboms }}
       - name: Log in to DockerHub
         if: needs.build.outputs.publish_docker_hub == 'true'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
