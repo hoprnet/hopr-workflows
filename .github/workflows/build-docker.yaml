@@ -75,6 +75,11 @@ on:
         type: string
         default: ""
         description: "Additional string to group concurrency by. The final concurrency group will be in the format: {repository}-{source_branch}-{workflow}-docker-{concurrency_group}"
+      job_runner:
+        required: false
+        type: string
+        description: "Runner to use for the build job"
+        default: depot-ubuntu-22.04-4
     secrets:
       gcp_service_account:
         required: true
@@ -244,7 +249,7 @@ jobs:
           echo "GIT_CONFIG_GLOBAL=" >> "${GITHUB_ENV}"
   manifest:
     name: Multi-Arch
-    runs-on: depot-ubuntu-22.04-4
+    runs-on: ${{ inputs.job_runner }}
     needs: build
     steps:
       - name: Setup GCP
@@ -326,7 +331,7 @@ jobs:
   scan:
     name: Scan (${{ matrix.architecture }})
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runner }}
     strategy:
       matrix:
         include: ${{ fromJSON(inputs.build_matrix) }}
@@ -518,7 +523,7 @@ jobs:
     name: Deploy
     needs: [ build, manifest, scan ]
     if: (needs.build.outputs.deploy_staging == 'true' || (vars.DEPLOY_STAGING_MERGED_PR == 'true' && inputs.version_type == 'pr')) && (inputs.deployment_namespace != '' && inputs.deployment_label_selector != '')
-    runs-on: self-hosted-hoprnet-small
+    runs-on: ${{ inputs.job_runner }}
     steps:
       - name: Setup GCP
         id: gcp
