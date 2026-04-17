@@ -73,6 +73,7 @@ runs:
           fetch-depth: 0
           fetch-tags: true
           token: ${{ inputs.github_token }}
+          clean: ${{ inputs.release_notes_file == '' }}
       - name: Get version info
         id: version
         uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
