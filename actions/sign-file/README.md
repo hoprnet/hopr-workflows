@@ -23,6 +23,7 @@ None
 - `path`: The filepath to sign
 - `architecture`: Architecture of the file to sign (e.g. x86_64-linux, aarch64-linux, x86_64-darwin, etc.)
 - `gpg_private_key`: GPG private key for signing
+- `gpg_private_key_password`: GPG private key password
 - `apple_certificate`: Apple developer certificate p12 for signing in base64
 - `apple_certificate_password`: Apple developer certificate password
 
