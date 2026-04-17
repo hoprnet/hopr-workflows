@@ -12,12 +12,18 @@ sign() {
     # Create isolated GPG keyring
     gnupghome="$(mktemp -d)"
     export GNUPGHOME="$gnupghome"
-    echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+    local gpg_passphrase_opts=()
+    if [[ -n "${GPG_PRIVATE_KEY_PASSWORD:-}" ]]; then
+        gpg_passphrase_opts=(--pinentry-mode loopback --passphrase "$GPG_PRIVATE_KEY_PASSWORD")
+    fi
+
+    echo "$GPG_PRIVATE_KEY" | gpg --batch "${gpg_passphrase_opts[@]}" --import
 
     # Generate hash and signature
     sha256sum "$input_file" > "$input_file.sha256"
     echo "Hash written to $input_file.sha256"
-    gpg --armor --output "$input_file.asc" --detach-sign "$input_file"
+    gpg --batch --armor --output "$input_file.asc" --detach-sign "${gpg_passphrase_opts[@]}" "$input_file"
     echo "Signature written to $input_file.asc"
 
     # Clean up

@@ -10,6 +10,9 @@ inputs:
     gpg_private_key:
         description: GPG private key for signing
         required: false
+    gpg_private_key_password:
+        description: GPG private key password
+        required: false
     apple_certificate:
         description: Apple developer certificate p12 for signing in base64
         required: false
@@ -25,6 +28,7 @@ runs:
         run: ${{ github.action_path }}/sign-linux-file.sh "${{ inputs.path }}"
         env:
           GPG_PRIVATE_KEY: ${{ inputs.gpg_private_key }}
+          GPG_PRIVATE_KEY_PASSWORD: ${{ inputs.gpg_private_key_password }}
         working-directory: ${{ github.workspace }}
       - name: Sign darwin file
         if: contains(inputs.architecture, 'darwin')

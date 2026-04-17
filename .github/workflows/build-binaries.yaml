@@ -70,6 +70,8 @@ on:
         required: true
       gpg_private_key:
         required: false
+      gpg_private_key_password:
+        required: false
       apple_certificate:
         required: false
       apple_certificate_password:
@@ -167,6 +169,7 @@ jobs:
           path: ${{ github.workspace }}/artifacts/
           architecture: ${{ inputs.architecture }}
           gpg_private_key: ${{ secrets.gpg_private_key }}
+          gpg_private_key_password: ${{ secrets.gpg_private_key_password }}
           apple_certificate: ${{ secrets.apple_certificate }}
           apple_certificate_password: ${{ secrets.apple_certificate_password }}
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} signed binary

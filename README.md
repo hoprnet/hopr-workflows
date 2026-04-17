@@ -193,8 +193,13 @@ jobs:
 
 **Secrets:**
 - `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
+- `gcp_workload_identity_provider`: The workload identity provider to authenticate on GCP.
+- `gcp_workload_identity_service_account`: The service account for the workload identity provider on GCP.
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 - `gpg_private_key` (Required): GPG Key to sign the artifacts.
+- `gpg_private_key_password`: GPG private key password.
+- `apple_certificate`: Apple developer certificate p12 for signing in base64.
+- `apple_certificate_password`: Apple developer certificate password.
 
 **Outputs:**
 
