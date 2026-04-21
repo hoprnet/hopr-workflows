@@ -21,9 +21,7 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = flake-utils.lib.defaultSystems;
 
-      imports = [
-        nix-lib.flakeModules.default
-      ];
+      imports = [ nix-lib.flakeModules.default ];
 
       perSystem =
         { system, ... }:
