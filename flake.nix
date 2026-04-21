@@ -6,6 +6,9 @@
     flake-utils.url = "github:numtide/flake-utils";
     flake-parts.url = "github:hercules-ci/flake-parts";
     nix-lib.url = "github:hoprnet/nix-lib";
+    nix-lib.inputs.nixpkgs.follows = "nixpkgs";
+    nix-lib.inputs.flake-parts.follows = "flake-parts";
+    nix-lib.inputs.flake-utils.follows = "flake-utils";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
   };
 
