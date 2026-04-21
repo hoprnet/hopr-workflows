@@ -1,6 +1,7 @@
 name: Nix Action
 description: >
-  Composite action that handles the common CI boilerplate: harden runner, checkout, Nix/Cachix setup (via setup-nix), and command execution.
+  Composite action that handles the common CI boilerplate: harden runner,
+  checkout, Nix/Cachix setup (via setup-nix), and command execution.
 
 inputs:
   command:
@@ -26,6 +27,7 @@ inputs:
     description: Whether to persist git credentials after checkout
     required: false
     default: "false"
+
 runs:
   using: composite
   steps:
@@ -34,16 +36,19 @@ runs:
       with:
         disable-sudo: ${{ inputs.disable_sudo }}
         egress-policy: audit
+
     - name: Checkout repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: ${{ inputs.persist_credentials }}
         ref: ${{ inputs.source_branch }}
+
     - name: Setup Nix
       uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
         cachix_auth_token: ${{ inputs.cachix_auth_token }}
+
     - name: Run command
       shell: bash
       run: ${{ inputs.command }}

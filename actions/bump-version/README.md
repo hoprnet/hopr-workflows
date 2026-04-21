@@ -4,7 +4,6 @@ This action modifies the `Cargo.toml` file to bump the `version` attribute based
 It also commits the change on the `${{ github.ref_name}}` branch. If the branch is protected, then it's recommended to add a bypass rule for the `bot` user.
 
 ## Usage
-
 ```bash
       - name: Bump version
         id: bump_version

@@ -54,12 +54,7 @@ def list_files(client, parent, filter_str=None):
 
 async def delete_old_files_list(client, files, dry_run):
     """Deletes a list of artifact files asynchronously."""
-    await asyncio.gather(
-        *[
-            asyncio.wait_for(delete_old_file(client, file, dry_run), timeout=60)
-            for file in files
-        ]
-    )
+    await asyncio.gather(*[asyncio.wait_for(delete_old_file(client, file, dry_run), timeout=60) for file in files])
 
 
 async def delete_old_file(client, file, dry_run):
@@ -70,14 +65,10 @@ async def delete_old_file(client, file, dry_run):
     file_name = full_file_name.split(":")[2]
 
     if dry_run:
-        print(
-            f"Dry-run mode: Would delete artifact package: '{package}' version: '{version}' file_name: '{file_name}'"
-        )
+        print(f"Dry-run mode: Would delete artifact package: '{package}' version: '{version}' file_name: '{file_name}'")
         return
     try:
-        print(
-            f"Delete artifact package: '{package}' version: '{version}' file_name: '{file_name}'"
-        )
+        print(f"Delete artifact package: '{package}' version: '{version}' file_name: '{file_name}'")
         request = artifactregistry_v1.DeleteFileRequest(name=file.name)
         client.delete_file(request=request)
     except Exception as e:
@@ -88,25 +79,10 @@ async def delete_old_file(client, file, dry_run):
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Cleanup old artifacts.")
 parser.add_argument("-p", "--project", help="GCP project ID")
-parser.add_argument(
-    "-l", "--location", default="europe-west3", help="Region of the Artifact Registry"
-)
-parser.add_argument(
-    "-r", "--repository", default="rust-binaries", help="Artifact repository name"
-)
-parser.add_argument(
-    "-n",
-    "--dry-run",
-    action="store_true",
-    help="Simulate the deletion without making any changes",
-)
-parser.add_argument(
-    "-d",
-    "--days",
-    type=int,
-    default=60,
-    help="Number of days to consider an file old (default: 60)",
-)
+parser.add_argument("-l", "--location", default="europe-west3", help="Region of the Artifact Registry")
+parser.add_argument("-r", "--repository", default="rust-binaries", help="Artifact repository name")
+parser.add_argument("-n", "--dry-run", action="store_true", help="Simulate the deletion without making any changes")
+parser.add_argument("-d", "--days", type=int, default=60, help="Number of days to consider an file old (default: 60)")
 args = parser.parse_args()
 
 # Extract and validate command-line arguments
@@ -117,7 +93,6 @@ dry_run = args.dry_run
 days = args.days
 date = datetime.now(UTC) - timedelta(days=days)
 packages = ["bloklid", "hopli"]
-
 
 async def main():
     """Main function to clean up old Artifact Registry artifacts."""

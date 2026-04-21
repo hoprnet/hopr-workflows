@@ -18,11 +18,12 @@ It identifies the date when the last tag was created in the given branch, and th
 
 - Non nix environment. Ubuntu/Debian runner.
 
+
 ## Inputs
 
 - `source_branch`: The base branch of the PRs merged.
 - `format`: The format of the release notes. Accepted values are: `github` and `json`.
-- `release_notes_file`: Filepath of the generated release notes.
+- `release_notes_file`:  Filepath of the generated release notes.
 
 ## Outputs
 

@@ -1,87 +1,87 @@
 name: Upload Artifact Registry
 description: Upload Artifact Registry artifacts
 inputs:
-  source:
-    description: Source folder to upload the artifact from
-    required: false
-    default: ./artifacts
-  region:
-    description: GCP region
-    required: false
-    default: europe-west3
-  repository:
-    description: Artifact Registry repository name
-    required: false
-    default: rust-binaries
-  package:
-    description: Artifact Registry package name
-    required: true
-  version:
-    description: Artifact version to upload
-    required: true
+    source:
+        description: Source folder to upload the artifact from
+        required: false
+        default: ./artifacts
+    region:
+        description: GCP region
+        required: false
+        default: europe-west3
+    repository:
+        description: Artifact Registry repository name
+        required: false
+        default: rust-binaries
+    package:
+        description: Artifact Registry package name
+        required: true
+    version:
+        description: Artifact version to upload
+        required: true
 outputs:
-  uploaded_files:
-    description: Comma-separated list of uploaded files
-    value: ${{ steps.artifacts.outputs.uploaded_files }}
+    uploaded_files:
+        description: Comma-separated list of uploaded files
+        value: ${{ steps.artifacts.outputs.uploaded_files }}
 runs:
-  using: composite
-  steps:
-    - name: Upload artifacts
-      shell: bash
-      id: artifacts
-      run: |
-        # Set gcloud config defaults to avoid repeating flags
-        gcloud config set artifacts/location "${{ inputs.region }}"
-        gcloud config set artifacts/repository "${{ inputs.repository }}"
-
-        # Validate source exists
-        source_path="${{ inputs.source }}"
-        if [ ! -e "$source_path" ]; then
-          echo "Error: Source path does not exist: $source_path"
-          exit 1
-        fi
-
-        # Handle both files and directories
-        if [ -f "$source_path" ]; then
-          files=("$(basename "$source_path")")
-          source_dir="$(dirname "$source_path")"
-        else
-          files=()
-          while IFS= read -r -d '' file; do
-            files+=("$(basename "$file")")
-          done < <(find "$source_path" -maxdepth 1 -type f -print0)
-          source_dir="$source_path"
-        fi
-
-        if [ ${#files[@]} -eq 0 ]; then
-          echo "Error: No files found to upload"
-          exit 1
-        fi
-
-        # List existing files in the registry once
-        existing_files=$(gcloud artifacts files list \
-          --package="${{ inputs.package }}" \
-          --version="${{ inputs.version }}" \
-          --format="value(name)" 2>/dev/null || true)
-
-        for artifact in "${files[@]}"; do
-          # Check if the file already exists in the cached list
-          existing_name=$(echo "$existing_files" | grep "${artifact}$" || true)
-          if [ -n "$existing_name" ]; then
-            echo "File ${artifact} already exists, deleting before re-upload..."
-            gcloud artifacts files delete \
-              "${existing_name}" --quiet || {
-                echo "Warning: Failed to delete existing ${artifact}, attempting upload anyway"
-              }
+    using: composite
+    steps:
+      - name: Upload artifacts
+        shell: bash
+        id: artifacts
+        run: |
+          # Set gcloud config defaults to avoid repeating flags
+          gcloud config set artifacts/location "${{ inputs.region }}"
+          gcloud config set artifacts/repository "${{ inputs.repository }}"
+          
+          # Validate source exists
+          source_path="${{ inputs.source }}"
+          if [ ! -e "$source_path" ]; then
+            echo "Error: Source path does not exist: $source_path"
+            exit 1
           fi
-          gcloud artifacts generic upload \
+          
+          # Handle both files and directories
+          if [ -f "$source_path" ]; then
+            files=("$(basename "$source_path")")
+            source_dir="$(dirname "$source_path")"
+          else
+            files=()
+            while IFS= read -r -d '' file; do
+              files+=("$(basename "$file")")
+            done < <(find "$source_path" -maxdepth 1 -type f -print0)
+            source_dir="$source_path"
+          fi
+          
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "Error: No files found to upload"
+            exit 1
+          fi
+
+          # List existing files in the registry once
+          existing_files=$(gcloud artifacts files list \
             --package="${{ inputs.package }}" \
             --version="${{ inputs.version }}" \
-            --source="${source_dir}/${artifact}" || {
-              echo "Error: Failed to upload ${artifact}"
-              exit 1
-            }
-        done
-        # Create a comma-separated list of uploaded files
-        IFS=','; uploaded_files="${files[*]}"; unset IFS
-        echo "uploaded_files=$uploaded_files" | tee -a $GITHUB_OUTPUT
+            --format="value(name)" 2>/dev/null || true)
+
+          for artifact in "${files[@]}"; do
+            # Check if the file already exists in the cached list
+            existing_name=$(echo "$existing_files" | grep "${artifact}$" || true)
+            if [ -n "$existing_name" ]; then
+              echo "File ${artifact} already exists, deleting before re-upload..."
+              gcloud artifacts files delete \
+                "${existing_name}" --quiet || {
+                  echo "Warning: Failed to delete existing ${artifact}, attempting upload anyway"
+                }
+            fi
+            gcloud artifacts generic upload \
+              --package="${{ inputs.package }}" \
+              --version="${{ inputs.version }}" \
+              --source="${source_dir}/${artifact}" || {
+                echo "Error: Failed to upload ${artifact}"
+                exit 1
+              }
+          done
+          # Create a comma-separated list of uploaded files
+          IFS=','; uploaded_files="${files[*]}"; unset IFS
+          echo "uploaded_files=$uploaded_files" | tee -a $GITHUB_OUTPUT

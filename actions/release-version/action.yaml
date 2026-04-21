@@ -1,154 +1,154 @@
 name: Release Version
 description: Release Version
 inputs:
-  source_branch:
-    description: Source branch for release notes
-    required: false
-    default: main
-  file:
-    description: File to update version in
-    required: true
-    default: Cargo.toml
-  release_type:
-    description: Release type to bump (major, minor, patch, rc)
-    required: false
-    default: patch
-  draft:
-    description: Whether to create a draft release
-    required: false
-    default: 'false'
-  cachix_cache_name:
-    required: false
-    description: "Cachix cache name to use"
-  cachix_auth_token:
-    required: true
-    description: "Cachix authentication token"
-  zulip_api_key:
-    description: Zulip API Key for notifications
-    required: false
-  zulip_email:
-    description: Zulip email for notifications
-    required: false
-  zulip_channel:
-    description: Zulip channel for notifications
-    required: false
-  zulip_topic:
-    description: Zulip topic for notifications
-    required: false
-  gcp_service_account:
-    description: GCP Service Account JSON for Artifact Registry access
-    required: false
-  gcp_artifact_region:
-    description: GCP region for Artifact Registry
-    required: false
-    default: europe-west3
-  gcp_artifact_repository:
-    description: GCP Artifact Registry repository name
-    required: false
-    default: rust-binaries
-  gcp_artifact_package:
-    required: false
-    description: "Google artifact registry package name"
-  release_notes_file:
-    description: Path to a file containing release notes. If empty, release notes will be auto-generated.
-    required: false
-    default: ''
-  github_token:
-    description: GitHub Token from the Bot with permission to make direct commits into the branch
-    required: true
+    source_branch:
+        description: Source branch for release notes
+        required: false
+        default: main
+    file:
+        description: File to update version in
+        required: true
+        default: Cargo.toml
+    release_type:
+        description: Release type to bump (major, minor, patch, rc)
+        required: false
+        default: patch
+    draft:
+        description: Whether to create a draft release
+        required: false
+        default: 'false'
+    cachix_cache_name:
+        required: false
+        description: "Cachix cache name to use"
+    cachix_auth_token:
+        required: true
+        description: "Cachix authentication token"
+    zulip_api_key:
+        description: Zulip API Key for notifications
+        required: false
+    zulip_email:
+        description: Zulip email for notifications
+        required: false
+    zulip_channel:
+        description: Zulip channel for notifications
+        required: false
+    zulip_topic:
+        description: Zulip topic for notifications
+        required: false
+    gcp_service_account:
+        description: GCP Service Account JSON for Artifact Registry access
+        required: false
+    gcp_artifact_region:
+        description: GCP region for Artifact Registry
+        required: false
+        default: europe-west3
+    gcp_artifact_repository:
+        description: GCP Artifact Registry repository name
+        required: false
+        default: rust-binaries
+    gcp_artifact_package:
+        required: false
+        description: "Google artifact registry package name"
+    release_notes_file:
+        description: Path to a file containing release notes. If empty, release notes will be auto-generated.
+        required: false
+        default: ''
+    github_token:
+        description: GitHub Token from the Bot with permission to make direct commits into the branch
+        required: true
 outputs:
-  current_version:
-    description: Current released version
-    value: ${{ steps.version.outputs.current_version }}
-  bump_version:
-    description: Version bumped
-    value: ${{ steps.bump.outputs.bump_version }}
+    current_version:
+        description: Current released version
+        value: ${{ steps.version.outputs.current_version }}
+    bump_version:
+        description: Version bumped
+        value: ${{ steps.bump.outputs.bump_version }}
 runs:
-  using: composite
-  steps:
-    - name: Checkout hoprnet repository
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-      with:
-        ref: ${{ inputs.source_branch }}
-        fetch-depth: 0
-        fetch-tags: true
-        token: ${{ inputs.github_token }}
-        clean: ${{ inputs.release_notes_file == '' }}
-    - name: Get version info
-      id: version
-      uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
-      with:
-        file: "${{ inputs.file }}"
-        version_type: release
-    - name: Setup GCP
-      if: inputs.gcp_service_account != ''
-      id: gcp
-      uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
-      with:
-        google_credentials: ${{ inputs.gcp_service_account }}
-        login_artifact_registry: 'true'
-        install_sdk: 'true'
-    - name: Setup Nix
-      uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
-      with:
-        cachix_cache_name: ${{ inputs.cachix_cache_name }}
-        cachix_auth_token: "${{ inputs.cachix_auth_token }}"
-    - name: Download binary files
-      if: inputs.gcp_artifact_package != ''
-      id: download
-      uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v2
-      with:
-        region: ${{ inputs.gcp_artifact_region }}
-        repository: ${{ inputs.gcp_artifact_repository }}
-        package: ${{ inputs.gcp_artifact_package }}
-        version: ${{ steps.version.outputs.current_version }}
-    - name: Generate Release Notes
-      if: inputs.release_notes_file == ''
-      uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
-      with:
-        source_branch: ${{ inputs.source_branch }}
-        format: github
-    - name: Create Release
-      uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
-      with:
-        tag_name: "v${{ steps.version.outputs.current_version }}"
-        prerelease: ${{ steps.version.outputs.prerelease }}
-        name: "v${{ steps.version.outputs.current_version }}"
-        body_path: ${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}
-        files: ${{ steps.download.outputs.downloaded_files || '' }}
-        draft: ${{ inputs.draft }}
-    - name: Bump version
-      id: bump
-      uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v2
-      with:
-        file: ${{ inputs.file }}
-        release_type: ${{ inputs.release_type }}
-        github_token: ${{ inputs.github_token }}
-    - name: Prepare notification message
-      shell: bash
-      if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
-      run: |
-        release_notes_path="${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}"
-        {
-          echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ steps.version.outputs.current_version }}\` has been released."
-          echo ""
-          cat "$release_notes_path"
-        } > notification_message.txt
+    using: composite
+    steps:
+      - name: Checkout hoprnet repository
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          ref: ${{ inputs.source_branch }}
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ inputs.github_token }}
+          clean: ${{ inputs.release_notes_file == '' }}
+      - name: Get version info
+        id: version
+        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+        with:
+          file: "${{ inputs.file }}"
+          version_type: release
+      - name: Setup GCP
+        if: inputs.gcp_service_account != ''
+        id: gcp
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        with:
+          google_credentials: ${{ inputs.gcp_service_account }}
+          login_artifact_registry: 'true'
+          install_sdk: 'true'
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ inputs.cachix_auth_token }}"
+      - name: Download binary files
+        if: inputs.gcp_artifact_package != ''
+        id: download
+        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v2
+        with:
+          region: ${{ inputs.gcp_artifact_region }}
+          repository: ${{ inputs.gcp_artifact_repository }}
+          package: ${{ inputs.gcp_artifact_package }}
+          version: ${{ steps.version.outputs.current_version }}
+      - name: Generate Release Notes
+        if: inputs.release_notes_file == ''
+        uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
+        with:
+          source_branch: ${{ inputs.source_branch }}
+          format: github
+      - name: Create Release
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        with:
+            tag_name: "v${{ steps.version.outputs.current_version }}"
+            prerelease: ${{ steps.version.outputs.prerelease }}
+            name: "v${{ steps.version.outputs.current_version }}"
+            body_path: ${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}
+            files: ${{ steps.download.outputs.downloaded_files || '' }}
+            draft: ${{ inputs.draft }}
+      - name: Bump version
+        id: bump
+        uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v2
+        with:
+          file: ${{ inputs.file }}
+          release_type: ${{ inputs.release_type }}
+          github_token: ${{ inputs.github_token }}
+      - name: Prepare notification message
+        shell: bash
+        if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
+        run: |
+          release_notes_path="${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}"
+          {
+            echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ steps.version.outputs.current_version }}\` has been released."
+            echo ""
+            cat "$release_notes_path"
+          } > notification_message.txt
 
-        # Store content in environment variable for the Zulip action
-        {
-          echo "NOTIFICATION_CONTENT<<EOF"
-          cat notification_message.txt
-          echo "EOF"
-        } >> $GITHUB_ENV
-    - name: Notify release
-      if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
-      uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
-      with:
-        api-key: ${{ inputs.zulip_api_key }}
-        email: ${{ inputs.zulip_email }}
-        organization-url: "https://hopr.zulipchat.com"
-        type: "stream"
-        to: ${{ inputs.zulip_channel }}
-        topic: ${{ inputs.zulip_topic }}
-        content: ${{ env.NOTIFICATION_CONTENT }}
+          # Store content in environment variable for the Zulip action
+          {
+            echo "NOTIFICATION_CONTENT<<EOF"
+            cat notification_message.txt
+            echo "EOF"
+          } >> $GITHUB_ENV
+      - name: Notify release
+        if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
+        uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
+        with:
+          api-key: ${{ inputs.zulip_api_key }}
+          email: ${{ inputs.zulip_email }}
+          organization-url: "https://hopr.zulipchat.com"
+          type: "stream"
+          to: ${{ inputs.zulip_channel }}
+          topic: ${{ inputs.zulip_topic }}
+          content: ${{ env.NOTIFICATION_CONTENT }}
