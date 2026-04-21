@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "schedule:earlyMondays"],
+  "pinDigests": true,
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackagePatterns": ["^hoprnet/hopr-workflows"],
+      "enabled": false,
+      "description": "Skip self-referential actions — versions are managed by this repo itself"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "excludePackagePatterns": ["^hoprnet/hopr-workflows"],
+      "groupName": "github-actions",
+      "commitMessageTopic": "GitHub Actions"
+    }
+  ]
+}
