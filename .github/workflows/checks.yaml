@@ -2,9 +2,21 @@
 ################################################################################
 # Reusable check pipeline
 #
-# Runs configurable code-quality checks (format, pre-commit, lint, deps, audit)
-# via a matrix strategy with per-check enable/disable toggles and command
-# overrides.
+# Runs configurable code-quality checks via a matrix strategy.
+#
+# Supported check toggles:
+#   - format
+#   - pre_commit
+#   - lint
+#   - deps
+#   - audit
+#
+# Supported command overrides:
+#   - format_command
+#   - pre_commit_command
+#   - lint_command
+#   - deps_command
+#   - audit_command
 ################################################################################
 name: Checks
 
