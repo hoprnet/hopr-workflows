@@ -1,6 +1,7 @@
 # Release Github version
 
 This action performs the following steps:
+
 - Generating the release notes (unless `release_notes_file` input is provided)
 - Download the release binaries from Google Artifact registry
 - Creates a github release
@@ -72,8 +73,8 @@ The release process follows a two-branch model: `main` for active development an
 
 ### Release Types
 
-| `release_type` | Example: before → after  | When to use                                       |
-|----------------|--------------------------|---------------------------------------------------|
+| `release_type` | Example: before → after | When to use                                       |
+| -------------- | ----------------------- | ------------------------------------------------- |
 | `rc`           | `1.0.0` → `1.1.0-rc.1`  | Start a release candidate cycle on `main`         |
 | `patch`        | `1.0.0` → `1.0.1`       | Bug fix on a `release/<MAJOR>.<MINOR>` branch     |
 | `minor`        | `1.0.1` → `1.1.0`       | Finalize a minor release from a release candidate |

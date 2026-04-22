@@ -1,4 +1,3 @@
----
 ################################################################################
 # Reusable crate-publish pipeline
 #
@@ -10,7 +9,6 @@
 # with max-parallel: 1 to control dependency ordering.
 ################################################################################
 name: Publish crates
-
 on:
   workflow_call:
     inputs:
@@ -46,9 +44,7 @@ on:
       cargo_registry_token:
         required: false
         description: "crates.io API token (required when version_type is 'release')"
-
 permissions: {}
-
 jobs:
   publish:
     name: ${{ inputs.version_type == 'release' && 'Publish' || 'Dry run' }}

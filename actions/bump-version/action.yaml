@@ -1,123 +1,123 @@
 name: Bump Version
 description: Bump Version
 inputs:
-    file:
-        description: File to update version in
-        required: true
-        default: Cargo.toml
-    release_type:
-        description: Release type to bump (major, minor, patch, rc)
-        required: false
-        default: patch
-    github_token:
-        description: GitHub Token from the Bot with permission to make direct commits into the branch
-        required: true
+  file:
+    description: File to update version in
+    required: true
+    default: Cargo.toml
+  release_type:
+    description: Release type to bump (major, minor, patch, rc)
+    required: false
+    default: patch
+  github_token:
+    description: GitHub Token from the Bot with permission to make direct commits into the branch
+    required: true
 outputs:
-    current_version:
-        description: Current version extracted from file
-        value: ${{ steps.versions.outputs.current_version }}
-    bump_version:
-        description: Version bumped
-        value: ${{ steps.versions.outputs.bump_version }}
+  current_version:
+    description: Current version extracted from file
+    value: ${{ steps.versions.outputs.current_version }}
+  bump_version:
+    description: Version bumped
+    value: ${{ steps.versions.outputs.bump_version }}
 runs:
-    using: composite
-    steps:
-      - name: Bump version
-        shell: bash
-        id: versions
-        run: |
-          if [[ "${{ inputs.file }}" =~ ^.*\.toml$ ]]; then
-            current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
-          elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
-            current_version=$(jq -r '.version' ${{ inputs.file }})
-          else
-            echo "Unsupported file type: ${{ inputs.file }}"
-            exit 1
-          fi
-          echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
-          # Split pre-release if any
-          IFS='-'
-          read -a current_version_splitted <<<"${current_version}"
-    
-          current_version_without_rc="${current_version_splitted[0]}"
-          if [ "${#current_version_splitted[*]}" = "2" ]; then
-            # Get Release Candidate Number
-            release_candidate_number="${current_version_splitted[1]/rc\./}"
-          elif [ "${{ inputs.release_type }}" = "rc" ]; then
-            # Reset the release candidate for new release name
-            release_candidate_number=0
-          fi
+  using: composite
+  steps:
+    - name: Bump version
+      shell: bash
+      id: versions
+      run: |
+        if [[ "${{ inputs.file }}" =~ ^.*\.toml$ ]]; then
+          current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
+        elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
+          current_version=$(jq -r '.version' ${{ inputs.file }})
+        else
+          echo "Unsupported file type: ${{ inputs.file }}"
+          exit 1
+        fi
+        echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
+        # Split pre-release if any
+        IFS='-'
+        read -a current_version_splitted <<<"${current_version}"
 
-          # Extract parts without IFS or read
-          IFS='.' read -r major_version minor_version patch_version <<< "${current_version_without_rc}"
-          echo "Current version ${major_version}.${minor_version}.${patch_version}"
-          # Bump the appropriate part
-          echo "Bumping ${{ inputs.release_type }} version"
-          case "${{ inputs.release_type }}" in
-              major)
-                  major_version=$((major_version+1))
-                  minor_version=0
-                  patch_version=0
-                  ;;
-              minor)
-                  minor_version=$((minor_version+1))
-                  patch_version=0
-                  ;;
-              patch)
-                  if [ -n "$release_candidate_number" ]; then
-                    # If we are bumping a patch after a RC, we do not increment the patch version
-                    echo "Bumping patch after Release Candidate, keeping patch version the same."
-                    unset release_candidate_number
-                  else
-                    patch_version=$((patch_version+1))
-                  fi
-                  ;;
-              rc)
-                  if [ "${#current_version_splitted[*]}" = "1" ]; then
-                      # Starting a new RC cycle from a non-RC version: bump minor
-                      minor_version=$((minor_version+1))
-                      patch_version=0
-                  fi
-                  release_candidate_number=$((release_candidate_number + 1))
-                  ;;
-              *)
-                  echo "Invalid release type ${{ inputs.release_type }}"
-                  exit 1
-                  ;;
-          esac
-          bump_version="${major_version}.${minor_version}.${patch_version}"
-          if [ -n "$release_candidate_number" ]; then
-              bump_version="${bump_version}-rc.${release_candidate_number}"
-          fi
-          echo "Bumped version: ${bump_version}"
+        current_version_without_rc="${current_version_splitted[0]}"
+        if [ "${#current_version_splitted[*]}" = "2" ]; then
+          # Get Release Candidate Number
+          release_candidate_number="${current_version_splitted[1]/rc\./}"
+        elif [ "${{ inputs.release_type }}" = "rc" ]; then
+          # Reset the release candidate for new release name
+          release_candidate_number=0
+        fi
+
+        # Extract parts without IFS or read
+        IFS='.' read -r major_version minor_version patch_version <<< "${current_version_without_rc}"
+        echo "Current version ${major_version}.${minor_version}.${patch_version}"
+        # Bump the appropriate part
+        echo "Bumping ${{ inputs.release_type }} version"
+        case "${{ inputs.release_type }}" in
+            major)
+                major_version=$((major_version+1))
+                minor_version=0
+                patch_version=0
+                ;;
+            minor)
+                minor_version=$((minor_version+1))
+                patch_version=0
+                ;;
+            patch)
+                if [ -n "$release_candidate_number" ]; then
+                  # If we are bumping a patch after a RC, we do not increment the patch version
+                  echo "Bumping patch after Release Candidate, keeping patch version the same."
+                  unset release_candidate_number
+                else
+                  patch_version=$((patch_version+1))
+                fi
+                ;;
+            rc)
+                if [ "${#current_version_splitted[*]}" = "1" ]; then
+                    # Starting a new RC cycle from a non-RC version: bump minor
+                    minor_version=$((minor_version+1))
+                    patch_version=0
+                fi
+                release_candidate_number=$((release_candidate_number + 1))
+                ;;
+            *)
+                echo "Invalid release type ${{ inputs.release_type }}"
+                exit 1
+                ;;
+        esac
+        bump_version="${major_version}.${minor_version}.${patch_version}"
+        if [ -n "$release_candidate_number" ]; then
+            bump_version="${bump_version}-rc.${release_candidate_number}"
+        fi
+        echo "Bumped version: ${bump_version}"
 
 
-          # Update the version in the specified file
-          if [[ "${{ inputs.file }}" =~ .*\.toml$ ]]; then
-            sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${bump_version}\5/" ${{ inputs.file }}
-            rm "${{ inputs.file }}.bak"
-            if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
-              echo "Regenerating Cargo.lock file"
-              nix develop --command bash -c "cargo metadata --no-deps --format-version 1 --manifest-path ${{ inputs.file }} \
-                | jq -r '.packages[] | select(.source == null) | .name' \
-                | xargs -I{} cargo update --manifest-path ${{ inputs.file }} -p {}"
-            fi
-          elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
-            jq --arg bump_version "${bump_version}" '.version = $bump_version' ${{ inputs.file }} > "${{ inputs.file }}.tmp"
-            mv "${{ inputs.file }}.tmp" ${{ inputs.file }}
+        # Update the version in the specified file
+        if [[ "${{ inputs.file }}" =~ .*\.toml$ ]]; then
+          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${bump_version}\5/" ${{ inputs.file }}
+          rm "${{ inputs.file }}.bak"
+          if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
+            echo "Regenerating Cargo.lock file"
+            nix develop --command bash -c "cargo metadata --no-deps --format-version 1 --manifest-path ${{ inputs.file }} \
+              | jq -r '.packages[] | select(.source == null) | .name' \
+              | xargs -I{} cargo update --manifest-path ${{ inputs.file }} -p {}"
           fi
-          echo "bump_version=${bump_version}" | tee -a "$GITHUB_OUTPUT"
-          lock_file=$(echo "${{ inputs.file }}" | sed -E 's/\.(toml|json)$/.lock/')
-          if [[ -f "$lock_file" ]]; then
-            echo "commit_files=${{ inputs.file }} ${lock_file}" | tee -a "$GITHUB_OUTPUT"
-          else
-            echo "commit_files=${{ inputs.file }}" | tee -a "$GITHUB_OUTPUT"
-          fi
-      - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
-        with:
-          add: '${{ steps.versions.outputs.commit_files }}'
-          new_branch: ${{ github.ref_name }}
-          message: "ci: Bump to version ${{ steps.versions.outputs.bump_version }}"
-          pathspec_error_handling: ignore
-          default_author: user_info
-          github_token: ${{ inputs.github_token }}
+        elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
+          jq --arg bump_version "${bump_version}" '.version = $bump_version' ${{ inputs.file }} > "${{ inputs.file }}.tmp"
+          mv "${{ inputs.file }}.tmp" ${{ inputs.file }}
+        fi
+        echo "bump_version=${bump_version}" | tee -a "$GITHUB_OUTPUT"
+        lock_file=$(echo "${{ inputs.file }}" | sed -E 's/\.(toml|json)$/.lock/')
+        if [[ -f "$lock_file" ]]; then
+          echo "commit_files=${{ inputs.file }} ${lock_file}" | tee -a "$GITHUB_OUTPUT"
+        else
+          echo "commit_files=${{ inputs.file }}" | tee -a "$GITHUB_OUTPUT"
+        fi
+    - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
+      with:
+        add: '${{ steps.versions.outputs.commit_files }}'
+        new_branch: ${{ github.ref_name }}
+        message: "ci: Bump to version ${{ steps.versions.outputs.bump_version }}"
+        pathspec_error_handling: ignore
+        default_author: user_info
+        github_token: ${{ inputs.github_token }}

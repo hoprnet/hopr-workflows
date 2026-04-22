@@ -4,10 +4,10 @@ This action modifies the `Cargo.toml` file to set the `version` attribute based 
 It does not commit the change on the branch, the modification is done only to build the binary with the custom `version`.
 
 Updates the `version` of the project based on the type of build desired.
- - In pull requests commits: `x.y.z+commit.123456`
- - In pull requests merge: `x.y.z+pr.1234`
- - In close release: `x.y.z` . It basically does not modify anything
 
+- In pull requests commits: `x.y.z+commit.123456`
+- In pull requests merge: `x.y.z+pr.1234`
+- In close release: `x.y.z` . It basically does not modify anything
 
 ## Version semantics
 
@@ -22,28 +22,27 @@ Updates the `version` of the project based on the type of build desired.
 - `number`: Refers to the GitHub pull request number
 - `platform`: Refers to the Docker specific platform: `linux-amd64` or `linux-arm64`
 
-
 ## Tags semantics
 
 Below is described the tagging convention used for Docker images in Hoprnet.
 
 ### Branches
 
-|           Branch          |                 Purpose                                                |
-|---------------------------|------------------------------------------------------------------------|
+| Branch                    | Purpose                                                                |
+| ------------------------- | ---------------------------------------------------------------------- |
 | `main`                    | Active development branch. All new features and fixes are merged here. |
 | `release/<MAJOR>.<MINOR>` | Long-term support branch. Receives only critical fixes and backports.  |
 
 ### Tags
 
-| Tag            | Branch     | Trigger          |                   Description                                           |
-|----------------|------------|------------------|-------------------------------------------------------------------------|
-| `latest`       | `main`     | PR merged        | The most recent image built from `main`. Alias of `latest-main`.        |
-| `latest-main`  | `main`     | PR merged        | The most recent image built from `main`. Same image as `latest`.        |
-| `latest-testing`   | `release`  | PR merged        | The most recent image built from the `release/<MAJOR>.<MINOR>` branch.  |
-| `release-main` | `main`     | Release cut      | The latest release published from `main`.                               |
-| `release-testing`  | `release`  | Release cut      | The latest release published from the `release/<MAJOR>.<MINOR>` branch. |
-| `stable`       |     —      | Manual promotion | The image currently running in production.                              |
+| Tag               | Branch    | Trigger          | Description                                                             |
+| ----------------- | --------- | ---------------- | ----------------------------------------------------------------------- |
+| `latest`          | `main`    | PR merged        | The most recent image built from `main`. Alias of `latest-main`.        |
+| `latest-main`     | `main`    | PR merged        | The most recent image built from `main`. Same image as `latest`.        |
+| `latest-testing`  | `release` | PR merged        | The most recent image built from the `release/<MAJOR>.<MINOR>` branch.  |
+| `release-main`    | `main`    | Release cut      | The latest release published from `main`.                               |
+| `release-testing` | `release` | Release cut      | The latest release published from the `release/<MAJOR>.<MINOR>` branch. |
+| `stable`          | —         | Manual promotion | The image currently running in production.                              |
 
 ### Tag Lifecycle
 
@@ -75,6 +74,7 @@ Production
 - `stable` is the only tag that is promoted manually. All other tags are updated automatically by CI.
 
 ## Usage
+
 ```bash
       - name: Updates build version
         id: version

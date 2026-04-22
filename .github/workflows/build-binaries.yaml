@@ -2,7 +2,6 @@
 # Pipeline to build binaries
 #################################################################################
 name: Build binary
-
 on:
   workflow_call:
     inputs:
@@ -79,10 +78,8 @@ on:
 concurrency:
   group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-binary
   cancel-in-progress: true
-
 permissions:
   contents: read
-
 jobs:
   build:
     name: Build
@@ -130,7 +127,6 @@ jobs:
           enable_sign_mac=${{ (contains(inputs.architecture, 'darwin') && secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
           enable_sign=$([[ "$enable_sign_linux" == "true" || "$enable_sign_mac" == "true" ]] && echo "true" || echo "false")
           echo "enable_sign=$enable_sign" | tee -a "$GITHUB_OUTPUT"
-
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
@@ -153,7 +149,7 @@ jobs:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}-debug
           path: ${{ github.workspace }}/artifacts-debug
   sign:
-    name:  Sign and Publish
+    name: Sign and Publish
     needs: build
     runs-on: ${{ inputs.runner }}
     if: needs.build.outputs.enable_sign == 'true'

@@ -1,31 +1,28 @@
 name: Setup NodeJs
 description: Setup NodeJS repository
 inputs:
-    node_version:
-        description: Node version to use
-        required: true
-        default: 20.x
+  node_version:
+    description: Node version to use
+    required: true
+    default: 20.x
 runs:
-    using: composite
-    steps:
-        - name: Setup Node.js
-          uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
-          with:
-              node-version: ${{ inputs.node_version }}
-
-        - name: Install Yarn
-          shell: bash
-          run: npm install -g yarn
-
-        - name: Setup Node.js with Yarn
-          uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
-          with:
-              node-version: ${{ inputs.node_version }}
-              cache: yarn
-              cache-dependency-path: ./yarn.lock
-
-        - name: Install dependencies
-          shell: bash
-          run: yarn --frozen-lockfile
-          env:
-            NODE_AUTH_TOKEN: foo
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      with:
+        node-version: ${{ inputs.node_version }}
+    - name: Install Yarn
+      shell: bash
+      run: npm install -g yarn
+    - name: Setup Node.js with Yarn
+      uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      with:
+        node-version: ${{ inputs.node_version }}
+        cache: yarn
+        cache-dependency-path: ./yarn.lock
+    - name: Install dependencies
+      shell: bash
+      run: yarn --frozen-lockfile
+      env:
+        NODE_AUTH_TOKEN: foo
