@@ -443,7 +443,6 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: "github-actions[bot]"
           body-includes: "## 🔎 Trivy Security Report"
-
       - name: Create or update Trivy comment
         if: inputs.version_type == 'commit' && steps.trivy_report.outputs.trivy_vulnerabilities_found == 'true'
         uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 #v5.0.0
@@ -526,7 +525,7 @@ jobs:
           echo "GIT_CONFIG_GLOBAL=" >> "${GITHUB_ENV}"
   deploy:
     name: Deploy
-    needs: [ build, manifest, scan ]
+    needs: [build, manifest, scan]
     if: (needs.build.outputs.deploy_staging == 'true' || (vars.DEPLOY_STAGING_MERGED_PR == 'true' && inputs.version_type == 'pr')) && (inputs.deployment_namespace != '' && inputs.deployment_label_selector != '')
     runs-on: ${{ inputs.job_runner }}
     steps:

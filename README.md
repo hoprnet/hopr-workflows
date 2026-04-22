@@ -27,6 +27,7 @@ This repository provides reusable workflows designed to simplify the build and r
 Runs configurable code-quality checks (pre-commit, lint, deps, audit) via a matrix strategy. Each check can be individually enabled/disabled and its command overridden.
 
 **Usage:**
+
 ```yaml
 jobs:
   checks:
@@ -41,6 +42,7 @@ jobs:
 ```
 
 **Inputs:**
+
 - `source_branch` (Required): Source branch to check out.
 - `pre_commit` (Optional): Enable pre-commit check (Default: `true`).
 - `lint` (Optional): Enable lint check (Default: `true`).
@@ -54,6 +56,7 @@ jobs:
 - `runner_large` (Optional): Runner for heavy checks (Default: `ubuntu-latest`).
 
 **Secrets:**
+
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 
 ---
@@ -63,6 +66,7 @@ jobs:
 Runs configurable test suites (unit, integration, nightly), benchmarks, and coverage reports as individual conditional jobs. Each coverage job depends only on its corresponding test — it runs when the test passes or when the test is disabled (skipped).
 
 **Usage:**
+
 ```yaml
 jobs:
   tests:
@@ -82,6 +86,7 @@ jobs:
 ```
 
 **Inputs:**
+
 - `source_branch` (Required): Source branch to check out.
 - `enable_unit_tests` (Optional): Enable unit tests (Default: `true`).
 - `enable_integration_tests` (Optional): Enable integration tests (Default: `false`).
@@ -102,10 +107,12 @@ jobs:
 - `coverage_timeout` (Optional): Timeout in minutes for coverage jobs (Default: `60`).
 
 **Secrets:**
+
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 - `codecov_token` (Optional): Codecov token. Required when `enable_unit_coverage` or `enable_integration_coverage` is enabled.
 
 **Coverage-only usage (e.g. post-merge pipeline):**
+
 ```yaml
 jobs:
   coverage:
@@ -131,6 +138,7 @@ jobs:
 Scans GitHub Actions workflow files for security issues using [zizmor](https://docs.zizmor.sh/) and uploads results as SARIF to the GitHub Security tab.
 
 **Usage:**
+
 ```yaml
 jobs:
   zizmor:
@@ -146,11 +154,13 @@ jobs:
 ```
 
 **Inputs:**
+
 - `source_branch` (Required): Source branch to check out.
 - `runner` (Optional): Runner for the job (Default: `ubuntu-latest`).
 - `zizmor_command` (Optional): Command to run zizmor (Default: `nix develop -L .#ci -c bash -c "zizmor --format sarif . > results.sarif"`).
 
 **Secrets:**
+
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 
 ---
@@ -160,6 +170,7 @@ jobs:
 Compiles binaries for a specific architecture using Nix. It handles version naming, signing and upload files to artifact registry.
 
 **Usage:**
+
 ```yaml
 jobs:
   build:
@@ -179,6 +190,7 @@ jobs:
 ```
 
 **Inputs:**
+
 - `source_branch` (Required): Source branch to build the binary from.
 - `version_type` (Required): The strategy for versioning (e.g., `commit`, `pr`, `release`).
 - `architecture` (Optional): The target architecture (Default: `x86_64-linux`).
@@ -192,6 +204,7 @@ jobs:
 - `runner` (Required): The runner label to use for the job.
 
 **Secrets:**
+
 - `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
 - `gcp_workload_identity_provider`: The workload identity provider to authenticate on GCP.
 - `gcp_workload_identity_service_account`: The service account for the workload identity provider on GCP.
@@ -210,6 +223,7 @@ jobs:
 Constructs a platform-specific Docker image for the project and its multi-architecture manifest.
 
 **Usage:**
+
 ```yaml
 jobs:
   build-docker:
@@ -246,12 +260,14 @@ jobs:
 ```
 
 **Key Features:**
+
 - Builds Docker images using Nix or standard commands.
 - Scan docker images for vulnerabilities.
 - Support for pushing to Google Artifact Registry and Docker Hub.
 - Outputs version tags for downstream jobs.
 
 **Inputs:**
+
 - `source_branch` (Required): Source branch to build the docker image from.
 - `version_type` (Required): The strategy for versioning (e.g., `commit`, `pr`, `release`).
 - `build_matrix`: It's a JSON array containing an object with the parameters for each matrix parallel execution. Each matrix entry must include its `runner`; this controls the `build` and `smoke-test` jobs
@@ -269,23 +285,23 @@ jobs:
 - `job_runner` (Optional): Runner to use for non-matrix jobs (`manifest`, `scan`, `deploy`) (Default: `depot-ubuntu-22.04-4`)
 
 **Secrets:**
+
 - `gcp_service_account` (Required): Google Cloud Service Account with permissions to upload artifacts.
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 - `docker_hub_username` (Optional): Docker Hub username (Required for release builds).
 - `docker_hub_token` (Optional): Docker Hub token (Required for release builds).
 
 **Outputs:**
+
 - `docker_build_version`: Docker image version built.
 - `docker_debug_version`: Docker debug image version built.
-
-
-
 
 ### [Build Library](./.github/workflows/build-library.yaml)
 
 Compiles a library for a specific architecture using Nix. Unlike the binary workflow, it does not sign or upload artifacts — it only runs the build command.
 
 **Usage:**
+
 ```yaml
 jobs:
   build-library:
@@ -301,6 +317,7 @@ jobs:
 ```
 
 **Inputs:**
+
 - `source_branch` (Required): Source branch to build the library from.
 - `architecture` (Required): The target architecture (e.g., `x86_64-linux`).
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
@@ -310,6 +327,7 @@ jobs:
 - `runner` (Required): The runner label to use for the job.
 
 **Secrets:**
+
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 
 **Outputs:**

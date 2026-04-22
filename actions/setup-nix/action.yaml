@@ -1,39 +1,38 @@
 name: Setup Nix
 description: Setup Nix environment
 inputs:
-    cachix_cache_name:
-        description: Name of the Cachix cache to use
-        required: false
-    cachix_auth_token:
-        description: Cachix authentication token
-        required: false
-    nix_path:
-        description: Nix path to use
-        required: false
-        default: nixpkgs=channel:nixos-24.05
+  cachix_cache_name:
+    description: Name of the Cachix cache to use
+    required: false
+  cachix_auth_token:
+    description: Cachix authentication token
+    required: false
+  nix_path:
+    description: Nix path to use
+    required: false
+    default: nixpkgs=channel:nixos-24.05
 runs:
-    using: composite
-    steps:
-      - name: Install Nix
-        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
-        with:
-          nix_path: ${{ inputs.nix_path }}
-      - name: Set cache name
-        id: cache-name
-        shell: bash
-        run: |
-          if [ -z "${{ inputs.cachix_cache_name }}" ]; then
-            repo_name=$(basename "${{ github.repository }}")
-            echo "cachix_cache_name=${repo_name}" | tee -a $GITHUB_OUTPUT
-          else
-            echo "cachix_cache_name=${{ inputs.cachix_cache_name }}" | tee -a $GITHUB_OUTPUT
-          fi
-      - name: Use Nix Cache
-        uses: cachix/cachix-action@1eb2ef646ac0255473d23a5907ad7b04ce94065c # v17
-        continue-on-error: true # Allow failure if cachix is not available
-        with:
-          name: ${{ steps.cache-name.outputs.cachix_cache_name }}
-          authToken: ${{ inputs.cachix_auth_token }}
-        env:
-          USER: runner
-
+  using: composite
+  steps:
+    - name: Install Nix
+      uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
+      with:
+        nix_path: ${{ inputs.nix_path }}
+    - name: Set cache name
+      id: cache-name
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.cachix_cache_name }}" ]; then
+          repo_name=$(basename "${{ github.repository }}")
+          echo "cachix_cache_name=${repo_name}" | tee -a $GITHUB_OUTPUT
+        else
+          echo "cachix_cache_name=${{ inputs.cachix_cache_name }}" | tee -a $GITHUB_OUTPUT
+        fi
+    - name: Use Nix Cache
+      uses: cachix/cachix-action@1eb2ef646ac0255473d23a5907ad7b04ce94065c # v17
+      continue-on-error: true # Allow failure if cachix is not available
+      with:
+        name: ${{ steps.cache-name.outputs.cachix_cache_name }}
+        authToken: ${{ inputs.cachix_auth_token }}
+      env:
+        USER: runner

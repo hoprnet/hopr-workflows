@@ -1,4 +1,3 @@
----
 ################################################################################
 # Reusable zizmor security check pipeline
 #
@@ -10,7 +9,6 @@
 # required from the caller.
 ################################################################################
 name: Zizmor
-
 on:
   workflow_call:
     inputs:
@@ -28,9 +26,7 @@ on:
     secrets:
       cachix_auth_token:
         required: true
-
 permissions: {}
-
 jobs:
   zizmor:
     name: Zizmor
@@ -48,7 +44,6 @@ jobs:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           command: ${{ inputs.zizmor_command }}
-
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
         with:
