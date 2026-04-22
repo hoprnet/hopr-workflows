@@ -17,4 +17,5 @@ jobs:
       deps: false
       audit: false
       lint_command: "nix fmt && git diff --exit-code"
+      disable_sudo: false
     secrets: inherit
