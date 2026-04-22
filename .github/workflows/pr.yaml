@@ -1,12 +1,8 @@
----
 name: PR
-
 on:
   pull_request:
-
 permissions:
   contents: read
-
 jobs:
   format:
     uses: ./.github/workflows/checks.yaml
