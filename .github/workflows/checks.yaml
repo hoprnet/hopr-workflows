@@ -52,6 +52,10 @@ on:
         required: false
         type: string
         default: "ubuntu-latest"
+      disable_sudo:
+        required: false
+        type: boolean
+        default: true
     secrets:
       cachix_auth_token:
         required: true
@@ -95,3 +99,4 @@ jobs:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           command: ${{ matrix.command }}
+          disable_sudo: ${{ inputs.disable_sudo }}
