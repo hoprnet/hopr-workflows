@@ -58,7 +58,7 @@ on:
         default: true
     secrets:
       cachix_auth_token:
-        required: false
+        required: true
 permissions: {}
 jobs:
   check:

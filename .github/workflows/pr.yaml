@@ -14,4 +14,5 @@ jobs:
       lint: true
       lint_command: "nix fmt && git diff --exit-code"
       disable_sudo: false
-    secrets: inherit
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
