@@ -169,6 +169,7 @@ jobs:
       always() && inputs.enable_unit_coverage && (needs['unit-test'].result == 'success' || needs['unit-test'].result == 'skipped') && (
 
 
+
         github.event_name == 'push' ||
         github.event_name == 'merge_group' ||
         (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
@@ -200,6 +201,7 @@ jobs:
     needs: [integration-test]
     if: >-
       always() && inputs.enable_integration_coverage && (needs['integration-test'].result == 'success' || needs['integration-test'].result == 'skipped') && (
+
 
 
         github.event_name == 'push' ||
