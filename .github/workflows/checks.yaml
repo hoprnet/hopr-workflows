@@ -54,7 +54,7 @@ on:
         default: "ubuntu-latest"
     secrets:
       cachix_auth_token:
-        required: true
+        required: false
 permissions: {}
 jobs:
   check:
