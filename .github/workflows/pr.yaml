@@ -8,10 +8,10 @@ jobs:
     uses: ./.github/workflows/checks.yaml
     with:
       source_branch: ${{ github.event.pull_request.head.sha }}
-      lint: true
       pre_commit: false
       deps: false
       audit: false
+      lint: true
       lint_command: "nix fmt && git diff --exit-code"
       disable_sudo: false
     secrets: inherit
