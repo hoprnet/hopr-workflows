@@ -8,40 +8,49 @@ on:
       runner:
         required: true
         type: string
-      project:
+      bencher_project:
         required: true
         type: string
         description: "Bencher project name"
-      run_benchmarks:
-        required: false
+      should_build:
+        required: true
         type: boolean
-        default: true
+        description: "Whether to build benchmarks"
+      should_run:
+        required: true
+        type: boolean
         description: "Whether to run benchmarks after building them"
-      is_pr:
-        required: false
-        type: boolean
-        default: false
-        description: "Whether this is running for a PR (uses PR branch and github actions commenting)"
       build_command:
-        required: false
+        required: true
         type: string
-        default: "nix build -L .#bench-build"
+        description: "Command to build benchmarks"
       run_command:
+        required: true
+        type: string
+        description: "Command to run benchmarks"
+      zulip_stream:
         required: false
         type: string
-        default: "nix run .#bench-run"
+        default: "HOPRd"
+        description: "Zulip stream name"
+      zulip_topic:
+        required: false
+        type: string
+        default: "Benchmark regressions"
+        description: "Zulip topic name"
     secrets:
       cachix_auth_token:
         required: true
       bencher_api_token:
         required: false
-      zulip_api_key:
+      ZULIP_API_KEY:
         required: false
-      zulip_email:
+      ZULIP_EMAIL:
         required: false
 jobs:
   build-benchmarks:
     name: Build Benchmarks
+    if: inputs.should_build == true
     runs-on: ${{ inputs.runner }}
     permissions:
       contents: read
@@ -65,7 +74,7 @@ jobs:
   run-benchmarks:
     name: Run Benchmarks
     needs: build-benchmarks
-    if: inputs.run_benchmarks == true
+    if: always() && inputs.should_run == true && (needs.build-benchmarks.result == 'success' || needs.build-benchmarks.result == 'skipped')
     runs-on: ${{ inputs.runner }}
     permissions:
       contents: read
@@ -89,13 +98,13 @@ jobs:
       - name: Install Bencher CLI
         uses: bencherdev/bencher@0f8f620172ccd6225d40a7590598eb7b41718af8
       - name: Execute and Upload (PR)
-        if: inputs.is_pr == true
+        if: github.event_name == 'pull_request'
         id: bencher_pr
         shell: bash
         run: |
           set +e
           bencher run \
-            --project ${{ inputs.project }} \
+            --project ${{ inputs.bencher_project }} \
             --token "${{ secrets.bencher_api_token }}" \
             --adapter rust_criterion \
             --branch "${{ inputs.source_branch }}" \
@@ -106,8 +115,8 @@ jobs:
           set -e
 
           # Extract Bencher Run URL
-          BENCHER_RUN_URL=$(grep -oE "https://bencher.dev/(console/projects/${{ inputs.project }}/runs/|perf/${{ inputs.project }}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
-          echo "bencher_run_url=${BENCHER_RUN_URL:-https://bencher.dev/console/projects/${{ inputs.project }}}" >> "$GITHUB_OUTPUT"
+          BENCHER_RUN_URL=$(grep -oE "https://bencher.dev/(console/projects/${{ inputs.bencher_project }}/runs/|perf/${{ inputs.bencher_project }}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
+          echo "bencher_run_url=${BENCHER_RUN_URL:-https://bencher.dev/console/projects/${{ inputs.bencher_project }}}" >> "$GITHUB_OUTPUT"
 
           exit $EXIT_CODE
         env:
@@ -115,29 +124,30 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Notify performance drop (PR)
         uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
-        if: failure() && inputs.is_pr == true && env.ZULIP_API_KEY != ''
+        if: failure() && github.event_name == 'pull_request' && env.ZULIP_API_KEY != '' && env.ZULIP_EMAIL != ''
         env:
-          ZULIP_API_KEY: ${{ secrets.zulip_api_key }}
+          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
+          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
         with:
           api-key: ${{ env.ZULIP_API_KEY }}
-          email: ${{ secrets.zulip_email }}
+          email: ${{ env.ZULIP_EMAIL }}
           organization-url: "https://hopr.zulipchat.com"
           type: "stream"
-          to: "HOPRd"
-          topic: "Benchmark regressions"
+          to: "${{ inputs.zulip_stream }}"
+          topic: "${{ inputs.zulip_topic }}"
           content: |
-            The benchmark results for PR `${{ github.event.pull_request.title || github.ref_name }}`${{ github.event.pull_request.number && format(' (#{0})', github.event.pull_request.number) || '' }} have dropped, or failed.
+            The Bencher results for PR `${{ github.event.pull_request.title || github.ref_name }}`${{ github.event.pull_request.number && format(' ([#{0}](https://github.com/{1}/pull/{0}))', github.event.pull_request.number, github.repository) || '' }} have dropped, or failed.
 
-            Please check the specific [Bencher Run](${{ steps.bencher_pr.outputs.bencher_run_url }}) for more details.
-      - name: Execute and Upload (Merge)
-        if: inputs.is_pr == false
+            Please check the specific [Bencher Run](${{ steps.bencher_pr.outputs.bencher_run_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}) for more details.
+      - name: Execute and Upload (Merge/Push)
+        if: github.event_name != 'pull_request'
         id: bencher_merge
         shell: bash
         run: |
           set +e
           # Capture stdout and stderr, tee to file
           bencher run \
-            --project ${{ inputs.project }} \
+            --project ${{ inputs.bencher_project }} \
             --token "${{ secrets.bencher_api_token }}" \
             --adapter rust_criterion \
             --branch "${{ inputs.source_branch }}" \
@@ -147,26 +157,27 @@ jobs:
           set -e
 
           # Extract Bencher Report URL
-          BENCHER_REPORT_URL=$(grep -oE "https://bencher.dev/(console/projects/${{ inputs.project }}/reports/|perf/${{ inputs.project }}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
-          echo "bencher_report_url=${BENCHER_REPORT_URL:-https://bencher.dev/console/projects/${{ inputs.project }}}" >> "$GITHUB_OUTPUT"
+          BENCHER_REPORT_URL=$(grep -oE "https://bencher.dev/(console/projects/${{ inputs.bencher_project }}/reports/|perf/${{ inputs.bencher_project }}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
+          echo "bencher_report_url=${BENCHER_REPORT_URL:-https://bencher.dev/console/projects/${{ inputs.bencher_project }}}" >> "$GITHUB_OUTPUT"
 
           exit $EXIT_CODE
         env:
           BENCHER_API_TOKEN: ${{ secrets.bencher_api_token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Notify performance drop (Merge)
+      - name: Notify performance drop (Merge/Push)
         uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
-        if: failure() && inputs.is_pr == false && env.ZULIP_API_KEY != ''
+        if: failure() && github.event_name != 'pull_request' && env.ZULIP_API_KEY != '' && env.ZULIP_EMAIL != ''
         env:
-          ZULIP_API_KEY: ${{ secrets.zulip_api_key }}
+          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
+          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
         with:
           api-key: ${{ env.ZULIP_API_KEY }}
-          email: ${{ secrets.zulip_email }}
+          email: ${{ env.ZULIP_EMAIL }}
           organization-url: "https://hopr.zulipchat.com"
           type: "stream"
-          to: "HOPRd"
-          topic: "Benchmark regressions"
+          to: "${{ inputs.zulip_stream }}"
+          topic: "${{ inputs.zulip_topic }}"
           content: |
-            The benchmark results for branch `${{ github.repository }} ${{ github.ref_name }}` at commit (${{ github.sha }}) have dropped, or failed.
+            The Bencher results for branch `${{ github.repository }} ${{ github.ref_name }}` at commit (${{ github.sha }}) have dropped, or failed.
 
-            Please check the specific [Bencher Report](${{ steps.bencher_merge.outputs.bencher_report_url }}) for more details.
+            Please check the specific [Bencher Report](${{ steps.bencher_merge.outputs.bencher_report_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}) for more details.
