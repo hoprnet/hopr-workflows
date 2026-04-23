@@ -5,6 +5,9 @@
   "nix": {
     "enabled": true
   },
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "matchManagers": ["github-actions"],
