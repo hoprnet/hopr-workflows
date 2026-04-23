@@ -91,8 +91,9 @@ jobs:
       - name: Execute and Upload (PR)
         if: inputs.is_pr == true
         id: bencher_pr
+        shell: bash
         run: |
-          set -o pipefail
+          set +e
           bencher run \
             --project ${{ inputs.project }} \
             --token "${{ secrets.bencher_api_token }}" \
@@ -100,26 +101,32 @@ jobs:
             --branch "${{ inputs.source_branch }}" \
             --github-actions "${{ secrets.GITHUB_TOKEN }}" \
             --err \
-            "${{ inputs.run_command }}" | tee bencher_output.txt
+            "${{ inputs.run_command }}" 2>&1 | tee bencher_output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
 
           # Extract Bencher Run URL
           BENCHER_RUN_URL=$(grep -oE "https://bencher.dev/(console/projects/${{ inputs.project }}/runs/|perf/${{ inputs.project }}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
           echo "bencher_run_url=${BENCHER_RUN_URL:-https://bencher.dev/console/projects/${{ inputs.project }}}" >> "$GITHUB_OUTPUT"
+
+          exit $EXIT_CODE
         env:
           BENCHER_API_TOKEN: ${{ secrets.bencher_api_token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Notify performance drop (PR)
         uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
-        if: failure() && inputs.is_pr == true && secrets.zulip_api_key != ''
+        if: failure() && inputs.is_pr == true && env.ZULIP_API_KEY != ''
+        env:
+          ZULIP_API_KEY: ${{ secrets.zulip_api_key }}
         with:
-          api-key: ${{ secrets.zulip_api_key }}
+          api-key: ${{ env.ZULIP_API_KEY }}
           email: ${{ secrets.zulip_email }}
           organization-url: "https://hopr.zulipchat.com"
           type: "stream"
           to: "HOPRd"
           topic: "Benchmark regressions"
           content: |
-            The benchmark results for PR `${{ github.event.pull_request.title }}` (#${{ github.event.pull_request.number }}) have dropped, or failed.
+            The benchmark results for PR `${{ github.event.pull_request.title || github.ref_name }}`${{ github.event.pull_request.number && format(' (#{0})', github.event.pull_request.number) || '' }} have dropped, or failed.
 
             Please check the specific [Bencher Run](${{ steps.bencher_pr.outputs.bencher_run_url }}) for more details.
       - name: Execute and Upload (Merge)
@@ -149,9 +156,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Notify performance drop (Merge)
         uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
-        if: failure() && inputs.is_pr == false && secrets.zulip_api_key != ''
+        if: failure() && inputs.is_pr == false && env.ZULIP_API_KEY != ''
+        env:
+          ZULIP_API_KEY: ${{ secrets.zulip_api_key }}
         with:
-          api-key: ${{ secrets.zulip_api_key }}
+          api-key: ${{ env.ZULIP_API_KEY }}
           email: ${{ secrets.zulip_email }}
           organization-url: "https://hopr.zulipchat.com"
           type: "stream"
