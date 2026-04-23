@@ -76,7 +76,7 @@ on:
       apple_certificate_password:
         required: false
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-binary
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.binary }}-build-binary
   cancel-in-progress: true
 permissions:
   contents: read
