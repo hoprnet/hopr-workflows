@@ -333,3 +333,54 @@ jobs:
 **Outputs:**
 
 - No outputs defined.
+
+---
+
+### [Benchmarks](./.github/workflows/benchmarks.yaml)
+
+Standardized workflow for building, running, and publishing benchmarks to Bencher.dev, with integrated Zulip notifications for performance drops or failures.
+
+**Usage:**
+
+```yaml
+jobs:
+  benchmarks:
+    name: Benchmarks
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    uses: hoprnet/hopr-workflows/.github/workflows/benchmarks.yaml@<commit-hash> # main
+    with:
+      source_branch: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      runner: self-hosted-hoprnet-bigger
+      bencher_project: ${{ github.event.repository.name }}
+      should_build: true
+      should_run: true
+      build_command: "nix build -L .#bench-build"
+      run_command: "nix run .#bench-run"
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      bencher_api_token: ${{ secrets.BENCHER_API_TOKEN }}
+      ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
+      ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
+```
+
+**Inputs:**
+
+- `source_branch` (Required): Source branch to check out.
+- `runner` (Required): The runner label to use for the jobs.
+- `bencher_project` (Required): The project name in Bencher.dev.
+- `should_build` (Required): Whether to build the benchmarks.
+- `should_run` (Required): Whether to run benchmarks after building them.
+- `build_command` (Required): Command to build the benchmarks.
+- `run_command` (Required): Command to run the benchmarks.
+- `zulip_stream` (Optional): Zulip stream for notifications (Default: `"HOPRd"`).
+- `zulip_topic` (Optional): Zulip topic for notifications (Default: `"Benchmark regressions"`).
+
+**Secrets:**
+
+- `cachix_auth_token` (Required): Auth token for Cachix cache.
+- `bencher_api_token` (Optional): API token for Bencher.dev.
+- `ZULIP_API_KEY` (Optional): Zulip API key for notifications.
+- `ZULIP_EMAIL` (Optional): Zulip email for notifications.
