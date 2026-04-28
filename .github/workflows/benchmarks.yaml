@@ -38,6 +38,16 @@ on:
         type: string
         default: "Benchmark regressions"
         description: "Zulip topic name"
+      build_timeout_minutes:
+        required: false
+        type: number
+        default: 90
+        description: "Timeout in minutes for the build job"
+      run_timeout_minutes:
+        required: false
+        type: number
+        default: 720
+        description: "Timeout in minutes for the run job"
     secrets:
       cachix_auth_token:
         required: true
@@ -52,6 +62,7 @@ jobs:
     name: Build Benchmarks
     if: inputs.should_build == true
     runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.build_timeout_minutes }}
     permissions:
       contents: read
     steps:
@@ -76,6 +87,7 @@ jobs:
     needs: build-benchmarks
     if: always() && inputs.should_run == true && (needs.build-benchmarks.result == 'success' || needs.build-benchmarks.result == 'skipped')
     runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.run_timeout_minutes }}
     permissions:
       contents: read
       checks: write
