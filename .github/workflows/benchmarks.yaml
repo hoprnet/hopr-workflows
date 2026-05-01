@@ -95,6 +95,16 @@ jobs:
         uses: hoprnet/hopr-workflows/actions/setup-nix@43b03a7b5df777770d95c6524f48be34184b26fa # setup-nix-v1
         with:
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
+      - name: Compute short SHA
+        id: short_sha
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            SHA="${GITHUB_SHA}"
+          fi
+          echo "value=${SHA:0:7}" >> "$GITHUB_OUTPUT"
+          echo "full=${SHA}" >> "$GITHUB_OUTPUT"
       - name: Install Bencher CLI
         uses: bencherdev/bencher@0f8f620172ccd6225d40a7590598eb7b41718af8
       - name: Execute and Upload (PR)
@@ -136,9 +146,9 @@ jobs:
           to: "${{ inputs.zulip_stream }}"
           topic: "${{ inputs.zulip_topic }}"
           content: |
-            The Bencher results for PR `${{ github.event.pull_request.title || github.ref_name }}`${{ github.event.pull_request.number && format(' ([#{0}](https://github.com/{1}/pull/{0}))', github.event.pull_request.number, github.repository) || '' }} have dropped, or failed.
+            Benchmark run failed or detected a regression for PR [#${{ github.event.pull_request.number }}](${{ github.event.pull_request.html_url }}) at commit [`${{ steps.short_sha.outputs.value }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.short_sha.outputs.full }}).
 
-            Please check the specific [Bencher Run](${{ steps.bencher_pr.outputs.bencher_run_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}) for more details.
+            See [Bencher Run](${{ steps.bencher_pr.outputs.bencher_run_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}) for details.
       - name: Execute and Upload (Merge/Push)
         if: github.event_name != 'pull_request'
         id: bencher_merge
@@ -178,6 +188,6 @@ jobs:
           to: "${{ inputs.zulip_stream }}"
           topic: "${{ inputs.zulip_topic }}"
           content: |
-            The Bencher results for branch `${{ github.repository }} ${{ github.ref_name }}` at commit (${{ github.sha }}) have dropped, or failed.
+            Benchmark run failed or detected a regression on `${{ github.ref_name }}` at commit [`${{ steps.short_sha.outputs.value }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.short_sha.outputs.full }}).
 
-            Please check the specific [Bencher Report](${{ steps.bencher_merge.outputs.bencher_report_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}) for more details.
+            See [Bencher Report](${{ steps.bencher_merge.outputs.bencher_report_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}) for details.
