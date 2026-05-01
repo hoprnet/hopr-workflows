@@ -125,6 +125,12 @@ jobs:
         with:
           disable-sudo: true
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
+      # Nix fetches dependencies in a sandbox with its own git processes that don't inherit the checkout token.
       - name: Configure git credentials for private repositories
         if: ${{ github.event.repository.private }}
         env:
@@ -134,11 +140,6 @@ jobs:
           CONFIG_FILE="${RUNNER_TEMP}/gitconfig-credentials"
           printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
           echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
-      - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        with:
-          persist-credentials: false
-          ref: ${{ inputs.source_branch }}
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
         with:
@@ -487,6 +488,12 @@ jobs:
     if: vars.RUN_DOCKER_SMOKE_TESTS == 'true'
     needs: build
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
+      # Nix fetches dependencies in a sandbox with its own git processes that don't inherit the checkout token.
       - name: Configure git credentials for private repositories
         if: ${{ github.event.repository.private }}
         env:
@@ -496,11 +503,6 @@ jobs:
           CONFIG_FILE="${RUNNER_TEMP}/gitconfig-credentials"
           printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
           echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
-      - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        with:
-          persist-credentials: false
-          ref: ${{ inputs.source_branch }}
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
         with:
