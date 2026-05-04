@@ -21,7 +21,14 @@ sign() {
   echo "$GPG_PRIVATE_KEY" | gpg --batch "${gpg_passphrase_opts[@]}" --import
 
   # Generate hash and signature
-  sha256sum "$input_file" >"$input_file.sha256"
+  local input_dir
+  local input_basename
+  input_dir="$(dirname "$input_file")"
+  input_basename="$(basename "$input_file")"
+  (
+    cd "$input_dir"
+    sha256sum "$input_basename" >"$input_basename.sha256"
+  )
   echo "Hash written to $input_file.sha256"
   gpg --batch --armor --output "$input_file.asc" --detach-sign "${gpg_passphrase_opts[@]}" "$input_file"
   echo "Signature written to $input_file.asc"
