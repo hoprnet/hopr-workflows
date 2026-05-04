@@ -8,7 +8,7 @@ cleanup-npm-packages.py
 
 This script cleans up old npm package versions from a Google Cloud Artifact Registry.
 It lists all packages in the specified repository, identifies versions older than
-a specified number of days whose version string contains "+commit" or "+pr", and
+a specified number of days whose version string contains "-commit" or "-pr", and
 deletes them. The script can also run in dry-run mode to simulate deletions without
 making any changes.
 
@@ -107,8 +107,8 @@ repository = args.repository
 dry_run = args.dry_run
 date = make_cutoff_date(args.days)
 
-# Match versions containing -commit./-pr. (current format) or +commit./+pr. (future semver format)
-version_filter = re.compile(r"[-+](commit|pr)\.")
+# Match versions containing -commit./-pr. (current format)
+version_filter = re.compile(r"-(commit|pr)\.")
 
 
 async def main():
