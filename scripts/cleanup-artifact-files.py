@@ -4,7 +4,7 @@
 # ///
 
 """
-cleanup-artifacts.py.py
+cleanup-artifacts.py
 
 This script cleans up old artifacts from a Google Cloud Artifact Registry.
 It lists artifacts in the specified registry, identifies artifacts older than
@@ -16,7 +16,7 @@ Dependencies:
 - google-auth==2.38.0
 
 Usage:
-    ./cleanup-artifacts.py.py <project> <region> <repository> [-n | --dry-run] [-d | --days <days>]
+    ./cleanup-artifacts.py <project> <region> <repository> [-n | --dry-run] [-d | --days <days>]
 
 Arguments:
     project: The GCP project ID.
@@ -26,44 +26,45 @@ Arguments:
     -d, --days: Number of days to consider a file old (default: 60).
 
 Example:
-    ./cleanup-artifacts.py.py my-project europe-west3 rust-binaries -d 30 --dry-run
+    ./cleanup-artifacts.py my-project europe-west3 rust-binaries -d 30 --dry-run
 """
 
-from datetime import UTC, datetime, timedelta
-from google.auth.exceptions import DefaultCredentialsError
+import importlib.util
+import os
+
+_spec = importlib.util.spec_from_file_location(
+    "cleanup_common",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "cleanup-common.py"),
+)
+_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+add_args = _mod.add_args
+make_cutoff_date = _mod.make_cutoff_date
+make_artifact_client = _mod.make_artifact_client
+make_registry_parent = _mod.make_registry_parent
+delete_in_batches = _mod.delete_in_batches
+
+from datetime import UTC
 from google.cloud import artifactregistry_v1
 import argparse
-import shlex
 import asyncio
-import itertools
 import re
-import subprocess
 import sys
 
 
-def list_files(client, parent, filter_str=None):
+def list_files(client, parent):
     """Lists Files in Artifact registry."""
     try:
-        print(f"Listing Files in {parent} with filter: {filter_str}")
-        request = artifactregistry_v1.ListFilesRequest(parent=parent, filter=filter_str)
-        return [file for file in client.list_files(request=request)]
+        print(f"Listing Files in {parent}")
+        request = artifactregistry_v1.ListFilesRequest(parent=parent)
+        return list(client.list_files(request=request))
     except Exception as e:
         print(f"Error listing artifact files: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
 
-async def delete_old_files_list(client, files, dry_run):
-    """Deletes a list of artifact files asynchronously."""
-    await asyncio.gather(
-        *[
-            asyncio.wait_for(delete_old_file(client, file, dry_run), timeout=60)
-            for file in files
-        ]
-    )
-
-
 async def delete_old_file(client, file, dry_run):
-    """Deletes an artifact file by its URI."""
+    """Deletes an artifact file by its resource name."""
     full_file_name = file.name.split("/")[-1]
     package = full_file_name.split(":")[0]
     version = full_file_name.split(":")[1]
@@ -87,51 +88,26 @@ async def delete_old_file(client, file, dry_run):
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Cleanup old artifacts.")
-parser.add_argument("-p", "--project", help="GCP project ID")
-parser.add_argument(
-    "-l", "--location", default="europe-west3", help="Region of the Artifact Registry"
-)
-parser.add_argument(
-    "-r", "--repository", default="rust-binaries", help="Artifact repository name"
-)
-parser.add_argument(
-    "-n",
-    "--dry-run",
-    action="store_true",
-    help="Simulate the deletion without making any changes",
-)
-parser.add_argument(
-    "-d",
-    "--days",
-    type=int,
-    default=60,
-    help="Number of days to consider an file old (default: 60)",
-)
+add_args(parser, repository_default="rust-binaries")
 args = parser.parse_args()
 
-# Extract and validate command-line arguments
 project = args.project
 location = args.location
 repository = args.repository
 dry_run = args.dry_run
-days = args.days
-date = datetime.now(UTC) - timedelta(days=days)
+date = make_cutoff_date(args.days)
 packages = ["bloklid", "hopli"]
+
+# we are fine deleting files with a single "-commit.", "-pr.", "-build.", "-debug." or "<commit-hash>"
+# tag or with both
+name_filter = re.compile(r"^(.*\+commit\..*)|(.*\+pr\..*)|(.*\+debug\..*)")
 
 
 async def main():
     """Main function to clean up old Artifact Registry artifacts."""
-    try:
-        client = artifactregistry_v1.ArtifactRegistryClient()
-    except DefaultCredentialsError as e:
-        print(f"Error with credentials: {str(e)}", file=sys.stderr)
-        sys.exit(1)
+    client = make_artifact_client()
 
-    # we are fine deleting files with a single "-commit.", "-pr.", "-build.", "-debug." or "<commit-hash>"
-    # tag or with both
-    name_filter = re.compile(r"^(.*\+commit\..*)|(.*\+pr\..*)|(.*\+debug\..*)")
-    parent = f"projects/{project}/locations/{location}/repositories/{repository}"
-    # List all files in the repository (client-side filtering is more robust for partial matching)
+    parent = make_registry_parent(project, location, repository)
     artifact_files = list_files(client, parent)
     for package in packages:
         old_files = [
@@ -143,8 +119,7 @@ async def main():
             and name_filter.match(file.name)
         ]
         print(f"Found {len(old_files)} old files for {package}")
-        for batch in itertools.batched(old_files, 20):
-            await delete_old_files_list(client, batch, dry_run)
+        await delete_in_batches(old_files, lambda file: delete_old_file(client, file, dry_run))
 
 
 asyncio.run(main())

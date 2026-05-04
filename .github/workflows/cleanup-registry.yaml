@@ -36,7 +36,10 @@ jobs:
           cachix_auth_token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Cleanup Docker images
         timeout-minutes: 20
-        run: nix run .#cleanup-docker-images -- "${{ vars.DOCKER_IMAGE_REGISTRY }}"
+        run: nix run .#cleanup-docker-images -- -p hoprassociation -l europe-west3 -r docker-images
       - name: Cleanup Artifact files
         timeout-minutes: 20
         run: nix run .#cleanup-artifact-files -- -p hoprassociation -l europe-west3 -r rust-binaries
+      - name: Cleanup NPM packages
+        timeout-minutes: 20
+        run: nix run .#cleanup-npm-packages -- -p hoprassociation -l europe-west3 -r npm
