@@ -180,12 +180,12 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.asc
-          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.asc
+          path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture}}.asc
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} binary checksum
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.sha256
-          path: ${{ github.workspace }}/artifacts/${{ inputs.binary }}-${{ inputs.architecture}}.sha256
+          path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture}}.sha256
       - name: Setup GCP
         if: needs.build.outputs.publish_artifact_registry == 'true'
         uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
