@@ -57,6 +57,11 @@
               exec ${pythonEnv.interpreter} ./scripts/cleanup-artifact-files.py "$@"
             '';
           };
+          apps.cleanup-npm-packages = flake-utils.lib.mkApp {
+            drv = pkgs.writeShellScriptBin "cleanup-npm-packages" ''
+              exec ${pythonEnv.interpreter} ./scripts/cleanup-npm-packages.py "$@"
+            '';
+          };
         };
     };
 }
