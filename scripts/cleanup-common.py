@@ -15,11 +15,34 @@ import sys
 
 def add_args(parser, repository_default="", project_required=False):
     """Adds all standard arguments shared by all cleanup scripts."""
-    parser.add_argument("-p", "--project", required=project_required, help="GCP project ID")
-    parser.add_argument("-l", "--location", default="europe-west3", help="Region of the Artifact Registry")
-    parser.add_argument("-r", "--repository", default=repository_default, help="Artifact repository name")
-    parser.add_argument("-n", "--dry-run", action="store_true", help="Simulate the deletion without making any changes")
-    parser.add_argument("-d", "--days", type=int, default=60, help="Number of days to consider an item old (default: 60)")
+    parser.add_argument(
+        "-p", "--project", required=project_required, help="GCP project ID"
+    )
+    parser.add_argument(
+        "-l",
+        "--location",
+        default="europe-west3",
+        help="Region of the Artifact Registry",
+    )
+    parser.add_argument(
+        "-r",
+        "--repository",
+        default=repository_default,
+        help="Artifact repository name",
+    )
+    parser.add_argument(
+        "-n",
+        "--dry-run",
+        action="store_true",
+        help="Simulate the deletion without making any changes",
+    )
+    parser.add_argument(
+        "-d",
+        "--days",
+        type=int,
+        default=60,
+        help="Number of days to consider an item old (default: 60)",
+    )
 
 
 def make_cutoff_date(days):

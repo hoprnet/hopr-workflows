@@ -141,13 +141,19 @@ async def main():
             img for img in old_images if img.uri.startswith(f"{registry}/{image}@")
         ]
         tagged_filtered_images = [img for img in filtered_images if len(img.tags) > 0]
-        untagged_filtered_images = [img for img in filtered_images if len(img.tags) == 0]
+        untagged_filtered_images = [
+            img for img in filtered_images if len(img.tags) == 0
+        ]
 
         print(f"Found {len(filtered_images)} old images for {image}")
         print(f"Found {len(tagged_filtered_images)} tagged images for {image}")
         print(f"Found {len(untagged_filtered_images)} untagged images for {image}")
-        await delete_in_batches(tagged_filtered_images, lambda img: delete_docker_image(img, dry_run))
-        await delete_in_batches(untagged_filtered_images, lambda img: delete_docker_image(img, dry_run))
+        await delete_in_batches(
+            tagged_filtered_images, lambda img: delete_docker_image(img, dry_run)
+        )
+        await delete_in_batches(
+            untagged_filtered_images, lambda img: delete_docker_image(img, dry_run)
+        )
 
 
 asyncio.run(main())

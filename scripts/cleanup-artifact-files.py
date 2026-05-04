@@ -119,7 +119,9 @@ async def main():
             and name_filter.match(file.name)
         ]
         print(f"Found {len(old_files)} old files for {package}")
-        await delete_in_batches(old_files, lambda file: delete_old_file(client, file, dry_run))
+        await delete_in_batches(
+            old_files, lambda file: delete_old_file(client, file, dry_run)
+        )
 
 
 asyncio.run(main())

@@ -93,7 +93,9 @@ async def delete_old_version(client, version, dry_run):
         request = artifactregistry_v1.DeleteVersionRequest(name=version.name)
         client.delete_version(request=request)
     except Exception as e:
-        print(f"Error deleting version '{ver}' of '{package}': {str(e)}", file=sys.stderr)
+        print(
+            f"Error deleting version '{ver}' of '{package}': {str(e)}", file=sys.stderr
+        )
 
 
 # Parse command-line arguments
@@ -139,7 +141,9 @@ async def main():
             and not version.related_tags
         ]
         print(f"Found {len(old_versions)} old versions for '{package_name}'")
-        await delete_in_batches(old_versions, lambda version: delete_old_version(client, version, dry_run))
+        await delete_in_batches(
+            old_versions, lambda version: delete_old_version(client, version, dry_run)
+        )
 
 
 asyncio.run(main())
