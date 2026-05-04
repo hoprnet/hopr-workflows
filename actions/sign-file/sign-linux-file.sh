@@ -25,8 +25,10 @@ sign() {
   local input_basename
   input_dir="$(dirname "$input_file")"
   input_basename="$(basename "$input_file")"
-  cd "$input_dir"
-  sha256sum "$input_basename" >"$input_file.sha256"
+  (
+    cd "$input_dir"
+    sha256sum "$input_basename" >"$input_basename.sha256"
+  )
   echo "Hash written to $input_file.sha256"
   gpg --batch --armor --output "$input_file.asc" --detach-sign "${gpg_passphrase_opts[@]}" "$input_file"
   echo "Signature written to $input_file.asc"
