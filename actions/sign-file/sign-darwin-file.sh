@@ -16,7 +16,14 @@ sign() {
   echo "Verifying signature for file $input_file"
   codesign --verify --deep --strict --verbose=4 "$input_file"
 
-  shasum -a 256 "$input_file" >"${input_file}.sha256"
+  local input_dir
+  local input_basename
+  input_dir="$(dirname "$input_file")"
+  input_basename="$(basename "$input_file")"
+  (
+    cd "$input_dir"
+    shasum -a 256 "$input_basename" >"${input_basename}.sha256"
+  )
   echo "Hash written to $input_file.sha256"
 
 }
