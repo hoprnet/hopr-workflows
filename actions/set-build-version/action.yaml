@@ -70,8 +70,10 @@ runs:
         echo "Gathering version from ${{ inputs.file }} and setting build version type to '${{ inputs.version_type }}'"
         if [[ "${{ inputs.file }}" =~ ^.*\.toml$ ]]; then
           current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
+          semver_delimiter="+"
         elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
           current_version=$(jq -r '.version' ${{ inputs.file }})
+          semver_delimiter="-"
         else
           echo "Unsupported file type: ${{ inputs.file }}"
           exit 1
@@ -91,8 +93,8 @@ runs:
           commit_sha=$(git rev-parse --short HEAD)
           echo "Using HEAD SHA: ${commit_sha}"
         fi
-        commit_version="${current_version}+commit.${commit_sha}"
-        pr_version="${current_version}+pr.${{ github.event.pull_request.number }}"
+        commit_version="${current_version}${semver_delimiter}commit.${commit_sha}"
+        pr_version="${current_version}${semver_delimiter}pr.${{ github.event.pull_request.number }}"
         release_version="${current_version}"
         publish_artifact_registry=false
         publish_github_release=false
@@ -131,7 +133,7 @@ runs:
 
         ## Debug build flavor
         if [[ "${{ inputs.version_type }}" == "commit" ]] && [[ "${GITHUB_PR_LABEL_BUILD_FLAVOR_DEBUG:-0}" == '1' ]]; then
-            debug_version="${current_version}+debug.${commit_sha}"
+            debug_version="${current_version}${semver_delimiter}debug.${commit_sha}"
             docker_debug_version=${debug_version/+/-}
             if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
               docker_debug_version_platform="${docker_debug_version}-linux-arm64"
