@@ -88,7 +88,7 @@ async def delete_old_file(client, file, dry_run):
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Cleanup old artifacts.")
-add_args(parser, repository_default="rust-binaries")
+add_args(parser, repository_default="rust-binaries", project_required=True)
 args = parser.parse_args()
 
 project = args.project

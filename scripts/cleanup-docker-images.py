@@ -93,7 +93,7 @@ async def delete_docker_image(img, dry_run):
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Cleanup old Docker images.")
-add_args(parser)
+add_args(parser, project_required=True)
 args = parser.parse_args()
 
 project = args.project
