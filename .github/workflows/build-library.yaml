@@ -8,6 +8,9 @@ on:
       source_branch:
         required: true
         type: string
+      version_type:
+        required: true
+        type: string
       architecture:
         required: true
         type: string
@@ -24,6 +27,10 @@ on:
         required: true
         type: string
         description: "Command to build the binary"
+      package_name:
+        required: true
+        type: string
+        description: "Name of the package being built"
       timeout_minutes:
         required: false
         type: number
@@ -40,8 +47,11 @@ on:
     secrets:
       cachix_auth_token:
         required: true
+      cargo_registry_token:
+        required: false
+        description: "crates.io API token (required when version_type is 'release')"
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-library
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.package_name }}-library
   cancel-in-progress: true
 permissions:
   contents: read
@@ -67,6 +77,32 @@ jobs:
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
-      - name: Build library
+      - name: Updates build version
+        id: version
+        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+        with:
+          file: "${{ inputs.build_file }}"
+          version_type: "${{ inputs.version_type }}"
+          architecture: "${{ inputs.architecture }}"
+      - name: Build library ${{ inputs.architecture }}
         shell: bash
         run: ${{ inputs.build_command }}
+      - name: Build dry-run library
+        if: inputs.version_type != 'release'
+        shell: bash
+        run: nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish --package "$PACKAGE" --all-features
+        env:
+          PACKAGE: ${{ inputs.package_name }}
+      - name: Publish library
+        if: inputs.version_type == 'release'
+        shell: bash
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.cargo_registry_token }}
+          PACKAGE: ${{ inputs.package_name }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CARGO_REGISTRY_TOKEN:-}" ]]; then
+            echo "::error::secrets.cargo_registry_token is required when version_type='release'"
+            exit 1
+          fi
+          nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish --package "$PACKAGE" --execute --all-features --no-confirm
