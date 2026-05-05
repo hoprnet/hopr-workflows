@@ -84,7 +84,7 @@ The release process follows a two-branch model: `main` for active development an
 
 ```bash
       - name: Release version
-        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v3
+        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v4
         with:
           source_branch: main
           file: Cargo.toml
@@ -112,6 +112,7 @@ The release process follows a two-branch model: `main` for active development an
 - `source_branch`: Source branch for release notes
 - `file`: The filepath to the version file (e.g. `Cargo.toml` or `package.json`).
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
+- `release_tag_prefix`: Prefix for the release tag and release name (Default: `v`).
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 - `zulip_email`: Email of the user used to send Zulip notifications.
