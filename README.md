@@ -26,5 +26,4 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 - [Build Library](./.github/workflows/build-library.md): Builds a Rust library using Nix and publishes the crate to crates.io (dry-run on non-release builds).
 - [Checks](./.github/workflows/checks.md): Runs configurable code-quality checks (pre-commit, lint, deps, audit) via a matrix strategy.
 - [Checks Zizmor](./.github/workflows/checks-zizmor.md): Scans GitHub Actions workflow files for security issues using zizmor and uploads SARIF to the GitHub Security tab.
-- [Publish Crates](./.github/workflows/publish-crates.md): Publishes a single Rust crate to crates.io using cargo-release (dry-run by default).
 - [Tests](./.github/workflows/tests.md): Runs configurable test suites (unit, integration, nightly), benchmarks, and coverage reports.
