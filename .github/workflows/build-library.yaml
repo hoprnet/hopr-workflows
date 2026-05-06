@@ -83,7 +83,6 @@ jobs:
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
-          architecture: "${{ inputs.architecture }}"
       - name: Build library ${{ inputs.architecture }}
         shell: bash
         run: ${{ inputs.build_command }}

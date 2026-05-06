@@ -4,10 +4,10 @@ Builds, runs, and publishes benchmarks to [Bencher.dev](https://bencher.dev), wi
 
 ## Jobs
 
-| Job | Condition |
-|-----|-----------|
-| `build-benchmarks` | When `should_build` is `true` |
-| `run-benchmarks` | When `should_run` is `true` and build succeeded or was skipped |
+| Job                | Condition                                                      |
+| ------------------ | -------------------------------------------------------------- |
+| `build-benchmarks` | When `should_build` is `true`                                  |
+| `run-benchmarks`   | When `should_run` is `true` and build succeeded or was skipped |
 
 ## Usage
 
@@ -37,26 +37,26 @@ jobs:
 
 ## Inputs
 
-| Name | Required | Default | Description |
-|------|----------|---------|-------------|
-| `source_branch` | Yes | — | Source branch to check out |
-| `runner` | Yes | — | Runner label for both jobs |
-| `bencher_project` | Yes | — | Bencher.dev project name |
-| `should_build` | Yes | — | Whether to build the benchmarks |
-| `should_run` | Yes | — | Whether to run benchmarks after building |
-| `build_command` | Yes | — | Command to build the benchmarks |
-| `run_command` | Yes | — | Command to run the benchmarks |
-| `zulip_stream` | No | `HOPRd` | Zulip stream for notifications |
-| `zulip_topic` | No | `Benchmark regressions` | Zulip topic for notifications |
+| Name              | Required | Default                 | Description                              |
+| ----------------- | -------- | ----------------------- | ---------------------------------------- |
+| `source_branch`   | Yes      | —                       | Source branch to check out               |
+| `runner`          | Yes      | —                       | Runner label for both jobs               |
+| `bencher_project` | Yes      | —                       | Bencher.dev project name                 |
+| `should_build`    | Yes      | —                       | Whether to build the benchmarks          |
+| `should_run`      | Yes      | —                       | Whether to run benchmarks after building |
+| `build_command`   | Yes      | —                       | Command to build the benchmarks          |
+| `run_command`     | Yes      | —                       | Command to run the benchmarks            |
+| `zulip_stream`    | No       | `HOPRd`                 | Zulip stream for notifications           |
+| `zulip_topic`     | No       | `Benchmark regressions` | Zulip topic for notifications            |
 
 ## Secrets
 
-| Name | Required | Description |
-|------|----------|-------------|
-| `cachix_auth_token` | Yes | Auth token for Cachix cache |
-| `bencher_api_token` | No | Bencher.dev API token |
-| `ZULIP_API_KEY` | No | Zulip API key for failure notifications |
-| `ZULIP_EMAIL` | No | Zulip email for failure notifications |
+| Name                | Required | Description                             |
+| ------------------- | -------- | --------------------------------------- |
+| `cachix_auth_token` | Yes      | Auth token for Cachix cache             |
+| `bencher_api_token` | No       | Bencher.dev API token                   |
+| `ZULIP_API_KEY`     | No       | Zulip API key for failure notifications |
+| `ZULIP_EMAIL`       | No       | Zulip email for failure notifications   |
 
 ## Notifications
 

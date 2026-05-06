@@ -20,14 +20,14 @@ jobs:
 
 ## Inputs
 
-| Name | Required | Default | Description |
-|------|----------|---------|-------------|
-| `source_branch` | Yes | — | Source branch to check out |
-| `runner` | No | `ubuntu-latest` | Runner for the job |
-| `zizmor_command` | No | `nix develop -L .#ci -c bash -c "zizmor --format sarif . > results.sarif"` | Command to run zizmor |
+| Name             | Required | Default                                                                    | Description                |
+| ---------------- | -------- | -------------------------------------------------------------------------- | -------------------------- |
+| `source_branch`  | Yes      | —                                                                          | Source branch to check out |
+| `runner`         | No       | `ubuntu-latest`                                                            | Runner for the job         |
+| `zizmor_command` | No       | `nix develop -L .#ci -c bash -c "zizmor --format sarif . > results.sarif"` | Command to run zizmor      |
 
 ## Secrets
 
-| Name | Required | Description |
-|------|----------|-------------|
-| `cachix_auth_token` | Yes | Auth token for Cachix cache |
+| Name                | Required | Description                 |
+| ------------------- | -------- | --------------------------- |
+| `cachix_auth_token` | Yes      | Auth token for Cachix cache |

@@ -23,30 +23,30 @@ jobs:
 
 ## Inputs
 
-| Name | Required | Default | Description |
-|------|----------|---------|-------------|
-| `source_branch` | Yes | — | Source branch to build from |
-| `version_type` | No | `pr` | Versioning strategy: `commit`, `pr`, or `release`. Only `release` publishes to crates.io |
-| `package_name` | Yes | — | Crate name to publish (e.g. `hopr-types`) |
-| `architecture` | Yes | — | Target architecture (e.g. `x86_64-linux`) |
-| `cachix_cache_name` | No | — | Cachix cache name |
-| `build_file` | No | `Cargo.toml` | File to extract version from |
-| `build_command` | Yes | — | Nix command to build the library |
-| `timeout_minutes` | No | `60` | Timeout in minutes |
-| `runner` | Yes | — | Runner label for the job |
-| `enabled` | No | `true` | Whether to run this job |
+| Name                | Required | Default      | Description                                                                              |
+| ------------------- | -------- | ------------ | ---------------------------------------------------------------------------------------- |
+| `source_branch`     | Yes      | —            | Source branch to build from                                                              |
+| `version_type`      | No       | `pr`         | Versioning strategy: `commit`, `pr`, or `release`. Only `release` publishes to crates.io |
+| `package_name`      | Yes      | —            | Crate name to publish (e.g. `hopr-types`)                                                |
+| `architecture`      | Yes      | —            | Target architecture (e.g. `x86_64-linux`)                                                |
+| `cachix_cache_name` | No       | —            | Cachix cache name                                                                        |
+| `build_file`        | No       | `Cargo.toml` | File to extract version from                                                             |
+| `build_command`     | Yes      | —            | Nix command to build the library                                                         |
+| `timeout_minutes`   | No       | `60`         | Timeout in minutes                                                                       |
+| `runner`            | Yes      | —            | Runner label for the job                                                                 |
+| `enabled`           | No       | `true`       | Whether to run this job                                                                  |
 
 ## Secrets
 
-| Name | Required | Description |
-|------|----------|-------------|
-| `cachix_auth_token` | Yes | Auth token for Cachix cache |
-| `cargo_registry_token` | No | crates.io API token. Required when `version_type` is `release` |
+| Name                   | Required | Description                                                    |
+| ---------------------- | -------- | -------------------------------------------------------------- |
+| `cachix_auth_token`    | Yes      | Auth token for Cachix cache                                    |
+| `cargo_registry_token` | No       | crates.io API token. Required when `version_type` is `release` |
 
 ## Steps
 
 1. **Setup Nix** — configures the Nix environment with Cachix
 2. **Updates build version** — stamps the version using [set-build-version](../actions/set-build-version/README.md)
 3. **Build library** — runs `build_command`
-4. **Dry-run publish** *(non-release only)* — runs `cargo release publish` without `--execute` to validate the package
-5. **Publish library** *(release only)* — runs `cargo release publish --execute --all-features --no-confirm`
+4. **Dry-run publish** _(non-release only)_ — runs `cargo release publish` without `--execute` to validate the package
+5. **Publish library** _(release only)_ — runs `cargo release publish --execute --all-features --no-confirm`
