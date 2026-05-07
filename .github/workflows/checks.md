@@ -19,20 +19,20 @@ jobs:
 
 ## Inputs
 
-| Name                 | Required | Default                                                      | Description                                       |
-| -------------------- | -------- | ------------------------------------------------------------ | ------------------------------------------------- |
-| `source_branch`      | Yes      | —                                                            | Source branch to check out                        |
-| `pre_commit`         | No       | `true`                                                       | Enable pre-commit check                           |
-| `lint`               | No       | `true`                                                       | Enable lint check                                 |
-| `deps`               | No       | `true`                                                       | Enable dependency check                           |
-| `audit`              | No       | `true`                                                       | Enable security audit                             |
-| `pre_commit_command` | No       | `nix build -L .#pre-commit-check`                            | Command for pre-commit                            |
-| `lint_command`       | No       | `nix run -L .#check`                                         | Command for linting                               |
-| `deps_command`       | No       | `nix develop .#ci -c bash -c "cargo machete && cargo shear"` | Command for dependency check                      |
-| `audit_command`      | No       | `nix run .#audit`                                            | Command for security audit                        |
-| `runner_small`       | No       | `ubuntu-latest`                                              | Runner for lightweight checks (pre-commit)        |
-| `runner_large`       | No       | `ubuntu-latest`                                              | Runner for heavy checks (lint, deps, audit)       |
-| `disable_sudo`       | No       | `true`                                                       | Disable sudo in harden-runner                     |
+| Name                 | Required | Default                                                      | Description                                 |
+| -------------------- | -------- | ------------------------------------------------------------ | ------------------------------------------- |
+| `source_branch`      | Yes      | —                                                            | Source branch to check out                  |
+| `pre_commit`         | No       | `true`                                                       | Enable pre-commit check                     |
+| `lint`               | No       | `true`                                                       | Enable lint check                           |
+| `deps`               | No       | `true`                                                       | Enable dependency check                     |
+| `audit`              | No       | `true`                                                       | Enable security audit                       |
+| `pre_commit_command` | No       | `nix build -L .#pre-commit-check`                            | Command for pre-commit                      |
+| `lint_command`       | No       | `nix run -L .#check`                                         | Command for linting                         |
+| `deps_command`       | No       | `nix develop .#ci -c bash -c "cargo machete && cargo shear"` | Command for dependency check                |
+| `audit_command`      | No       | `nix run .#audit`                                            | Command for security audit                  |
+| `runner_small`       | No       | `ubuntu-latest`                                              | Runner for lightweight checks (pre-commit)  |
+| `runner_large`       | No       | `ubuntu-latest`                                              | Runner for heavy checks (lint, deps, audit) |
+| `disable_sudo`       | No       | `true`                                                       | Disable sudo in harden-runner               |
 
 ## Secrets
 
