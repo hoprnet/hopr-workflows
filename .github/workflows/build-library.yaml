@@ -73,12 +73,6 @@ jobs:
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
-      - name: Updates build version
-        id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
-        with:
-          file: "${{ inputs.build_file }}"
-          version_type: "${{ inputs.version_type }}"
       - name: Build dry-run library
         if: inputs.version_type != 'release'
         shell: bash
