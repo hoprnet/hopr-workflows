@@ -23,10 +23,6 @@ on:
         type: string
         default: "Cargo.toml"
         description: "File to extract version from"
-      build_command:
-        required: true
-        type: string
-        description: "Command to build the binary"
       package_name:
         required: true
         type: string
@@ -83,9 +79,6 @@ jobs:
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
-      - name: Build library ${{ inputs.architecture }}
-        shell: bash
-        run: ${{ inputs.build_command }}
       - name: Build dry-run library
         if: inputs.version_type != 'release'
         shell: bash

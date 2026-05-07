@@ -14,7 +14,6 @@ jobs:
       package_name: my-crate
       architecture: x86_64-linux
       cachix_cache_name: hopr
-      build_command: nix build .#my-library-x86_64-linux
       runner: self-hosted-hoprnet-bigger
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -26,12 +25,11 @@ jobs:
 | Name                | Required | Default      | Description                                                                              |
 | ------------------- | -------- | ------------ | ---------------------------------------------------------------------------------------- |
 | `source_branch`     | Yes      | —            | Source branch to build from                                                              |
-| `version_type`      | No       | `pr`         | Versioning strategy: `commit`, `pr`, or `release`. Only `release` publishes to crates.io |
+| `version_type`      | Yes      | —            | Versioning strategy: `commit`, `pr`, or `release`. Only `release` publishes to crates.io |
 | `package_name`      | Yes      | —            | Crate name to publish (e.g. `hopr-types`)                                                |
 | `architecture`      | Yes      | —            | Target architecture (e.g. `x86_64-linux`)                                                |
 | `cachix_cache_name` | No       | —            | Cachix cache name                                                                        |
 | `build_file`        | No       | `Cargo.toml` | File to extract version from                                                             |
-| `build_command`     | Yes      | —            | Nix command to build the library                                                         |
 | `timeout_minutes`   | No       | `60`         | Timeout in minutes                                                                       |
 | `runner`            | Yes      | —            | Runner label for the job                                                                 |
 | `enabled`           | No       | `true`       | Whether to run this job                                                                  |
@@ -45,8 +43,9 @@ jobs:
 
 ## Steps
 
-1. **Setup Nix** — configures the Nix environment with Cachix
-2. **Updates build version** — stamps the version using [set-build-version](../actions/set-build-version/README.md)
-3. **Build library** — runs `build_command`
-4. **Dry-run publish** _(non-release only)_ — runs `cargo release publish` without `--execute` to validate the package
-5. **Publish library** _(release only)_ — runs `cargo release publish --execute --all-features --no-confirm`
+1. **Harden Runner** — applies step-security hardening (no sudo, egress audit)
+2. **Checkout repository** — checks out `source_branch`
+3. **Setup Nix** — configures the Nix environment with Cachix
+4. **Updates build version** — stamps the version using [set-build-version](../actions/set-build-version/README.md)
+5. **Build dry-run library** _(non-release only)_ — runs `cargo release publish --all-features` without `--execute` to validate the package
+6. **Publish library** _(release only)_ — runs `cargo release publish --execute --all-features --no-confirm`
