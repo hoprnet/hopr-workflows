@@ -76,7 +76,8 @@ jobs:
       - name: Build dry-run library
         if: inputs.version_type != 'release'
         shell: bash
-        run: nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish --package "$PACKAGE" --all-features
+        # --allow-dirty: cargo publish fetches the crates.io index during packaging, which updates Cargo.lock; this flag prevents cargo-release from failing its clean-state check on that generated change
+        run: nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish --package "$PACKAGE" --all-features --allow-dirty
         env:
           PACKAGE: ${{ inputs.package_name }}
       - name: Publish library
@@ -91,4 +92,4 @@ jobs:
             echo "::error::secrets.cargo_registry_token is required when version_type='release'"
             exit 1
           fi
-          nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish --package "$PACKAGE" --execute --all-features --no-confirm
+          nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish --package "$PACKAGE" --execute --all-features --no-confirm --allow-dirty
