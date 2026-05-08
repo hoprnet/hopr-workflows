@@ -24,7 +24,7 @@ on:
         default: "Cargo.toml"
         description: "File to extract version from"
       package_name:
-        required: true
+        required: false
         type: string
         description: "Name of the package being built"
       timeout_minutes:
@@ -76,19 +76,19 @@ jobs:
       - name: Build dry-run library
         if: inputs.version_type != 'release'
         shell: bash
-        run: nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish --package "$PACKAGE" --all-features
+        run: nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish $CONTEXT --all-features
         env:
-          PACKAGE: ${{ inputs.package_name }}
+          CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
       - name: Publish library
         if: inputs.version_type == 'release'
         shell: bash
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.cargo_registry_token }}
-          PACKAGE: ${{ inputs.package_name }}
+          CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
         run: |
           set -euo pipefail
           if [[ -z "${CARGO_REGISTRY_TOKEN:-}" ]]; then
             echo "::error::secrets.cargo_registry_token is required when version_type='release'"
             exit 1
           fi
-          nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish --package "$PACKAGE" --execute --all-features --no-confirm
+          nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish $CONTEXT --execute --all-features --no-confirm
