@@ -186,7 +186,7 @@ runs:
           if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
             echo "Regenerating lock file"
             nix develop --command bash -c "cargo metadata --no-deps --format-version 1 --manifest-path ${{ inputs.file }} \
-              | jq -r '.packages[] | select(.source == null) | "\(.name)@\(.version)"' \
+              | jq -r '.packages[] | select(.source == null) | .name + "@" + .version' \
               | xargs -I{} cargo update --manifest-path ${{ inputs.file }} -p {}"
           fi
         elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
