@@ -10,8 +10,10 @@ sign() {
   echo "Signing file: ${input_file}"
 
   # Create isolated GPG keyring
+  local gnupghome
   gnupghome="$(mktemp -d)"
   export GNUPGHOME="$gnupghome"
+  trap 'rm -rf "$GNUPGHOME"' EXIT
 
   local gpg_passphrase_opts=()
   if [[ -n ${GPG_PRIVATE_KEY_PASSWORD:-} ]]; then
@@ -34,7 +36,8 @@ sign() {
   echo "Signature written to $input_file.asc"
 
   # Clean up
-  rm -rf "$gnupghome"
+  rm -rf "$GNUPGHOME"
+  trap - EXIT
 
 }
 
