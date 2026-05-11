@@ -13,6 +13,10 @@ inputs:
     description: Release type to bump (major, minor, patch, rc)
     required: false
     default: patch
+  release_tag_prefix:
+    description: Prefix for the release tag
+    required: false
+    default: "v"
   draft:
     description: Whether to create a draft release
     required: false
@@ -109,11 +113,11 @@ runs:
         source_branch: ${{ inputs.source_branch }}
         format: github
     - name: Create Release
-      uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+      uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
       with:
-        tag_name: "v${{ steps.version.outputs.current_version }}"
+        tag_name: "${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
         prerelease: ${{ steps.version.outputs.prerelease }}
-        name: "v${{ steps.version.outputs.current_version }}"
+        name: "${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
         body_path: ${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}
         files: ${{ steps.download.outputs.downloaded_files || '' }}
         draft: ${{ inputs.draft }}
@@ -130,7 +134,7 @@ runs:
       run: |
         release_notes_path="${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}"
         {
-          echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ steps.version.outputs.current_version }}\` has been released."
+          echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}\` has been released."
           echo ""
           cat "$release_notes_path"
         } > notification_message.txt
