@@ -31,5 +31,6 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 ## Tags
 
 The reusable workflows and actions use the following tagging pattern:
-- `<action-name>-v<major_version_number>` 
+
+- `<action-name>-v<major_version_number>`
 - `<workflow-name>-v<major_version_number>`
