@@ -24,7 +24,7 @@ jobs:
       cachix_cache_name: hopr
       build_command: nix build .#binary-hoprd-x86_64-linux
       binary: hoprd
-      runner: self-hosted-hoprnet-bigger
+      runner: depot-ubuntu-22.04-4
     secrets:
       gcp_service_account: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY }}
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}

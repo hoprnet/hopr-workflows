@@ -47,11 +47,11 @@ on:
       runner_small:
         required: false
         type: string
-        default: "ubuntu-latest"
+        default: "depot-ubuntu-22.04"
       runner_large:
         required: false
         type: string
-        default: "ubuntu-latest"
+        default: "depot-ubuntu-22.04"
       disable_sudo:
         required: false
         type: boolean

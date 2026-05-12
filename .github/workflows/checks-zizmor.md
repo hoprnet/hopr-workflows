@@ -13,7 +13,7 @@ jobs:
       security-events: write
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
-      runner: self-hosted-hoprnet-bigger
+      runner: depot-ubuntu-22.04-4
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 ```
@@ -23,7 +23,7 @@ jobs:
 | Name             | Required | Default                                                                    | Description                |
 | ---------------- | -------- | -------------------------------------------------------------------------- | -------------------------- |
 | `source_branch`  | Yes      | —                                                                          | Source branch to check out |
-| `runner`         | No       | `ubuntu-latest`                                                            | Runner for the job         |
+| `runner`         | No       | `depot-ubuntu-22.04`                                                            | Runner for the job         |
 | `zizmor_command` | No       | `nix develop -L .#ci -c bash -c "zizmor --format sarif . > results.sarif"` | Command to run zizmor      |
 
 ## Secrets

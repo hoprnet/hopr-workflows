@@ -66,7 +66,7 @@ on:
       runner_unit:
         required: false
         type: string
-        default: "ubuntu-latest"
+        default: "depot-ubuntu-22.04"
         description: >-
           Runner for unit tests, nightly tests, benchmarks, and unit coverage.
       runner_integration:

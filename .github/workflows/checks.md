@@ -11,8 +11,8 @@ jobs:
     uses: hoprnet/hopr-workflows/.github/workflows/checks.yaml@workflow-checks-v1
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
-      runner_small: self-hosted-hoprnet-small
-      runner_large: self-hosted-hoprnet-bigger
+      runner_small: depot-ubuntu-22.04
+      runner_large: depot-ubuntu-22.04-4
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 ```
@@ -30,8 +30,8 @@ jobs:
 | `lint_command`       | No       | `nix run -L .#check`                                         | Command for linting                         |
 | `deps_command`       | No       | `nix develop .#ci -c bash -c "cargo machete && cargo shear"` | Command for dependency check                |
 | `audit_command`      | No       | `nix run .#audit`                                            | Command for security audit                  |
-| `runner_small`       | No       | `ubuntu-latest`                                              | Runner for lightweight checks (pre-commit)  |
-| `runner_large`       | No       | `ubuntu-latest`                                              | Runner for heavy checks (lint, deps, audit) |
+| `runner_small`       | No       | `depot-ubuntu-22.04`                                              | Runner for lightweight checks (pre-commit)  |
+| `runner_large`       | No       | `depot-ubuntu-22.04`                                              | Runner for heavy checks (lint, deps, audit) |
 | `disable_sudo`       | No       | `true`                                                       | Disable sudo in harden-runner               |
 
 ## Secrets

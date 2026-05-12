@@ -22,7 +22,7 @@ jobs:
     uses: hoprnet/hopr-workflows/.github/workflows/benchmarks.yaml@<commit-hash>
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref_name }}
-      runner: self-hosted-hoprnet-bigger
+      runner: depot-ubuntu-22.04-4
       bencher_project: ${{ github.event.repository.name }}
       should_build: true
       should_run: true
