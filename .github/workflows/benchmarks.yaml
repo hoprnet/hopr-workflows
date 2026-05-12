@@ -8,6 +8,7 @@ on:
       runner:
         required: true
         type: string
+        default: depot-ubuntu-22.04-4
       bencher_project:
         required: true
         type: string
