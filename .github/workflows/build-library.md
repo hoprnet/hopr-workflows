@@ -14,7 +14,7 @@ jobs:
       package_name: my-crate
       architecture: x86_64-linux
       cachix_cache_name: hopr
-      runner: self-hosted-hoprnet-bigger
+      runner: depot-ubuntu-22.04-4
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       cargo_registry_token: ${{ secrets.CARGO_REGISTRY_TOKEN }}

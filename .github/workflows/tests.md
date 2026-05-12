@@ -59,7 +59,7 @@ jobs:
 | `benchmark_command`            | No       | `nix build .#bench-build`         | Command for benchmarks                                                          |
 | `unit_coverage_command`        | No       | `nix run .#coverage-unit`         | Command for unit coverage                                                       |
 | `integration_coverage_command` | No       | `nix run .#coverage-integration`  | Command for integration coverage                                                |
-| `runner_unit`                  | No       | `ubuntu-latest`                   | Runner for unit tests, nightly tests, benchmarks, and unit coverage             |
+| `runner_unit`                  | No       | `depot-ubuntu-22.04`              | Runner for unit tests, nightly tests, benchmarks, and unit coverage             |
 | `runner_integration`           | No       | `""`                              | Runner for integration tests and coverage. Falls back to `runner_unit` if empty |
 | `test_timeout`                 | No       | `60`                              | Timeout in minutes for test jobs                                                |
 | `benchmark_timeout`            | No       | `20`                              | Timeout in minutes for benchmark job                                            |

@@ -27,3 +27,10 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 - [Checks](./.github/workflows/checks.md): Runs configurable code-quality checks (pre-commit, lint, deps, audit) via a matrix strategy.
 - [Checks Zizmor](./.github/workflows/checks-zizmor.md): Scans GitHub Actions workflow files for security issues using zizmor and uploads SARIF to the GitHub Security tab.
 - [Tests](./.github/workflows/tests.md): Runs configurable test suites (unit, integration, nightly), benchmarks, and coverage reports.
+
+## Tags
+
+The reusable workflows and actions use the following tagging pattern:
+
+- `<action-name>-v<major_version_number>`
+- `<workflow-name>-v<major_version_number>`

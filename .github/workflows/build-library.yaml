@@ -33,8 +33,9 @@ on:
         default: 60
         description: "Timeout for the job in minutes"
       runner:
-        required: true
+        required: false
         type: string
+        default: depot-ubuntu-22.04-4
       enabled:
         required: false
         type: boolean
