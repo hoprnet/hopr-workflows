@@ -123,9 +123,10 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         tag="${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
+        override_value="$(echo "${{ inputs.override }}" | tr '[:upper:]' '[:lower:]')"
         if gh release view "$tag" --repo "${{ github.repository }}" > /dev/null 2>&1; then
           echo "exists=true" >> "$GITHUB_OUTPUT"
-          if [[ ! "${{ inputs.override }}" =~ ^[Tt][Rr][Uu][Ee]$ ]]; then
+          if [[ "$override_value" != "true" ]]; then
             echo "Release '$tag' already exists. Set 'override' to 'true' to update it."
             exit 1
           fi
