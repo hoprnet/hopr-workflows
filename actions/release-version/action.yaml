@@ -127,7 +127,7 @@ runs:
         if gh release view "$tag" --repo "${{ github.repository }}" > /dev/null 2>&1; then
           echo "exists=true" >> "$GITHUB_OUTPUT"
           if [[ "$override_value" != "true" ]]; then
-            echo "Release '$tag' already exists. Set 'override' to 'true' to update it."
+            echo "Release '$tag' already exists. Set 'override' to 'true' to update it." >&2
             exit 1
           fi
         else
