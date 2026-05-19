@@ -116,7 +116,7 @@ runs:
       with:
         source_branch: ${{ inputs.source_branch }}
         format: github
-    - name: Verify release does not already exist
+    - name: Check release existence
       id: check_release
       shell: bash
       env:
@@ -125,7 +125,7 @@ runs:
         tag="${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
         if gh release view "$tag" --repo "${{ github.repository }}" > /dev/null 2>&1; then
           echo "exists=true" >> "$GITHUB_OUTPUT"
-          if [[ "${{ inputs.override }}" != "true" ]]; then
+          if [[ ! "${{ inputs.override }}" =~ ^[Tt][Rr][Uu][Ee]$ ]]; then
             echo "Release '$tag' already exists. Set 'override' to 'true' to update it."
             exit 1
           fi
