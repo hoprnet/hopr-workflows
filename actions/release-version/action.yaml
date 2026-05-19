@@ -124,6 +124,11 @@ runs:
         tag="${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
         release_exists="false"
 
+        if [[ -z "$GITHUB_TOKEN" ]]; then
+          echo "GITHUB_TOKEN is required to verify whether release '$tag' already exists." >&2
+          exit 1
+        fi
+
         if command -v gh > /dev/null 2>&1; then
           if gh release view "$tag" --repo "${{ github.repository }}" > /dev/null 2>&1; then
             release_exists="true"
@@ -145,7 +150,7 @@ runs:
           if [[ "$http_status" == "200" ]]; then
             release_exists="true"
           elif [[ "$http_status" != "404" ]]; then
-            echo "Failed to verify release '$tag' existence via GitHub API (HTTP $http_status). Check token permissions (401/403) and API rate limiting (429)." >&2
+            echo "Failed to verify release '$tag' existence via GitHub API (HTTP $http_status). Check token permissions (401/403), API rate limiting (429), and transient network/server errors (5xx)." >&2
             exit 1
           fi
         fi
