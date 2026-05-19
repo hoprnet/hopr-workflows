@@ -122,11 +122,35 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         tag="${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
-        if gh release view "$tag" --repo "${{ github.repository }}" > /dev/null 2>&1; then
-          if [[ "${{ inputs.override }}" != "true" ]]; then
-            echo "Release '$tag' already exists. Set 'override' to 'true' to update it." >&2
+        release_exists="false"
+
+        if command -v gh > /dev/null 2>&1; then
+          if gh release view "$tag" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            release_exists="true"
+          fi
+        else
+          if ! command -v curl > /dev/null 2>&1; then
+            echo "Neither 'gh' nor 'curl' is available to verify whether release '$tag' already exists." >&2
             exit 1
           fi
+
+          api_url="https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag"
+          http_status="$(curl -sS -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$api_url")"
+
+          if [[ "$http_status" == "200" ]]; then
+            release_exists="true"
+          elif [[ "$http_status" != "404" ]]; then
+            echo "Failed to verify release '$tag' existence via GitHub API (HTTP $http_status)." >&2
+            exit 1
+          fi
+        fi
+
+        if [[ "$release_exists" == "true" && "${{ inputs.override }}" != "true" ]]; then
+          echo "Release '$tag' already exists. Set 'override' to 'true' to update it." >&2
+          exit 1
         fi
     - name: Create Release
       uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
