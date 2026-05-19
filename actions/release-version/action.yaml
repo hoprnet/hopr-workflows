@@ -21,6 +21,10 @@ inputs:
     description: Whether to create a draft release
     required: false
     default: 'false'
+  override:
+    description: Whether to allow updating an existing release for the same tag
+    required: false
+    default: 'false'
   cachix_cache_name:
     required: false
     description: "Cachix cache name to use"
@@ -112,6 +116,22 @@ runs:
       with:
         source_branch: ${{ inputs.source_branch }}
         format: github
+    - name: Verify release does not already exist
+      id: check_release
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        tag="${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
+        if gh release view "$tag" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+          if [[ "${{ inputs.override }}" != "true" ]]; then
+            echo "Release '$tag' already exists. Set 'override' to 'true' to update it."
+            exit 1
+          fi
+        else
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+        fi
     - name: Create Release
       uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
       with:
