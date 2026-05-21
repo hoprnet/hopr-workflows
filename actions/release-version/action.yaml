@@ -124,21 +124,11 @@ runs:
         tag="${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
         release_exists="false"
 
-        if [[ -z "$GITHUB_TOKEN" ]]; then
-          echo "GITHUB_TOKEN is required to verify whether release '$tag' already exists." >&2
-          exit 1
-        fi
-
         if command -v gh > /dev/null 2>&1; then
           if gh release view "$tag" --repo "${{ github.repository }}" > /dev/null 2>&1; then
             release_exists="true"
           fi
         else
-          if ! command -v curl > /dev/null 2>&1; then
-            echo "Neither 'gh' nor 'curl' is available to verify whether release '$tag' already exists." >&2
-            exit 1
-          fi
-
           api_url="https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag"
           http_status="$(curl -sS -o /dev/null -w "%{http_code}" \
             --proto "=https" \
@@ -156,7 +146,7 @@ runs:
         fi
 
         if [[ "$release_exists" == "true" && "${{ inputs.override }}" != "true" ]]; then
-          echo "Release '$tag' already exists. Set 'override' to 'true' to update it." >&2
+          echo "Release '$tag' already exists. Use input parameter \"override: 'true'\" to allow override existing releases." >&2
           exit 1
         fi
     - name: Create Release
