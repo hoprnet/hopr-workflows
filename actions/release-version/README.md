@@ -99,6 +99,7 @@ The release process follows a two-branch model: `main` for active development an
           gcp_artifact_package: my-package
           github_token: "${{ secrets.GH_RUNNER_TOKEN }}"
           draft: 'true'
+          override: 'false'
 ```
 
 ## Requirements
@@ -126,6 +127,7 @@ The release process follows a two-branch model: `main` for active development an
 - `release_notes_file`: Path to a file containing release notes. If empty (default), release notes are auto-generated from the git history using the `generate-release-notes` action.
 - `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch.
 - `draft`: Whether to create a draft release
+- `override`: Whether to allow updating an existing release for the target tag. When `false` (default), the action fails if the release already exists.
 
 ## Outputs
 
