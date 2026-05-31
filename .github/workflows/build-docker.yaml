@@ -179,9 +179,11 @@ jobs:
           password: ${{ secrets.docker_hub_token }}
       - name: Publish docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         run: |
+          # The depot-ubuntu-24.04 runner ships a v1-format /etc/containers/registries.conf
+          # which recent skopeo refuses to parse. Point skopeo at a minimal valid v2 config
+          # via CONTAINERS_REGISTRIES_CONF so it never reads the system file.
+          printf 'unqualified-search-registries = ["docker.io"]\n' > "${CONTAINERS_REGISTRIES_CONF}"
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
-            mkdir -p "$HOME/.config/containers"
-            printf 'unqualified-search-registries = ["docker.io"]\n' > "$HOME/.config/containers/registries.conf"
             set -euo pipefail
             base_branch=${{ github.event.pull_request.base.ref }}
             publish_image() {
@@ -234,12 +236,14 @@ jobs:
           GCP_RELEASE_MAIN_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:release-main-${{ steps.version.outputs.docker_platform }}
           GCP_RELEASE_TESTING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:release-testing-${{ steps.version.outputs.docker_platform }}
           DOCKER_HUB_IMAGE_NAME: ${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
+          CONTAINERS_REGISTRIES_CONF: ${{ runner.temp }}/registries.conf
       - name: Publish debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
         if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
         run: |
+          # See the release publish step above: force skopeo onto a minimal valid v2
+          # registries.conf so it ignores the runner's v1 /etc/containers/registries.conf.
+          printf 'unqualified-search-registries = ["docker.io"]\n' > "${CONTAINERS_REGISTRIES_CONF}"
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
-            mkdir -p "$HOME/.config/containers"
-            printf 'unqualified-search-registries = ["docker.io"]\n' > "$HOME/.config/containers/registries.conf"
             set -euo pipefail
             echo "Publishing image ${GCP_DEBUG_IMAGE_NAME}"
             if [[ "${{ inputs.docker_image_format }}" == "skopeo" ]]; then
@@ -252,6 +256,7 @@ jobs:
           SKOPEO
         env:
           GCP_DEBUG_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
+          CONTAINERS_REGISTRIES_CONF: ${{ runner.temp }}/registries.conf
       - name: Remove git credentials
         if: ${{ github.event.repository.private && always() }}
         run: |
