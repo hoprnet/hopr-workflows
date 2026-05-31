@@ -180,6 +180,8 @@ jobs:
       - name: Publish docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         run: |
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
+            mkdir -p "$HOME/.config/containers"
+            printf 'unqualified-search-registries = ["docker.io"]\n' > "$HOME/.config/containers/registries.conf"
             set -euo pipefail
             base_branch=${{ github.event.pull_request.base.ref }}
             publish_image() {
@@ -236,6 +238,8 @@ jobs:
         if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
         run: |
           nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
+            mkdir -p "$HOME/.config/containers"
+            printf 'unqualified-search-registries = ["docker.io"]\n' > "$HOME/.config/containers/registries.conf"
             set -euo pipefail
             echo "Publishing image ${GCP_DEBUG_IMAGE_NAME}"
             if [[ "${{ inputs.docker_image_format }}" == "skopeo" ]]; then
