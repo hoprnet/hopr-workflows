@@ -179,9 +179,7 @@ jobs:
           password: ${{ secrets.docker_hub_token }}
       - name: Publish docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         run: |
-          nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
-            mkdir -p "$HOME/.config/containers"
-            printf 'unqualified-search-registries = ["docker.io"]\n' > "$HOME/.config/containers/registries.conf"
+          nix shell github:hoprnet/nix-lib#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
             base_branch=${{ github.event.pull_request.base.ref }}
             publish_image() {
@@ -237,9 +235,7 @@ jobs:
       - name: Publish debug docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_debug_version_platform }}
         if: steps.version.outputs.docker_debug_version_platform != '' && matrix.build_debug_command != ''
         run: |
-          nix shell nixpkgs#skopeo -c bash << 'SKOPEO'
-            mkdir -p "$HOME/.config/containers"
-            printf 'unqualified-search-registries = ["docker.io"]\n' > "$HOME/.config/containers/registries.conf"
+          nix shell github:hoprnet/nix-lib#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
             echo "Publishing image ${GCP_DEBUG_IMAGE_NAME}"
             if [[ "${{ inputs.docker_image_format }}" == "skopeo" ]]; then
