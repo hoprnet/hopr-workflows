@@ -21,6 +21,10 @@ inputs:
     description: Whether to create a draft release
     required: false
     default: 'false'
+  override:
+    description: Whether to allow updating an existing release for the same tag
+    required: false
+    default: 'false'
   cachix_cache_name:
     required: false
     description: "Cachix cache name to use"
@@ -112,6 +116,39 @@ runs:
       with:
         source_branch: ${{ inputs.source_branch }}
         format: github
+    - name: Check release existence
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        tag="${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
+        release_exists="false"
+
+        if command -v gh > /dev/null 2>&1; then
+          if gh release view "$tag" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            release_exists="true"
+          fi
+        else
+          api_url="https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag"
+          http_status="$(curl -sS -o /dev/null -w "%{http_code}" \
+            --proto "=https" \
+            --tlsv1.2 \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$api_url")"
+
+          if [[ "$http_status" == "200" ]]; then
+            release_exists="true"
+          elif [[ "$http_status" != "404" ]]; then
+            echo "Failed to verify release '$tag' existence via GitHub API (HTTP $http_status). Check token permissions (401/403), API rate limiting (429), and transient network/server errors (5xx)." >&2
+            exit 1
+          fi
+        fi
+
+        if [[ "$release_exists" == "true" && "${{ inputs.override }}" != "true" ]]; then
+          echo "Release '$tag' already exists. Use input parameter \"override: 'true'\" to allow override existing releases." >&2
+          exit 1
+        fi
     - name: Create Release
       uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
       with:
