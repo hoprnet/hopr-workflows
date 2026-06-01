@@ -18,6 +18,10 @@ inputs:
     description: Cachix authentication token (passed to setup-nix)
     required: false
     default: ""
+  nix_path:
+    description: Nix path to use (passed to setup-nix)
+    required: false
+    default: nixpkgs=channel:nixos-26.05
   disable_sudo:
     description: Whether to disable sudo in harden-runner
     required: false
@@ -44,6 +48,7 @@ runs:
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
         cachix_auth_token: ${{ inputs.cachix_auth_token }}
+        nix_path: ${{ inputs.nix_path }}
     - name: Run command
       shell: bash
       run: ${{ inputs.command }}

@@ -16,11 +16,12 @@ steps:
 
 ## Inputs
 
-| Input                 | Required | Default   | Description                                       |
-| --------------------- | -------- | --------- | ------------------------------------------------- |
-| `command`             | Yes      | —         | Shell command(s) to execute (supports multi-line) |
-| `source_branch`       | No       | `main`    | Git branch to checkout                            |
-| `cachix_cache_name`   | No       | `hoprnet` | Cachix cache name (passed to setup-nix)           |
-| `cachix_auth_token`   | No       | `""`      | Cachix authentication token (passed to setup-nix) |
-| `disable_sudo`        | No       | `"true"`  | Disable sudo in harden-runner                     |
-| `persist_credentials` | No       | `"false"` | Persist git credentials after checkout            |
+| Input                 | Required | Default                       | Description                                       |
+| --------------------- | -------- | ----------------------------- | ------------------------------------------------- |
+| `command`             | Yes      | —                             | Shell command(s) to execute (supports multi-line) |
+| `source_branch`       | No       | `main`                        | Git branch to checkout                            |
+| `cachix_cache_name`   | No       | `hoprnet`                     | Cachix cache name (passed to setup-nix)           |
+| `cachix_auth_token`   | No       | `""`                          | Cachix authentication token (passed to setup-nix) |
+| `nix_path`            | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use (passed to setup-nix)             |
+| `disable_sudo`        | No       | `"true"`                      | Disable sudo in harden-runner                     |
+| `persist_credentials` | No       | `"false"`                     | Persist git credentials after checkout            |

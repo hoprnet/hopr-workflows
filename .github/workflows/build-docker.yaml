@@ -28,6 +28,11 @@ on:
         required: false
         type: string
         description: "Cachix cache name to use"
+      nix_path:
+        required: false
+        type: string
+        default: nixpkgs=channel:nixos-26.05
+        description: "Nix path to use"
       build_file:
         required: false
         type: string
@@ -145,6 +150,7 @@ jobs:
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+          nix_path: ${{ inputs.nix_path }}
       - name: Updates build version
         id: version
         uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
@@ -355,6 +361,7 @@ jobs:
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+          nix_path: ${{ inputs.nix_path }}
       - name: Set up Docker
         uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4.7.0
       - name: Install Cosign
@@ -512,6 +519,7 @@ jobs:
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+          nix_path: ${{ inputs.nix_path }}
       - name: Run smoke tests
         if: matrix.smoke_test_command != ''
         run: ${{ matrix.smoke_test_command }} 2>&1 | tee test.logs

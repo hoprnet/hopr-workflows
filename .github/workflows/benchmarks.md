@@ -37,17 +37,18 @@ jobs:
 
 ## Inputs
 
-| Name              | Required | Default                 | Description                              |
-| ----------------- | -------- | ----------------------- | ---------------------------------------- |
-| `source_branch`   | Yes      | —                       | Source branch to check out               |
-| `runner`          | Yes      | —                       | Runner label for both jobs               |
-| `bencher_project` | Yes      | —                       | Bencher.dev project name                 |
-| `should_build`    | Yes      | —                       | Whether to build the benchmarks          |
-| `should_run`      | Yes      | —                       | Whether to run benchmarks after building |
-| `build_command`   | Yes      | —                       | Command to build the benchmarks          |
-| `run_command`     | Yes      | —                       | Command to run the benchmarks            |
-| `zulip_stream`    | No       | `HOPRd`                 | Zulip stream for notifications           |
-| `zulip_topic`     | No       | `Benchmark regressions` | Zulip topic for notifications            |
+| Name              | Required | Default                       | Description                              |
+| ----------------- | -------- | ----------------------------- | ---------------------------------------- |
+| `source_branch`   | Yes      | —                             | Source branch to check out               |
+| `runner`          | Yes      | —                             | Runner label for both jobs               |
+| `bencher_project` | Yes      | —                             | Bencher.dev project name                 |
+| `should_build`    | Yes      | —                             | Whether to build the benchmarks          |
+| `should_run`      | Yes      | —                             | Whether to run benchmarks after building |
+| `build_command`   | Yes      | —                             | Command to build the benchmarks          |
+| `run_command`     | Yes      | —                             | Command to run the benchmarks            |
+| `nix_path`        | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use                          |
+| `zulip_stream`    | No       | `HOPRd`                       | Zulip stream for notifications           |
+| `zulip_topic`     | No       | `Benchmark regressions`       | Zulip topic for notifications            |
 
 ## Secrets
 

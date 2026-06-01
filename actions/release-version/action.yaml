@@ -31,6 +31,10 @@ inputs:
   cachix_auth_token:
     required: true
     description: "Cachix authentication token"
+  nix_path:
+    description: Nix path to use
+    required: false
+    default: nixpkgs=channel:nixos-26.05
   zulip_api_key:
     description: Zulip API Key for notifications
     required: false
@@ -101,6 +105,7 @@ runs:
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
         cachix_auth_token: "${{ inputs.cachix_auth_token }}"
+        nix_path: ${{ inputs.nix_path }}
     - name: Download binary files
       if: inputs.gcp_artifact_package != ''
       id: download

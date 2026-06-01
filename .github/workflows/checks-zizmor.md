@@ -25,6 +25,7 @@ jobs:
 | `source_branch`  | Yes      | —                                                                          | Source branch to check out |
 | `runner`         | No       | `depot-ubuntu-22.04`                                                       | Runner for the job         |
 | `zizmor_command` | No       | `nix develop -L .#ci -c bash -c "zizmor --format sarif . > results.sarif"` | Command to run zizmor      |
+| `nix_path`       | No       | `nixpkgs=channel:nixos-26.05`                                              | Nix path to use            |
 
 ## Secrets
 

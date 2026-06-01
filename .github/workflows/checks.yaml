@@ -56,6 +56,11 @@ on:
         required: false
         type: boolean
         default: true
+      nix_path:
+        required: false
+        type: string
+        default: nixpkgs=channel:nixos-26.05
+        description: "Nix path to use"
     secrets:
       cachix_auth_token:
         required: true
@@ -100,3 +105,4 @@ jobs:
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           command: ${{ matrix.command }}
           disable_sudo: ${{ inputs.disable_sudo }}
+          nix_path: ${{ inputs.nix_path }}

@@ -33,21 +33,22 @@ jobs:
 
 ## Inputs
 
-| Name                  | Required | Default         | Description                                                           |
-| --------------------- | -------- | --------------- | --------------------------------------------------------------------- |
-| `source_branch`       | Yes      | —               | Source branch to build from                                           |
-| `version_type`        | Yes      | —               | Versioning strategy: `commit`, `pr`, or `release`                     |
-| `architecture`        | Yes      | —               | Target architecture (e.g. `x86_64-linux`, `aarch64-darwin`)           |
-| `cachix_cache_name`   | No       | —               | Cachix cache name                                                     |
-| `build_file`          | No       | `Cargo.toml`    | File to extract version from                                          |
-| `build_command`       | Yes      | —               | Command to build the binary. Output expected in `./result/bin/`       |
-| `build_debug_command` | No       | —               | Command to build the debug binary. Output expected in `./result/bin/` |
-| `binary`              | Yes      | —               | Binary name used for artifact naming                                  |
-| `gcp_region`          | No       | `europe-west3`  | GCP region for Artifact Registry                                      |
-| `gcp_repository`      | No       | `rust-binaries` | GCP Artifact Registry repository name                                 |
-| `timeout_minutes`     | No       | `60`            | Timeout in minutes                                                    |
-| `runner`              | Yes      | —               | Runner label for the job                                              |
-| `enabled`             | No       | `true`          | Whether to run this job                                               |
+| Name                  | Required | Default                       | Description                                                           |
+| --------------------- | -------- | ----------------------------- | --------------------------------------------------------------------- |
+| `source_branch`       | Yes      | —                             | Source branch to build from                                           |
+| `version_type`        | Yes      | —                             | Versioning strategy: `commit`, `pr`, or `release`                     |
+| `architecture`        | Yes      | —                             | Target architecture (e.g. `x86_64-linux`, `aarch64-darwin`)           |
+| `cachix_cache_name`   | No       | —                             | Cachix cache name                                                     |
+| `nix_path`            | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use                                                       |
+| `build_file`          | No       | `Cargo.toml`                  | File to extract version from                                          |
+| `build_command`       | Yes      | —                             | Command to build the binary. Output expected in `./result/bin/`       |
+| `build_debug_command` | No       | —                             | Command to build the debug binary. Output expected in `./result/bin/` |
+| `binary`              | Yes      | —                             | Binary name used for artifact naming                                  |
+| `gcp_region`          | No       | `europe-west3`                | GCP region for Artifact Registry                                      |
+| `gcp_repository`      | No       | `rust-binaries`               | GCP Artifact Registry repository name                                 |
+| `timeout_minutes`     | No       | `60`                          | Timeout in minutes                                                    |
+| `runner`              | Yes      | —                             | Runner label for the job                                              |
+| `enabled`             | No       | `true`                        | Whether to run this job                                               |
 
 ## Secrets
 
