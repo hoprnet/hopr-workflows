@@ -116,6 +116,7 @@ The release process follows a two-branch model: `main` for active development an
 - `release_tag_prefix`: Prefix for the release tag and release name (Default: `v`).
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
+- `nix_path`: Nix path to use. Default value: `nixpkgs=channel:nixos-26.05`.
 - `zulip_email`: Email of the user used to send Zulip notifications.
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.

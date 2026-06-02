@@ -10,7 +10,7 @@ inputs:
   nix_path:
     description: Nix path to use
     required: false
-    default: nixpkgs=channel:nixos-24.05
+    default: nixpkgs=channel:nixos-26.05
 runs:
   using: composite
   steps:

@@ -64,6 +64,7 @@ jobs:
 | `test_timeout`                 | No       | `60`                              | Timeout in minutes for test jobs                                                |
 | `benchmark_timeout`            | No       | `20`                              | Timeout in minutes for benchmark job                                            |
 | `coverage_timeout`             | No       | `60`                              | Timeout in minutes for coverage jobs                                            |
+| `nix_path`                     | No       | `nixpkgs=channel:nixos-26.05`     | Nix path to use                                                                 |
 
 ## Secrets
 

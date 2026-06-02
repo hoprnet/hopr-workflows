@@ -33,6 +33,7 @@ jobs:
 | `runner_small`       | No       | `depot-ubuntu-22.04`                                         | Runner for lightweight checks (pre-commit)  |
 | `runner_large`       | No       | `depot-ubuntu-22.04-4`                                       | Runner for heavy checks (lint, deps, audit) |
 | `disable_sudo`       | No       | `true`                                                       | Disable sudo in harden-runner               |
+| `nix_path`           | No       | `nixpkgs=channel:nixos-26.05`                                | Nix path to use                             |
 
 ## Secrets
 

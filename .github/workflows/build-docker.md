@@ -66,6 +66,7 @@ Each entry in the JSON array must include:
 | `version_type`                 | Yes      | —                                                           | Versioning strategy: `commit`, `pr`, or `release`   |
 | `build_matrix`                 | Yes      | —                                                           | JSON array of matrix entries (see schema above)     |
 | `cachix_cache_name`            | No       | —                                                           | Cachix cache name                                   |
+| `nix_path`                     | No       | `nixpkgs=channel:nixos-26.05`                               | Nix path to use                                     |
 | `build_file`                   | No       | `Cargo.toml`                                                | File to extract version from                        |
 | `docker_image_name`            | Yes      | —                                                           | Docker image name                                   |
 | `docker_image_format`          | No       | `docker`                                                    | Image format: `docker` or `skopeo`                  |

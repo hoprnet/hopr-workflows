@@ -29,6 +29,11 @@ on:
         required: true
         type: string
         description: "Command to run benchmarks"
+      nix_path:
+        required: false
+        type: string
+        default: nixpkgs=channel:nixos-26.05
+        description: "Nix path to use"
       zulip_stream:
         required: false
         type: string
@@ -70,6 +75,7 @@ jobs:
         uses: hoprnet/hopr-workflows/actions/setup-nix@43b03a7b5df777770d95c6524f48be34184b26fa # setup-nix-v1
         with:
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          nix_path: ${{ inputs.nix_path }}
       - name: Build benchmarks
         run: ${{ inputs.build_command }}
   run-benchmarks:
@@ -96,6 +102,7 @@ jobs:
         uses: hoprnet/hopr-workflows/actions/setup-nix@43b03a7b5df777770d95c6524f48be34184b26fa # setup-nix-v1
         with:
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          nix_path: ${{ inputs.nix_path }}
       - name: Compute short SHA
         id: short_sha
         run: |

@@ -27,6 +27,7 @@ This action generates and publishes the rust docs in github pages
 - `publish`: Determines if the action should finishing publishing the docs.
 - `cachix_cache_name`: Cachix cache name. Default value. Github repository name
 - `cachix_auth_token`: Cachix authentication token
+- `nix_path`: Nix path to use. Default value: `nixpkgs=channel:nixos-26.05`
 - `command`: Nix command to run the docs. Default value `nix build -L .#docs`
 - `github_token`: Github token used to deploy in Github Pages
 

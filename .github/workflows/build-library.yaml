@@ -18,6 +18,11 @@ on:
         required: false
         type: string
         description: "Cachix cache name to use"
+      nix_path:
+        required: false
+        type: string
+        default: nixpkgs=channel:nixos-26.05
+        description: "Nix path to use"
       build_file:
         required: false
         type: string
@@ -74,6 +79,7 @@ jobs:
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+          nix_path: ${{ inputs.nix_path }}
       - name: Build dry-run library
         if: inputs.version_type != 'release'
         shell: bash
