@@ -146,14 +146,14 @@ jobs:
           printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
           echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        uses: ./actions/setup-nix
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
           nix_path: ${{ inputs.nix_path }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+        uses: ./actions/set-build-version
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
@@ -173,7 +173,7 @@ jobs:
         run: ${{ matrix.build_debug_command }}
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: ./actions/setup-gcp
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -264,57 +264,62 @@ jobs:
     runs-on: ${{ inputs.job_runner }}
     needs: build
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: ./actions/setup-gcp
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'false'
       - name: Create multi-arch docker manifest - ${{ needs.build.outputs.docker_build_version }}
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: ./actions/multi-arch-manifest
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_build_version }}
       - name: Create debug multi-arch docker manifest - ${{ needs.build.outputs.docker_debug_version }}
         if: needs.build.outputs.docker_debug_version != ''
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: ./actions/multi-arch-manifest
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_debug_version }}
       - name: Create multi-arch docker manifest - latest
         if: inputs.version_type == 'pr'
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: ./actions/multi-arch-manifest
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest
       - name: Create multi-arch docker manifest - latest-main
         if: inputs.version_type == 'pr' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: ./actions/multi-arch-manifest
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest-main
       - name: Create multi-arch docker manifest - latest-testing
         if: inputs.version_type == 'pr' && contains(github.event.pull_request.base.ref, 'release/')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: ./actions/multi-arch-manifest
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest-testing
       - name: Create multi-arch docker manifest - release-main
         if: inputs.version_type == 'release' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: ./actions/multi-arch-manifest
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: release-main
       - name: Create multi-arch docker manifest - release-testing
         if: inputs.version_type == 'release' && contains(github.event.pull_request.base.ref, 'release/')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: ./actions/multi-arch-manifest
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
@@ -335,7 +340,7 @@ jobs:
           password: ${{ secrets.docker_hub_token }}
       - name: Create multi-arch docker manifest - Docker Hub - ${{ needs.build.outputs.docker_build_version }}
         if: steps.docker_hub.outputs.publish_docker_hub == 'true'
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: ./actions/multi-arch-manifest
         with:
           registry: ${{ inputs.docker_hub_registry }}
           image: ${{ inputs.docker_image_name }}
@@ -352,8 +357,13 @@ jobs:
       pull-requests: write
       id-token: write # Required for cosign keyless attestation and GCP Workload Identity
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        uses: ./actions/setup-nix
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
@@ -366,7 +376,7 @@ jobs:
           cosign-release: 'v3.0.5'
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: ./actions/setup-gcp
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           login_artifact_registry: 'true'
@@ -511,7 +521,7 @@ jobs:
           printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
           echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        uses: ./actions/setup-nix
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
@@ -539,9 +549,14 @@ jobs:
     if: (needs.build.outputs.deploy_staging == 'true' || (vars.DEPLOY_STAGING_MERGED_PR == 'true' && inputs.version_type == 'pr')) && (inputs.deployment_namespace != '' && inputs.deployment_label_selector != '')
     runs-on: ${{ inputs.job_runner }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: ./actions/setup-gcp
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           install_sdk: 'true'

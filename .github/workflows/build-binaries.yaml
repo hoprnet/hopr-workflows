@@ -108,14 +108,14 @@ jobs:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        uses: ./actions/setup-nix
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
           nix_path: ${{ inputs.nix_path }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+        uses: ./actions/set-build-version
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
@@ -161,13 +161,18 @@ jobs:
     runs-on: ${{ inputs.runner }}
     if: needs.build.outputs.enable_sign == 'true'
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
       - name: Download binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts
       - name: Sign binary ${{ inputs.binary }}-${{ inputs.architecture }}
-        uses: hoprnet/hopr-workflows/actions/sign-file@sign-file-v2
+        uses: ./actions/sign-file
         with:
           path: ${{ github.workspace }}/artifacts/
           architecture: ${{ inputs.architecture }}
@@ -195,7 +200,7 @@ jobs:
           path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture}}.sha256
       - name: Setup GCP
         if: needs.build.outputs.publish_artifact_registry == 'true'
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: ./actions/setup-gcp
         with:
           google_credentials: ${{ secrets.gcp_service_account }}
           workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
@@ -203,7 +208,7 @@ jobs:
           install_sdk: "true"
       - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
         if: needs.build.outputs.publish_artifact_registry == 'true'
-        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v2
+        uses: ./actions/upload-artifact-registry
         with:
           source: ${{ github.workspace }}/artifacts
           region: ${{ inputs.gcp_region }}

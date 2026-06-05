@@ -7,7 +7,7 @@ Creates file `${input.file}.asc` and `${input.file}.sha256`.
 
 ```bash
       - name: Sign binary
-        uses: hoprnet/hopr-workflows/actions/sign-file@sign-file-v2
+        uses: ./actions/sign-file
         with:
           path: ./binary-file
           gpg_private_key: ${{ secrets.MY_GPG_PRIVATE_KEY }}

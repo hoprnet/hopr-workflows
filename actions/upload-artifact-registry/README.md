@@ -6,7 +6,7 @@ This action upload files to Google Artifact registry, avoiding to interact direc
 
 ```bash
       - name: Upload files
-        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v2
+        uses: ./actions/upload-artifact-registry
         with:
           source: ./artifacts
           region: europe-west3

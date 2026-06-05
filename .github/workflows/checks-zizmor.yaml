@@ -40,16 +40,28 @@ jobs:
       contents: read
       security-events: write
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: true
+          egress-policy: audit
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_branch }}
+      - name: Setup Nix
+        uses: ./actions/setup-nix
+        with:
+          cachix_cache_name: hoprnet
+          cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          nix_path: ${{ inputs.nix_path }}
       - name: Run zizmor
-        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        shell: bash
+        run: ${{ inputs.zizmor_command }}
         env:
           GH_TOKEN: ${{ github.token }}
           NIX_CONFIG: "access-tokens = github.com=${{ github.token }}"
-        with:
-          source_branch: ${{ inputs.source_branch }}
-          cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ inputs.zizmor_command }}
-          nix_path: ${{ inputs.nix_path }}
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
         with:

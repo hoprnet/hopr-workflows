@@ -16,7 +16,7 @@ The `sign` job also uploads the binary (and signature/checksum) to Google Artifa
 ```yaml
 jobs:
   build:
-    uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v2
+    uses: ./.github/workflows/build-binaries.yaml
     with:
       source_branch: ${{ github.ref_name }}
       version_type: commit

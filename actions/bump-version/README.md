@@ -8,7 +8,7 @@ It also commits the change on the `${{ github.ref_name}}` branch. If the branch 
 ```bash
       - name: Bump version
         id: bump_version
-        uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v2
+        uses: ./actions/bump-version
         with:
           file: Cargo.toml
           release_type: patch

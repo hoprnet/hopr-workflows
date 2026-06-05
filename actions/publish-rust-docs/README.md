@@ -6,7 +6,7 @@ This action generates and publishes the rust docs in github pages
 
 ```bash
       - name: Publish docs
-        uses: hoprnet/hopr-workflows/actions/publish-rust-docs@publish-rust-docs-v1
+        uses: ./actions/publish-rust-docs
         with:
           source_repo: ${{ github.repository }}
           source_branch: ${{ github.event.pull_request.head.ref || github.ref }}

@@ -78,7 +78,7 @@ Production
 ```bash
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+        uses: ./actions/set-build-version
         with:
           file: Cargo.toml
           version_type: 'commit'

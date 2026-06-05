@@ -75,7 +75,7 @@ jobs:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        uses: ./actions/setup-nix
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"

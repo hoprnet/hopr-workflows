@@ -7,7 +7,7 @@ Builds a Rust library for a specific architecture using Nix and publishes it to 
 ```yaml
 jobs:
   build-library:
-    uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@build-library-v2
+    uses: ./.github/workflows/build-library.yaml
     with:
       source_branch: ${{ github.ref_name }}
       version_type: release

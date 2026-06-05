@@ -7,7 +7,7 @@ This action should be invoked after the docker build image is created for each p
 
 ```bash
       - name: Create multi-arch docker manifest
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: ./actions/multi-arch-manifest
         with:
           registry: europe-west3-docker.pkg.dev/hoprassociation/docker-images
           image: blokli

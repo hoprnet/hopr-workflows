@@ -8,7 +8,7 @@ Runs configurable test suites (unit, integration, nightly), benchmarks, and cove
 jobs:
   tests:
     name: Test
-    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v4
+    uses: ./.github/workflows/tests.yaml
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
       enable_unit_tests: true
@@ -28,7 +28,7 @@ jobs:
 jobs:
   coverage:
     name: Coverage
-    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v4
+    uses: ./.github/workflows/tests.yaml
     with:
       source_branch: ${{ github.ref_name }}
       enable_unit_tests: false
