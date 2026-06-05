@@ -6,7 +6,7 @@ This action sets up the runner to run in a Nix environment
 
 ```bash
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+        uses: hoprnet/hopr-workflows/actions/setup-nix@5477bd53d62ac15c4804b31fbd55966b29a43997 # setup-nix-v2
         with:
           cachix_cache_name: my-cache-name
           cachix_auth_token: "${{ secrets.CACHIX_AUTH_TOKEN }}"

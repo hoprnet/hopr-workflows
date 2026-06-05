@@ -37,7 +37,7 @@ runs:
         repository: ${{ inputs.source_repo }}
         ref: ${{ inputs.source_branch }}
     - name: Setup Nix
-      uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+      uses: hoprnet/hopr-workflows/actions/setup-nix@5477bd53d62ac15c4804b31fbd55966b29a43997 # setup-nix-v2
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
         cachix_auth_token: "${{ inputs.cachix_auth_token }}"
