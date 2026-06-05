@@ -97,18 +97,26 @@ jobs:
             timeout: 15
             command: ${{ inputs.audit_command }}
     steps:
+      - name: Harden Runner
+        if: matrix.enabled
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: ${{ inputs.disable_sudo }}
+          egress-policy: audit
       - name: Checkout repository
         if: matrix.enabled
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
+      - name: Setup Nix
+        if: matrix.enabled
+        uses: ./actions/setup-nix
+        with:
+          cachix_cache_name: hoprnet
+          cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          nix_path: ${{ inputs.nix_path }}
       - name: Run ${{ matrix.name }}
         if: matrix.enabled
-        uses: ./actions/nix-action
-        with:
-          source_branch: ${{ inputs.source_branch }}
-          cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ matrix.command }}
-          disable_sudo: ${{ inputs.disable_sudo }}
-          nix_path: ${{ inputs.nix_path }}
+        shell: bash
+        run: ${{ matrix.command }}

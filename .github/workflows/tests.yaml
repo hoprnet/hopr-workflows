@@ -113,18 +113,25 @@ jobs:
     env:
       CI: "true"
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: true
+          egress-policy: audit
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
-      - name: Run Unit
-        uses: ./actions/nix-action
+      - name: Setup Nix
+        uses: ./actions/setup-nix
         with:
-          source_branch: ${{ inputs.source_branch }}
+          cachix_cache_name: hoprnet
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ inputs.unit_test_command }}
           nix_path: ${{ inputs.nix_path }}
+      - name: Run Unit
+        shell: bash
+        run: ${{ inputs.unit_test_command }}
   integration-test:
     name: Integration
     if: inputs.enable_integration_tests
@@ -135,18 +142,25 @@ jobs:
     env:
       CI: "true"
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: true
+          egress-policy: audit
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
-      - name: Run Integration
-        uses: ./actions/nix-action
+      - name: Setup Nix
+        uses: ./actions/setup-nix
         with:
-          source_branch: ${{ inputs.source_branch }}
+          cachix_cache_name: hoprnet
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ inputs.integration_test_command }}
           nix_path: ${{ inputs.nix_path }}
+      - name: Run Integration
+        shell: bash
+        run: ${{ inputs.integration_test_command }}
   nightly-test:
     name: Unit Nightly
     if: inputs.enable_nightly_tests
@@ -157,18 +171,25 @@ jobs:
     env:
       CI: "true"
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: true
+          egress-policy: audit
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
-      - name: Run Unit Nightly
-        uses: ./actions/nix-action
+      - name: Setup Nix
+        uses: ./actions/setup-nix
         with:
-          source_branch: ${{ inputs.source_branch }}
+          cachix_cache_name: hoprnet
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ inputs.nightly_test_command }}
           nix_path: ${{ inputs.nix_path }}
+      - name: Run Unit Nightly
+        shell: bash
+        run: ${{ inputs.nightly_test_command }}
   # ── Benchmark ──────────────────────────────────────────────────────────────
   benchmark:
     name: Benchmark
@@ -178,18 +199,25 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: true
+          egress-policy: audit
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
-      - name: Run Benchmark
-        uses: ./actions/nix-action
+      - name: Setup Nix
+        uses: ./actions/setup-nix
         with:
-          source_branch: ${{ inputs.source_branch }}
+          cachix_cache_name: hoprnet
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ inputs.benchmark_command }}
           nix_path: ${{ inputs.nix_path }}
+      - name: Run Benchmark
+        shell: bash
+        run: ${{ inputs.benchmark_command }}
   # ── Coverage ───────────────────────────────────────────────────────────────
   unit-coverage:
     name: Coverage / Unit
@@ -203,18 +231,25 @@ jobs:
     env:
       CI: "true"
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: true
+          egress-policy: audit
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
-      - name: Generate Unit report
-        uses: ./actions/nix-action
+      - name: Setup Nix
+        uses: ./actions/setup-nix
         with:
-          source_branch: ${{ inputs.source_branch }}
+          cachix_cache_name: hoprnet
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ inputs.unit_coverage_command }}
           nix_path: ${{ inputs.nix_path }}
+      - name: Generate Unit report
+        shell: bash
+        run: ${{ inputs.unit_coverage_command }}
       - name: Upload Unit report
         uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         if: >-
@@ -236,18 +271,25 @@ jobs:
     env:
       CI: "true"
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: true
+          egress-policy: audit
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
-      - name: Generate Integration report
-        uses: ./actions/nix-action
+      - name: Setup Nix
+        uses: ./actions/setup-nix
         with:
-          source_branch: ${{ inputs.source_branch }}
+          cachix_cache_name: hoprnet
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
-          command: ${{ inputs.integration_coverage_command }}
           nix_path: ${{ inputs.nix_path }}
+      - name: Generate Integration report
+        shell: bash
+        run: ${{ inputs.integration_coverage_command }}
       - name: Upload Integration report
         uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         if: >-
