@@ -114,7 +114,7 @@ jobs:
       CI: "true"
     steps:
       - name: Run Unit
-        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        uses: hoprnet/hopr-workflows/actions/nix-action@8687133e2bae03344b3a080c76593637e16cbb2a # nix-action-v2
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -131,7 +131,7 @@ jobs:
       CI: "true"
     steps:
       - name: Run Integration
-        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        uses: hoprnet/hopr-workflows/actions/nix-action@8687133e2bae03344b3a080c76593637e16cbb2a # nix-action-v2
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -148,7 +148,7 @@ jobs:
       CI: "true"
     steps:
       - name: Run Unit Nightly
-        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        uses: hoprnet/hopr-workflows/actions/nix-action@8687133e2bae03344b3a080c76593637e16cbb2a # nix-action-v2
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -164,7 +164,7 @@ jobs:
       contents: read
     steps:
       - name: Run Benchmark
-        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        uses: hoprnet/hopr-workflows/actions/nix-action@8687133e2bae03344b3a080c76593637e16cbb2a # nix-action-v2
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -184,7 +184,7 @@ jobs:
       CI: "true"
     steps:
       - name: Generate Unit report
-        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        uses: hoprnet/hopr-workflows/actions/nix-action@8687133e2bae03344b3a080c76593637e16cbb2a # nix-action-v2
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -212,7 +212,7 @@ jobs:
       CI: "true"
     steps:
       - name: Generate Integration report
-        uses: hoprnet/hopr-workflows/actions/nix-action@c2aca7e56d25c4a786049ccf816c7f1af8721de8 # nix-action-v1
+        uses: hoprnet/hopr-workflows/actions/nix-action@8687133e2bae03344b3a080c76593637e16cbb2a # nix-action-v2
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
