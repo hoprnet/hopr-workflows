@@ -88,20 +88,20 @@ runs:
         clean: ${{ inputs.release_notes_file == '' }}
     - name: Get version info
       id: version
-      uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+      uses: ./actions/set-build-version
       with:
         file: "${{ inputs.file }}"
         version_type: release
     - name: Setup GCP
       if: inputs.gcp_service_account != ''
       id: gcp
-      uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+      uses: ./actions/setup-gcp
       with:
         google_credentials: ${{ inputs.gcp_service_account }}
         login_artifact_registry: 'true'
         install_sdk: 'true'
     - name: Setup Nix
-      uses: hoprnet/hopr-workflows/actions/setup-nix@setup-nix-v1
+      uses: ./actions/setup-nix
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
         cachix_auth_token: "${{ inputs.cachix_auth_token }}"
@@ -109,7 +109,7 @@ runs:
     - name: Download binary files
       if: inputs.gcp_artifact_package != ''
       id: download
-      uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v2
+      uses: ./actions/download-artifact-registry
       with:
         region: ${{ inputs.gcp_artifact_region }}
         repository: ${{ inputs.gcp_artifact_repository }}
@@ -117,7 +117,7 @@ runs:
         version: ${{ steps.version.outputs.current_version }}
     - name: Generate Release Notes
       if: inputs.release_notes_file == ''
-      uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
+      uses: ./actions/generate-release-notes
       with:
         source_branch: ${{ inputs.source_branch }}
         format: github
@@ -165,7 +165,7 @@ runs:
         draft: ${{ inputs.draft }}
     - name: Bump version
       id: bump
-      uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v2
+      uses: ./actions/bump-version
       with:
         file: ${{ inputs.file }}
         release_type: ${{ inputs.release_type }}

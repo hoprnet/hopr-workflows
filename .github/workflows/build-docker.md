@@ -18,7 +18,7 @@ Builds platform-specific Docker images using Nix and creates a multi-architectur
 jobs:
   build-docker:
     name: Docker
-    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v2
+    uses: ./.github/workflows/build-docker.yaml
     needs: build-binaries
     permissions:
       contents: read

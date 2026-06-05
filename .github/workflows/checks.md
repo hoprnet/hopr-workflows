@@ -8,7 +8,7 @@ Runs configurable code-quality checks (pre-commit, lint, deps, audit) via a matr
 jobs:
   checks:
     name: Check
-    uses: hoprnet/hopr-workflows/.github/workflows/checks.yaml@workflow-checks-v1
+    uses: ./.github/workflows/checks.yaml
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
       runner_small: depot-ubuntu-22.04

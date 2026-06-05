@@ -6,7 +6,7 @@ This action download files from Google Artifact registry, avoiding to interact d
 
 ```bash
       - name: Download files
-        uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v2
+        uses: ./actions/download-artifact-registry
         with:
           destination: ./artifacts
           region: europe-west3

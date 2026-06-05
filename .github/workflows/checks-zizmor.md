@@ -7,7 +7,7 @@ Scans GitHub Actions workflow files for security issues using [zizmor](https://d
 ```yaml
 jobs:
   zizmor:
-    uses: hoprnet/hopr-workflows/.github/workflows/checks-zizmor.yaml@workflow-checks-zizmor-v1
+    uses: ./.github/workflows/checks-zizmor.yaml
     permissions:
       contents: read
       security-events: write
