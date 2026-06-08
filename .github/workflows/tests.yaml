@@ -191,7 +191,7 @@ jobs:
           command: ${{ inputs.unit_coverage_command }}
           nix_path: ${{ inputs.nix_path }}
       - name: Upload Unit report
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: >-
           github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         with:
@@ -219,7 +219,7 @@ jobs:
           command: ${{ inputs.integration_coverage_command }}
           nix_path: ${{ inputs.nix_path }}
       - name: Upload Integration report
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: >-
           github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         with:
