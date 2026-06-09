@@ -1,7 +1,7 @@
 ################################################################################
 # Reusable check pipeline
 #
-# Runs configurable code-quality checks (pre-commit, lint, deps, audit)
+# Runs configurable code-quality checks (format, pre-commit, lint, deps, audit)
 # via a matrix strategy with per-check enable/disable toggles and command
 # overrides.
 ################################################################################
@@ -16,6 +16,14 @@ on:
         required: false
         type: boolean
         default: true
+      format:
+        required: false
+        type: boolean
+        default: false
+      format_command:
+        required: false
+        type: string
+        default: "nix fmt -- --ci"
       lint:
         required: false
         type: boolean
@@ -76,6 +84,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: Format
+            enabled: ${{ inputs.format }}
+            runner: ${{ inputs.runner_small }}
+            timeout: 10
+            command: ${{ inputs.format_command }}
           - name: Pre-commit
             enabled: ${{ inputs.pre_commit }}
             runner: ${{ inputs.runner_small }}
