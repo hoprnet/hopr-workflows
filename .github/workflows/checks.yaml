@@ -19,7 +19,7 @@ on:
       format:
         required: false
         type: boolean
-        default: false
+        default: true
       format_command:
         required: false
         type: string
