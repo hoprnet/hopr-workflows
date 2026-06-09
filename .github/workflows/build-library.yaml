@@ -83,7 +83,7 @@ jobs:
       - name: Build dry-run library
         if: inputs.version_type != 'release'
         shell: bash
-        run: nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish $CONTEXT --all-features
+        run: nix develop -c cargo release publish $CONTEXT --all-features
         env:
           CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
       - name: Publish library
@@ -98,4 +98,4 @@ jobs:
             echo "::error::secrets.cargo_registry_token is required when version_type='release'"
             exit 1
           fi
-          nix develop -c nix shell nixpkgs#cargo-release -c cargo release publish $CONTEXT --execute --all-features --no-confirm
+          nix develop -c cargo release publish $CONTEXT --execute --all-features --no-confirm

@@ -2,6 +2,8 @@
 
 Builds a Rust library for a specific architecture using Nix and publishes it to crates.io. On non-release builds (`version_type != release`) a dry-run is executed to validate the publish without actually uploading. On release builds the crate is published to crates.io with `cargo release publish --execute`.
 
+The workflow assumes the caller repository's default development shell already provides `cargo release`, so the publish step runs through a single `nix develop` invocation with no nested `nix shell`.
+
 ## Usage
 
 ```yaml
@@ -48,5 +50,5 @@ jobs:
 2. **Checkout repository** — checks out `source_branch`
 3. **Setup Nix** — configures the Nix environment with Cachix
 4. **Updates build version** — stamps the version using [set-build-version](../actions/set-build-version/README.md)
-5. **Build dry-run library** _(non-release only)_ — runs `cargo release publish --all-features` without `--execute` to validate the package
-6. **Publish library** _(release only)_ — runs `cargo release publish --execute --all-features --no-confirm`
+5. **Build dry-run library** _(non-release only)_ — runs `cargo release publish --all-features` without `--execute` to validate the package through the caller's default dev shell
+6. **Publish library** _(release only)_ — runs `cargo release publish --execute --all-features --no-confirm` through the caller's default dev shell
