@@ -49,14 +49,12 @@ on:
     secrets:
       cachix_auth_token:
         required: true
-      cargo_registry_token:
-        required: false
-        description: "crates.io API token (required when version_type is 'release')"
 concurrency:
   group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.package_name }}-library
   cancel-in-progress: true
 permissions:
   contents: read
+  id-token: write
 jobs:
   build:
     name: Build
@@ -86,16 +84,14 @@ jobs:
         run: nix develop -c cargo release publish $CONTEXT --all-features
         env:
           CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
+      - name: Authenticate with crates.io
+        if: inputs.version_type == 'release'
+        id: auth
+        uses: rust-lang/crates-io-auth-action@bbd81622f20ce9e2dd9622e3218b975523e45bbe # v1.0.4
       - name: Publish library
         if: inputs.version_type == 'release'
         shell: bash
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.cargo_registry_token }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
           CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
-        run: |
-          set -euo pipefail
-          if [[ -z "${CARGO_REGISTRY_TOKEN:-}" ]]; then
-            echo "::error::secrets.cargo_registry_token is required when version_type='release'"
-            exit 1
-          fi
-          nix develop -c cargo release publish $CONTEXT --execute --all-features --no-confirm
+        run: nix develop -c cargo release publish $CONTEXT --execute --all-features --no-confirm
