@@ -65,8 +65,8 @@ inputs:
     description: Path to a file containing release notes. If empty, release notes will be auto-generated.
     required: false
     default: ''
-  github_token:
-    description: GitHub Token from the Bot with permission to make direct commits into the branch
+  github_app_private_key:
+    description: GitHub App Private Key from the Bot with permission to make direct commits and releases
     required: true
 outputs:
   current_version:
@@ -78,13 +78,19 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Generate short-lived github token from GitHub App Hoprnet
+      id: bot-token
+      uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+      with:
+        client-id: ${{ vars.GH_APP_HOPRNET_BOT_CLIENT_ID }}
+        private-key: ${{ inputs.github_app_private_key }}
     - name: Checkout hoprnet repository
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         ref: ${{ inputs.source_branch }}
         fetch-depth: 0
         fetch-tags: true
-        token: ${{ inputs.github_token }}
+        token: ${{ steps.bot-token.outputs.token }}
         clean: ${{ inputs.release_notes_file == '' }}
     - name: Get version info
       id: version
@@ -124,7 +130,7 @@ runs:
     - name: Check release existence
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GITHUB_TOKEN: ${{ steps.bot-token.outputs.token }}
       run: |
         tag="${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
         release_exists="false"
@@ -169,7 +175,7 @@ runs:
       with:
         file: ${{ inputs.file }}
         release_type: ${{ inputs.release_type }}
-        github_token: ${{ inputs.github_token }}
+        github_token: ${{ steps.bot-token.outputs.token }}
     - name: Prepare notification message
       shell: bash
       if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
