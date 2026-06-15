@@ -28,6 +28,13 @@ To verify (or publish) against explicit Rust target triples instead of the runne
       targets: "x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu"
 ```
 
+`--workspace` is also accepted as a token inside `targets`. When present it overrides the `package_name` → `--package`/`--workspace` selection:
+
+```yaml
+    with:
+      targets: "--workspace x86_64-unknown-linux-gnu"
+```
+
 ## Inputs
 
 | Name                | Required | Default                       | Description                                                                              |
@@ -42,7 +49,7 @@ To verify (or publish) against explicit Rust target triples instead of the runne
 | `timeout_minutes`   | No       | `60`                          | Timeout in minutes                                                                       |
 | `runner`            | Yes      | —                             | Runner label for the job                                                                 |
 | `enabled`           | No       | `true`                        | Whether to run this job                                                                  |
-| `targets`           | No       | `""`                          | Space-separated Rust target triples passed as repeated `--target` flags to `cargo release publish`. Empty (default) verifies against the host triple only. |
+| `targets`           | No       | `""`                          | Space-separated tokens: Rust target triples become `--target <triple>`; the special token `--workspace` overrides `package_name` and selects the whole workspace. Empty (default) behaves as before. |
 
 ## Secrets
 

@@ -90,11 +90,15 @@ jobs:
           CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
           TARGETS: ${{ inputs.targets }}
         run: |
+          context_override=""
           target_args=""
           for t in $TARGETS; do
-            target_args="$target_args --target $t"
+            case "$t" in
+              --workspace) context_override="--workspace" ;;
+              *) target_args="$target_args --target $t" ;;
+            esac
           done
-          nix develop -c cargo release publish $CONTEXT $target_args --all-features
+          nix develop -c cargo release publish ${context_override:-$CONTEXT} $target_args --all-features
       - name: Authenticate with crates.io
         if: inputs.version_type == 'release'
         id: auth
@@ -107,8 +111,12 @@ jobs:
           CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
           TARGETS: ${{ inputs.targets }}
         run: |
+          context_override=""
           target_args=""
           for t in $TARGETS; do
-            target_args="$target_args --target $t"
+            case "$t" in
+              --workspace) context_override="--workspace" ;;
+              *) target_args="$target_args --target $t" ;;
+            esac
           done
-          nix develop -c cargo release publish $CONTEXT $target_args --execute --all-features --no-confirm
+          nix develop -c cargo release publish ${context_override:-$CONTEXT} $target_args --execute --all-features --no-confirm
