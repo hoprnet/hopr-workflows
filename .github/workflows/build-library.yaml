@@ -46,6 +46,11 @@ on:
         type: boolean
         default: true
         description: "Whether to run this job"
+      targets:
+        required: false
+        type: string
+        default: ""
+        description: "Space-separated Rust target triples passed as repeated --target flags to cargo release publish. Empty (default) verifies against the host triple only."
     secrets:
       cachix_auth_token:
         required: true
@@ -81,9 +86,16 @@ jobs:
       - name: Build dry-run library
         if: inputs.version_type != 'release'
         shell: bash
-        run: nix develop -c cargo release publish $CONTEXT --all-features
         env:
           CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
+          TARGETS: ${{ inputs.targets }}
+        run: |
+          target_args=""
+          for t in $TARGETS; do
+            [[ "$t" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo "::error::Invalid target triple: $t"; exit 1; }
+            target_args="${target_args:+$target_args }--target $t"
+          done
+          nix develop -c cargo release publish $CONTEXT $target_args --all-features
       - name: Authenticate with crates.io
         if: inputs.version_type == 'release'
         id: auth
@@ -94,4 +106,11 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
           CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
-        run: nix develop -c cargo release publish $CONTEXT --execute --all-features --no-confirm
+          TARGETS: ${{ inputs.targets }}
+        run: |-
+          target_args=""
+          for t in $TARGETS; do
+            [[ "$t" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo "::error::Invalid target triple: $t"; exit 1; }
+            target_args="${target_args:+$target_args }--target $t"
+          done
+          nix develop -c cargo release publish $CONTEXT $target_args --execute --all-features --no-confirm
