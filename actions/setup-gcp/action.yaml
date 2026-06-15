@@ -3,10 +3,12 @@ description: Install GCP tools and authenticate
 inputs:
   workload_identity_provider:
     description: Workload Identity Provider
-    required: true
+    required: false
+    default: projects/277369779617/locations/global/workloadIdentityPools/github-workflow-pool/providers/github-provider
   service_account:
     description: Service Account email
-    required: true
+    required: false
+    default: github-workflows@hoprassociation.iam.gserviceaccount.com
   install_sdk:
     description: Install SDK
     required: false
