@@ -48,7 +48,7 @@ on:
       gcp_service_account:
         required: false
         type: string
-        description: GCP Service Account JSON for Artifact Registry access
+        description: GCP Service Account email for Artifact Registry access
         default: github-workflows@hoprassociation.iam.gserviceaccount.com
       gcp_region:
         description: GCP region for Artifact Registry
