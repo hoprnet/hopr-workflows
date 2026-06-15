@@ -42,7 +42,7 @@ To verify (or publish) against explicit Rust target triples instead of the runne
 | ------------------- | -------- | ----------------------------- | ---------------------------------------------------------------------------------------- |
 | `source_branch`     | Yes      | —                             | Source branch to build from                                                              |
 | `version_type`      | Yes      | —                             | Versioning strategy: `commit`, `pr`, or `release`. Only `release` publishes to crates.io |
-| `package_name`      | Yes      | —                             | Crate name to publish (e.g. `hopr-types`). When empty, defaults to `--workspace`.              |
+| `package_name`      | No       | —                             | Crate name to publish (e.g. `hopr-types`). When empty, defaults to `--workspace`.              |
 | `architecture`      | Yes      | —                             | Target architecture (e.g. `x86_64-linux`)                                                |
 | `cachix_cache_name` | No       | —                             | Cachix cache name                                                                        |
 | `nix_path`          | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use                                                                          |
