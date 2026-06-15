@@ -10,6 +10,8 @@
     nix-lib.inputs.flake-parts.follows = "flake-parts";
     nix-lib.inputs.flake-utils.follows = "flake-utils";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
+    pre-commit.url = "github:cachix/git-hooks.nix";
+    pre-commit.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -19,6 +21,7 @@
       flake-utils,
       flake-parts,
       nix-lib,
+      pre-commit,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -38,6 +41,29 @@
               google-auth
             ]
           );
+          pre-commit-check = pre-commit.lib.${system}.run {
+            src = ./.;
+            hooks = {
+              check-executables-have-shebangs.enable = true;
+              check-shebang-scripts-are-executable.enable = true;
+              check-case-conflicts.enable = true;
+              check-symlinks.enable = true;
+              check-merge-conflicts.enable = true;
+              check-added-large-files.enable = true;
+              commitizen.enable = true;
+              renovate-config-validator = {
+                enable = true;
+                name = "Renovate config validator";
+                entry = "${pkgs.writeShellScript "validate-renovate" ''
+                  ${pkgs.nodejs}/bin/npx --yes --package renovate -- renovate-config-validator "$@"
+                ''}";
+                files = "renovate\\.json$";
+                language = "system";
+                pass_filenames = true;
+              };
+            };
+            tools = pkgs;
+          };
         in
         {
           devShells.default = pkgs.mkShell {
@@ -46,6 +72,9 @@
               pkgs.google-cloud-sdk
               pkgs.jq
             ];
+            shellHook = ''
+              ${pre-commit-check.shellHook}
+            '';
           };
           apps.cleanup-docker-images = flake-utils.lib.mkApp {
             drv = pkgs.writeShellScriptBin "cleanup-docker-images" ''
