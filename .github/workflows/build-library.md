@@ -21,11 +21,18 @@ jobs:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 ```
 
-To verify (or publish) against explicit Rust target triples instead of the runner's host default, supply `targets`:
+To verify (or publish) against explicit Rust target triples instead of the runner's host default, supply `targets`. GitHub Actions `workflow_call` inputs have no list type, so use either a space-separated inline string or a YAML block scalar — both work:
 
 ```yaml
     with:
       targets: "x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu"
+```
+
+```yaml
+    with:
+      targets: |
+        x86_64-unknown-linux-gnu
+        aarch64-unknown-linux-gnu
 ```
 
 `package_name` also accepts `--workspace` directly to make the workspace selection explicit:
@@ -50,7 +57,7 @@ To verify (or publish) against explicit Rust target triples instead of the runne
 | `timeout_minutes`   | No       | `60`                          | Timeout in minutes                                                                       |
 | `runner`            | Yes      | —                             | Runner label for the job                                                                 |
 | `enabled`           | No       | `true`                        | Whether to run this job                                                                  |
-| `targets`           | No       | `""`                          | Space-separated Rust target triples passed as repeated `--target` flags to `cargo release publish`. Empty (default) verifies against the host triple only. |
+| `targets`           | No       | `""`                          | Rust target triples passed as repeated `--target` flags to `cargo release publish`. Accepts a space-separated string or a YAML block scalar (`|`). Empty (default) verifies against the host triple only. |
 
 ## Secrets
 
