@@ -44,7 +44,7 @@ on:
         required: false
         type: string
         description: GCP Workload Identity Provider
-        default: projects/277369779617/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+        default: projects/277369779617/locations/global/workloadIdentityPools/github-workflow-pool/providers/github-provider
       gcp_service_account:
         required: false
         type: string
