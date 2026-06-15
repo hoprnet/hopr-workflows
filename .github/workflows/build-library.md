@@ -28,11 +28,12 @@ To verify (or publish) against explicit Rust target triples instead of the runne
       targets: "x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu"
 ```
 
-`--workspace` is also accepted as a token inside `targets`. When present it overrides the `package_name` → `--package`/`--workspace` selection:
+`package_name` also accepts `--workspace` directly to make the workspace selection explicit:
 
 ```yaml
     with:
-      targets: "--workspace x86_64-unknown-linux-gnu"
+      package_name: "--workspace"
+      targets: "x86_64-unknown-linux-gnu"
 ```
 
 ## Inputs
@@ -41,7 +42,7 @@ To verify (or publish) against explicit Rust target triples instead of the runne
 | ------------------- | -------- | ----------------------------- | ---------------------------------------------------------------------------------------- |
 | `source_branch`     | Yes      | —                             | Source branch to build from                                                              |
 | `version_type`      | Yes      | —                             | Versioning strategy: `commit`, `pr`, or `release`. Only `release` publishes to crates.io |
-| `package_name`      | Yes      | —                             | Crate name to publish (e.g. `hopr-types`)                                                |
+| `package_name`      | Yes      | —                             | Crate name to publish (e.g. `hopr-types`). Pass `--workspace` to publish all workspace crates. |
 | `architecture`      | Yes      | —                             | Target architecture (e.g. `x86_64-linux`)                                                |
 | `cachix_cache_name` | No       | —                             | Cachix cache name                                                                        |
 | `nix_path`          | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use                                                                          |
@@ -49,7 +50,7 @@ To verify (or publish) against explicit Rust target triples instead of the runne
 | `timeout_minutes`   | No       | `60`                          | Timeout in minutes                                                                       |
 | `runner`            | Yes      | —                             | Runner label for the job                                                                 |
 | `enabled`           | No       | `true`                        | Whether to run this job                                                                  |
-| `targets`           | No       | `""`                          | Space-separated tokens: Rust target triples become `--target <triple>`; the special token `--workspace` overrides `package_name` and selects the whole workspace. Empty (default) behaves as before. |
+| `targets`           | No       | `""`                          | Space-separated Rust target triples passed as repeated `--target` flags to `cargo release publish`. Empty (default) verifies against the host triple only. |
 
 ## Secrets
 
