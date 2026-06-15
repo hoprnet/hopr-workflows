@@ -25,9 +25,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup GCP
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
         with:
-          google_credentials: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER_GITHUB }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
           install_sdk: "true"
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@5477bd53d62ac15c4804b31fbd55966b29a43997 # setup-nix-v2

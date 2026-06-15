@@ -40,6 +40,16 @@ on:
         required: true
         type: string
         description: "Binary name to build"
+      gcp_workload_identity_provider:
+        required: true
+        type: string
+        description: GCP Workload Identity Provider
+        default: projects/277369779617/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+      gcp_service_account:
+        required: true
+        type: string
+        description: GCP Service Account JSON for Artifact Registry access
+        default: github-workflows@hoprassociation.iam.gserviceaccount.com
       gcp_region:
         description: GCP region for Artifact Registry
         type: string
@@ -65,12 +75,6 @@ on:
         default: true
         description: "Whether to run this job"
     secrets:
-      gcp_service_account:
-        required: false
-      gcp_workload_identity_provider:
-        required: false
-      gcp_workload_identity_service_account:
-        required: false
       cachix_auth_token:
         required: true
       gpg_private_key:
@@ -195,11 +199,10 @@ jobs:
           path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture}}.sha256
       - name: Setup GCP
         if: needs.build.outputs.publish_artifact_registry == 'true'
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
         with:
-          google_credentials: ${{ secrets.gcp_service_account }}
-          workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
-          service_account: ${{ secrets.gcp_workload_identity_service_account }}
+          workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
+          service_account: ${{ inputs.gcp_service_account }}
           install_sdk: "true"
       - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
         if: needs.build.outputs.publish_artifact_registry == 'true'

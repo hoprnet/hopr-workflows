@@ -1,15 +1,12 @@
 name: Setup GCP
 description: Install GCP tools and authenticate
 inputs:
-  google_credentials:
-    description: Google credentials taken from secret GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY
-    required: false
   workload_identity_provider:
     description: Workload Identity Provider
-    required: false
+    required: true
   service_account:
     description: Service Account email
-    required: false
+    required: true
   install_sdk:
     description: Install SDK
     required: false
@@ -41,16 +38,8 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Authenticate in Google Cloud using JSON Account Key
-      if: inputs.google_credentials != ''
-      id: auth_credentials
-      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
-      with:
-        token_format: access_token
-        credentials_json: ${{ inputs.google_credentials }}
     - name: Authenticate in Google Cloud using Workload Identity
       id: auth_workload_identity
-      if: inputs.workload_identity_provider != '' && inputs.service_account != ''
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
       with:
         token_format: access_token

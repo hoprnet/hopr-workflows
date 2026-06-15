@@ -47,9 +47,14 @@ inputs:
   zulip_topic:
     description: Zulip topic for notifications
     required: false
+  gcp_workload_identity_provider:
+    description: GCP Workload Identity Provider
+    required: false
+    default: projects/277369779617/locations/global/workloadIdentityPools/github-pool/providers/github-provider
   gcp_service_account:
     description: GCP Service Account JSON for Artifact Registry access
     required: false
+    default: github-workflows@hoprassociation.iam.gserviceaccount.com
   gcp_artifact_region:
     description: GCP region for Artifact Registry
     required: false
@@ -99,11 +104,12 @@ runs:
         file: "${{ inputs.file }}"
         version_type: release
     - name: Setup GCP
-      if: inputs.gcp_service_account != ''
+      if: inputs.gcp_service_account != '' && inputs.gcp_workload_identity_provider != ''
       id: gcp
-      uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+      uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
       with:
-        google_credentials: ${{ inputs.gcp_service_account }}
+        workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
+        service_account: ${{ inputs.gcp_service_account }}
         login_artifact_registry: 'true'
         install_sdk: 'true'
     - name: Setup Nix
