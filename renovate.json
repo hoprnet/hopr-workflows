@@ -27,7 +27,7 @@
     },
     {
       "matchManagers": ["github-actions"],
-      "excludePackageNames": ["/^hoprnet\\/hopr-workflows/"],
+      "matchPackageNames": ["!/^hoprnet\\/hopr-workflows/"],
       "groupName": "github-actions",
       "pinDigests": true,
       "commitMessageTopic": "GitHub Actions"
