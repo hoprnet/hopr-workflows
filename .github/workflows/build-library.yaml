@@ -1,3 +1,4 @@
+---
 #################################################################################
 # Pipeline to build libraries
 #################################################################################
@@ -50,12 +51,14 @@ on:
         required: false
         type: string
         default: ""
-        description: "Space-separated Rust target triples passed as repeated --target flags to cargo release publish. Empty (default) verifies against the host triple only."
+        description: "Space-separated Rust target triples passed as repeated --target flags to cargo release publish. Empty
+          (default) verifies against the host triple only."
     secrets:
       cachix_auth_token:
         required: true
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.package_name }}-library
+  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.package_name
+    }}-library
   cancel-in-progress: true
 permissions:
   contents: read
@@ -107,7 +110,7 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
           CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
           TARGETS: ${{ inputs.targets }}
-        run: |
+        run: |-
           target_args=""
           for t in $TARGETS; do
             [[ "$t" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo "::error::Invalid target triple: $t"; exit 1; }
