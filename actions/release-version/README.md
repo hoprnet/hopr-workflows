@@ -84,7 +84,7 @@ The release process follows a two-branch model: `main` for active development an
 
 ```bash
       - name: Release version
-        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v4
+        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v5
         with:
           source_branch: main
           file: Cargo.toml
@@ -95,9 +95,8 @@ The release process follows a two-branch model: `main` for active development an
           zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
           zulip_channel: "MyChannel"
           zulip_topic: "Releases"
-          gcp_service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_GITHUB_ACTIONS }}
           gcp_artifact_package: my-package
-          github_token: "${{ secrets.GH_RUNNER_TOKEN }}"
+          github_app_private_key: "${{ secrets.GH_APP_HOPRNET_BOT_PRIVATE_KEY }}"
           draft: 'true'
           override: 'false'
 ```
@@ -121,12 +120,13 @@ The release process follows a two-branch model: `main` for active development an
 - `zulip_api_key`: Api key of the zulip user.
 - `zulip_channel`: Zulip channel for notifications.
 - `zulip_topic`: Zulip topic for notifications.
-- `gcp_service_account`: GCP Service Account JSON for Artifact Registry access.
+- `gcp_workload_identity_provider`: GCP Workload Identity Provider
+- `gcp_service_account`: The service account email linked to the workload identity provider on GCP
 - `gcp_artifact_region`: GCP region for Artifact Registry.
 - `gcp_artifact_repository`: GCP Artifact Registry repository name.
 - `gcp_artifact_package`: Package name from Google Artifact Registry to download binaries from and publish in the release.
 - `release_notes_file`: Path to a file containing release notes. If empty (default), release notes are auto-generated from the git history using the `generate-release-notes` action.
-- `github_token`: GitHub Token from the Bot with permission to make direct commits into the branch.
+- `github_app_private_key`: GitHub App Private Key from the Bot with permission to make direct commits and releases
 - `draft`: Whether to create a draft release
 - `override`: Whether to allow updating an existing release for the target tag. When `false` (default), the action fails if the release already exists.
 

@@ -90,9 +90,17 @@ on:
         type: string
         description: "Runner to use for the build job"
         default: depot-ubuntu-22.04-4
-    secrets:
+      gcp_workload_identity_provider:
+        required: false
+        type: string
+        description: GCP Workload Identity Provider
+        default: projects/277369779617/locations/global/workloadIdentityPools/github-workflow-pool/providers/github-provider
       gcp_service_account:
-        required: true
+        required: false
+        type: string
+        description: GCP Service Account JSON for Artifact Registry access
+        default: github-workflows@hoprassociation.iam.gserviceaccount.com
+    secrets:
       cachix_auth_token:
         required: true
       docker_hub_username:
@@ -131,7 +139,7 @@ jobs:
           disable-sudo: true
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
       - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
@@ -173,9 +181,10 @@ jobs:
         run: ${{ matrix.build_debug_command }}
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
         with:
-          google_credentials: ${{ secrets.gcp_service_account }}
+          workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
+          service_account: ${{ inputs.gcp_service_account }}
           login_artifact_registry: 'true'
       - name: Log in to DockerHub
         if: steps.docker_hub.outputs.publish_docker_hub == 'true'
@@ -266,9 +275,10 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
         with:
-          google_credentials: ${{ secrets.gcp_service_account }}
+          workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
+          service_account: ${{ inputs.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'false'
       - name: Create multi-arch docker manifest - ${{ needs.build.outputs.docker_build_version }}
@@ -366,9 +376,10 @@ jobs:
           cosign-release: 'v3.0.5'
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
         with:
-          google_credentials: ${{ secrets.gcp_service_account }}
+          workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
+          service_account: ${{ inputs.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'true'
       - name: Compute platform-specific tags
@@ -496,7 +507,7 @@ jobs:
     needs: build
     steps:
       - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
@@ -541,9 +552,10 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v3
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
         with:
-          google_credentials: ${{ secrets.gcp_service_account }}
+          workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
+          service_account: ${{ inputs.gcp_service_account }}
           install_sdk: 'true'
           login_gke: 'true'
           gke_project: hopr-staging

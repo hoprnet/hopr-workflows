@@ -18,7 +18,7 @@ Builds platform-specific Docker images using Nix and creates a multi-architectur
 jobs:
   build-docker:
     name: Docker
-    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v2
+    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v3
     needs: build-binaries
     permissions:
       contents: read
@@ -40,7 +40,6 @@ jobs:
       docker_image_name: "hoprd"
       docker_image_format: skopeo
     secrets:
-      gcp_service_account: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY }}
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       docker_hub_username: ${{ secrets.DOCKER_HUB_USERNAME }}
       docker_hub_token: ${{ secrets.DOCKER_HUB_TOKEN }}

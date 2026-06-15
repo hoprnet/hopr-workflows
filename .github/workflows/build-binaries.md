@@ -16,7 +16,7 @@ The `sign` job also uploads the binary (and signature/checksum) to Google Artifa
 ```yaml
 jobs:
   build:
-    uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v2
+    uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v3
     with:
       source_branch: ${{ github.ref_name }}
       version_type: commit
@@ -26,7 +26,6 @@ jobs:
       binary: hoprd
       runner: depot-ubuntu-22.04-4
     secrets:
-      gcp_service_account: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY }}
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       gpg_private_key: ${{ secrets.GPG_HOPRNET_PRIVATE_KEY }}
 ```
