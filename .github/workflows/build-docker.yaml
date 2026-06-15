@@ -91,12 +91,12 @@ on:
         description: "Runner to use for the build job"
         default: depot-ubuntu-22.04-4
       gcp_workload_identity_provider:
-        required: true
+        required: false
         type: string
         description: GCP Workload Identity Provider
         default: projects/277369779617/locations/global/workloadIdentityPools/github-pool/providers/github-provider
       gcp_service_account:
-        required: true
+        required: false
         type: string
         description: GCP Service Account JSON for Artifact Registry access
         default: github-workflows@hoprassociation.iam.gserviceaccount.com
