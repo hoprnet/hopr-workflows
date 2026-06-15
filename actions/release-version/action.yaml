@@ -52,7 +52,7 @@ inputs:
     required: false
     default: projects/277369779617/locations/global/workloadIdentityPools/github-workflow-pool/providers/github-provider
   gcp_service_account:
-    description: GCP Service Account JSON for Artifact Registry access
+    description: GCP Service Account email for Artifact Registry access
     required: false
     default: github-workflows@hoprassociation.iam.gserviceaccount.com
   gcp_artifact_region:
@@ -104,7 +104,7 @@ runs:
         file: "${{ inputs.file }}"
         version_type: release
     - name: Setup GCP
-      if: inputs.gcp_service_account != '' && inputs.gcp_workload_identity_provider != ''
+      if: inputs.gcp_artifact_package != ''
       id: gcp
       uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
       with:
