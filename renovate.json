@@ -40,7 +40,7 @@
     {
       "description": "Expedite nix security updates — bypass weekly schedule",
       "matchManagers": ["nix"],
-      "matchCategories": ["security"],
+      "matchJsonata": ["$exists(vulnerabilityFixVersion)"],
       "schedule": ["at any time"],
       "automerge": true,
       "labels": ["security"],
