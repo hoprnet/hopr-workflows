@@ -95,8 +95,6 @@ on:
     secrets:
       cachix_auth_token:
         required: true
-      codecov_token:
-        required: false
 permissions: {}
 env:
   RUST_BACKTRACE: "1"
@@ -201,7 +199,6 @@ jobs:
           slug: ${{ github.repository }}
           use_oidc: true
           fail_ci_if_error: true
-          token: ${{ secrets.codecov_token }}
   integration-coverage:
     name: Coverage / Integration
     needs: [integration-test]
@@ -232,4 +229,3 @@ jobs:
           slug: ${{ github.repository }}
           use_oidc: true
           fail_ci_if_error: true
-          token: ${{ secrets.codecov_token }}
