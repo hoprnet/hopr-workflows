@@ -180,6 +180,7 @@ jobs:
     timeout-minutes: ${{ inputs.coverage_timeout }}
     permissions:
       contents: read
+      id-token: write
     env:
       CI: "true"
     steps:
@@ -198,6 +199,7 @@ jobs:
           files: coverage.lcov
           flags: unit
           slug: ${{ github.repository }}
+          use_oidc: true
           fail_ci_if_error: true
           token: ${{ secrets.codecov_token }}
   integration-coverage:
@@ -209,6 +211,7 @@ jobs:
     timeout-minutes: ${{ inputs.coverage_timeout }}
     permissions:
       contents: read
+      id-token: write
     env:
       CI: "true"
     steps:
@@ -227,5 +230,6 @@ jobs:
           files: coverage.lcov
           flags: integration
           slug: ${{ github.repository }}
+          use_oidc: true
           fail_ci_if_error: true
           token: ${{ secrets.codecov_token }}
