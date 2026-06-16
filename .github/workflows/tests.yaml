@@ -95,8 +95,6 @@ on:
     secrets:
       cachix_auth_token:
         required: true
-      codecov_token:
-        required: false
 permissions: {}
 env:
   RUST_BACKTRACE: "1"
@@ -180,6 +178,7 @@ jobs:
     timeout-minutes: ${{ inputs.coverage_timeout }}
     permissions:
       contents: read
+      id-token: write
     env:
       CI: "true"
     steps:
@@ -197,8 +196,9 @@ jobs:
         with:
           files: coverage.lcov
           flags: unit
+          slug: ${{ github.repository }}
+          use_oidc: true
           fail_ci_if_error: true
-          token: ${{ secrets.codecov_token }}
   integration-coverage:
     name: Coverage / Integration
     needs: [integration-test]
@@ -208,6 +208,7 @@ jobs:
     timeout-minutes: ${{ inputs.coverage_timeout }}
     permissions:
       contents: read
+      id-token: write
     env:
       CI: "true"
     steps:
@@ -225,5 +226,6 @@ jobs:
         with:
           files: coverage.lcov
           flags: integration
+          slug: ${{ github.repository }}
+          use_oidc: true
           fail_ci_if_error: true
-          token: ${{ secrets.codecov_token }}
