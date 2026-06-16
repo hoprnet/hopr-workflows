@@ -197,6 +197,7 @@ jobs:
         with:
           files: coverage.lcov
           flags: unit
+          slug: ${{ github.repository }}
           fail_ci_if_error: true
           token: ${{ secrets.codecov_token }}
   integration-coverage:
@@ -225,5 +226,6 @@ jobs:
         with:
           files: coverage.lcov
           flags: integration
+          slug: ${{ github.repository }}
           fail_ci_if_error: true
           token: ${{ secrets.codecov_token }}
