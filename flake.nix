@@ -88,7 +88,7 @@
             ];
             shellHook = ''
               ${pre-commit-check.shellHook}
-              export GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}"
+              export GITHUB_TOKEN="''${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}"
             '';
           };
           apps.cleanup-docker-images = flake-utils.lib.mkApp {
