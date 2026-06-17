@@ -85,10 +85,11 @@
               pythonEnv
               pkgs.google-cloud-sdk
               pkgs.jq
+              pkgs.gh
             ];
             shellHook = ''
-              ${pre-commit-check.shellHook}
               export GITHUB_TOKEN="''${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}"
+              ${pre-commit-check.shellHook}
             '';
           };
           apps.cleanup-docker-images = flake-utils.lib.mkApp {
