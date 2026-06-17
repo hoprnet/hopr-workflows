@@ -62,6 +62,19 @@
                 language = "system";
                 pass_filenames = true;
               };
+              actionlint = {
+                enable = true;
+              };
+              pinact = {
+                enable = true;
+                name = "pinact";
+                description = "Check GitHub Action refs are SHA-pinned and resolvable";
+                # Exclude self-referencing composite action paths that pinact cannot resolve
+                entry = "${pkgs.pinact}/bin/pinact run --check --exclude '^hoprnet/hopr-workflows'";
+                files = "\\.ya?ml$";
+                language = "system";
+                pass_filenames = false;
+              };
             };
             tools = pkgs;
           };
@@ -75,6 +88,7 @@
             ];
             shellHook = ''
               ${pre-commit-check.shellHook}
+              export GITHUB_TOKEN="$(gh auth token 2>/dev/null || true)"
             '';
           };
           apps.cleanup-docker-images = flake-utils.lib.mkApp {
