@@ -71,7 +71,7 @@
                 description = "Check GitHub Action refs are SHA-pinned and resolvable";
                 # Exclude self-referencing composite action paths that pinact cannot resolve
                 entry = "${pkgs.pinact}/bin/pinact run --check --exclude '^hoprnet/hopr-workflows'";
-                files = "\\.ya?ml$";
+                files = "^\\.github/workflows/.*\\.ya?ml$";
                 language = "system";
                 pass_filenames = false;
               };
@@ -88,7 +88,7 @@
             ];
             shellHook = ''
               ${pre-commit-check.shellHook}
-              export GITHUB_TOKEN="$(gh auth token 2>/dev/null || true)"
+              export GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}"
             '';
           };
           apps.cleanup-docker-images = flake-utils.lib.mkApp {
