@@ -1,31 +1,31 @@
 name: Propose ENS Contenthash
 description: Encode an IPFS CID and propose a setContenthash transaction to the Safe that owns the ENS name, signed by a Safe delegate
 inputs:
-  cid:
+  CID:
     description: IPFS CID (CIDv0 or CIDv1) to set as the ENS contenthash
     required: true
-  ens_name:
+  ENS_NAME:
     description: ENS name whose contenthash record is updated (e.g. ${{ vars.ENS_NAME }})
     required: true
-  resolver_address:
+  RESOLVER_ADDRESS:
     description: Address of the ENS resolver contract that holds the record
     required: true
-  safe_address:
+  SAFE_ADDRESS:
     description: Address of the Safe multisig that owns the ENS name
     required: true
-  ens_delegate_private_key:
+  ENS_DELEGATE_PRIVATE_KEY:
     description: Private key of the Safe delegate that proposes the transaction
     required: true
-  rpc_url:
+  RPC_URL:
     description: Ethereum mainnet RPC URL. When empty, viem's built-in mainnet public RPC is used
     required: false
     default: ""
-  safe_api_key:
-    description: Safe Transaction Service API key. Required when using Safe's hosted service (omit only when safe_tx_service_url points at a self-hosted service)
+  SAFE_API_KEY:
+    description: Safe Transaction Service API key. Required when using Safe's hosted service (omit only when SAFE_TX_SERVICE_URL points at a self-hosted service)
     required: false
     default: ""
-  safe_tx_service_url:
-    description: Custom Safe Transaction Service endpoint. When set, safe_api_key may be omitted
+  SAFE_TX_SERVICE_URL:
+    description: Custom Safe Transaction Service endpoint. When set, SAFE_API_KEY may be omitted
     required: false
     default: ""
 outputs:
@@ -61,11 +61,11 @@ runs:
       working-directory: ${{ github.action_path }}
       run: node ./propose-update.mjs
       env:
-        CID: ${{ inputs.cid }}
-        ENS_NAME: ${{ inputs.ens_name }}
-        RESOLVER_ADDRESS: ${{ inputs.resolver_address }}
-        SAFE_ADDRESS: ${{ inputs.safe_address }}
-        ENS_DELEGATE_PRIVATE_KEY: ${{ inputs.ens_delegate_private_key }}
-        RPC_URL: ${{ inputs.rpc_url }}
-        SAFE_API_KEY: ${{ inputs.safe_api_key }}
-        SAFE_TX_SERVICE_URL: ${{ inputs.safe_tx_service_url }}
+        CID: ${{ inputs.CID }}
+        ENS_NAME: ${{ inputs.ENS_NAME }}
+        RESOLVER_ADDRESS: ${{ inputs.RESOLVER_ADDRESS }}
+        SAFE_ADDRESS: ${{ inputs.SAFE_ADDRESS }}
+        ENS_DELEGATE_PRIVATE_KEY: ${{ inputs.ENS_DELEGATE_PRIVATE_KEY }}
+        RPC_URL: ${{ inputs.RPC_URL }}
+        SAFE_API_KEY: ${{ inputs.SAFE_API_KEY }}
+        SAFE_TX_SERVICE_URL: ${{ inputs.SAFE_TX_SERVICE_URL }}

@@ -8,22 +8,22 @@ the ENS name. The proposal is signed by a **Safe delegate** (`ENS_DELEGATE_PRIVA
 ## Usage
 
 ```yaml
-      - name: Update ENS contenthash
-        uses: hoprnet/hopr-workflows/actions/propose-ens-contenthash@propose-ens-contenthash-v1
-        with:
-          cid: ${{ needs.publish-ipfs.outputs.cid }}
-          ens_name: ${{ vars.ENS_NAME }}
-          resolver_address: "0x..."                              # ENS resolver holding the record
-          safe_address: "0x..."                                  # Safe that owns the ENS name
-          ens_delegate_private_key: ${{ secrets.ENS_DELEGATE_PRIVATE_KEY }}
-          safe_api_key: ${{ secrets.SAFE_API_KEY }}              # required for Safe's hosted service
-          rpc_url: ${{ secrets.RPC_URL }}                        # optional
+- name: Update ENS contenthash
+  uses: hoprnet/hopr-workflows/actions/propose-ens-contenthash@propose-ens-contenthash-v1
+  with:
+    CID: ${{ needs.publish-ipfs.outputs.cid }}
+    ENS_NAME: ${{ vars.ENS_NAME }}
+    RESOLVER_ADDRESS: "0x..." # ENS resolver holding the record
+    SAFE_ADDRESS: "0x..." # Safe that owns the ENS name
+    ENS_DELEGATE_PRIVATE_KEY: ${{ secrets.ENS_DELEGATE_PRIVATE_KEY }}
+    SAFE_API_KEY: ${{ secrets.SAFE_API_KEY }} # required for Safe's hosted service
+    RPC_URL: ${{ secrets.RPC_URL }} # optional
 ```
 
 ## Requirements
 
-- The `ens_delegate_private_key` address must already be registered as a **delegate** on the
-  `safe_address` Safe (done once by a Safe owner — see
+- The `ENS_DELEGATE_PRIVATE_KEY` address must already be registered as a **delegate** on the
+  `SAFE_ADDRESS` Safe (done once by a Safe owner — see
   [Safe delegates](https://docs.safe.global/core-api/transaction-service-guides/delegates)).
 - The Safe must be the owner (or an approved operator) of the ENS name on the resolver.
 - A **Safe Transaction Service API key** is required when using Safe's hosted service. Obtain one
@@ -32,16 +32,16 @@ the ENS name. The proposal is signed by a **Safe delegate** (`ENS_DELEGATE_PRIVA
 
 ## Inputs
 
-- `cid`: IPFS CID (CIDv0 or CIDv1) to set as the ENS contenthash. Required.
-- `ens_name`: ENS name whose contenthash record is updated. Required.
-- `resolver_address`: Address of the ENS resolver contract that holds the record. Required.
-- `safe_address`: Address of the Safe multisig that owns the ENS name. Required.
-- `ens_delegate_private_key`: Private key of the Safe delegate that proposes the transaction. Required.
-- `safe_api_key`: Safe Transaction Service API key. Required for the hosted service; may be omitted
-  only when `safe_tx_service_url` points at a self-hosted service. Default: empty.
-- `rpc_url`: Ethereum mainnet RPC URL. When empty, viem's built-in mainnet public RPC is used.
+- `CID`: IPFS CID (CIDv0 or CIDv1) to set as the ENS contenthash. Required.
+- `ENS_NAME`: ENS name whose contenthash record is updated. Required.
+- `RESOLVER_ADDRESS`: Address of the ENS resolver contract that holds the record. Required.
+- `SAFE_ADDRESS`: Address of the Safe multisig that owns the ENS name. Required.
+- `ENS_DELEGATE_PRIVATE_KEY`: Private key of the Safe delegate that proposes the transaction. Required.
+- `SAFE_API_KEY`: Safe Transaction Service API key. Required for the hosted service; may be omitted
+  only when `SAFE_TX_SERVICE_URL` points at a self-hosted service. Default: empty.
+- `RPC_URL`: Ethereum mainnet RPC URL. When empty, viem's built-in mainnet public RPC is used.
   Default: empty.
-- `safe_tx_service_url`: Custom Safe Transaction Service endpoint. When set, `safe_api_key` may be
+- `SAFE_TX_SERVICE_URL`: Custom Safe Transaction Service endpoint. When set, `SAFE_API_KEY` may be
   omitted. Default: empty (Safe's hosted mainnet service).
 
 ## Outputs
