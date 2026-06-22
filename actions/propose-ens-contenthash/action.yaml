@@ -5,7 +5,7 @@ inputs:
     description: IPFS CID (CIDv0 or CIDv1) to set as the ENS contenthash
     required: true
   ENS_NAME:
-    description: ENS name whose contenthash record is updated (e.g. ${{ vars.ENS_NAME }})
+    description: ENS name whose contenthash record is updated (e.g. app.hoprnet.org)
     required: true
   RESOLVER_ADDRESS:
     description: Address of the ENS resolver contract that holds the record
@@ -41,16 +41,35 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate required inputs
+      shell: bash
+      env:
+        CID: ${{ inputs.CID }}
+        ENS_NAME: ${{ inputs.ENS_NAME }}
+        RESOLVER_ADDRESS: ${{ inputs.RESOLVER_ADDRESS }}
+        SAFE_ADDRESS: ${{ inputs.SAFE_ADDRESS }}
+        ENS_DELEGATE_PRIVATE_KEY: ${{ inputs.ENS_DELEGATE_PRIVATE_KEY }}
+        SAFE_API_KEY: ${{ inputs.SAFE_API_KEY }}
+        SAFE_TX_SERVICE_URL: ${{ inputs.SAFE_TX_SERVICE_URL }}
+      run: |
+        set -euo pipefail
+        MISSING=0
+        for n in CID ENS_NAME RESOLVER_ADDRESS SAFE_ADDRESS ENS_DELEGATE_PRIVATE_KEY; do
+          [ -n "${!n:-}" ] || { echo "::error::$n is required but not set"; MISSING=1; }
+        done
+        if [ -z "${SAFE_API_KEY:-}" ] && [ -z "${SAFE_TX_SERVICE_URL:-}" ]; then
+          echo "::error::SAFE_API_KEY is required when using the hosted Safe Transaction Service (or set SAFE_TX_SERVICE_URL to a self-hosted service)"
+          MISSING=1
+        fi
+        if [ "$MISSING" -ne 0 ]; then exit 1; fi
     - name: Install pnpm
       uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
       with:
-        package_json_file: ${{ github.action_path }}/package.json
+        version: 11
     - name: Setup Node.js
       uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
       with:
         node-version: 24
-        cache: pnpm
-        cache-dependency-path: ${{ github.action_path }}/pnpm-lock.yaml
     - name: Install dependencies
       shell: bash
       working-directory: ${{ github.action_path }}
@@ -69,3 +88,26 @@ runs:
         RPC_URL: ${{ inputs.RPC_URL }}
         SAFE_API_KEY: ${{ inputs.SAFE_API_KEY }}
         SAFE_TX_SERVICE_URL: ${{ inputs.SAFE_TX_SERVICE_URL }}
+    - name: Write a summary of the proposed transaction
+      shell: bash
+      env:
+        ENS_NAME: ${{ inputs.ENS_NAME }}
+        SAFE_ADDRESS: ${{ inputs.SAFE_ADDRESS }}
+        CONTENT_HASH: ${{ steps.propose.outputs.content_hash }}
+        SAFE_TX_HASH: ${{ steps.propose.outputs.safe_tx_hash }}
+        NAMEHASH: ${{ steps.propose.outputs.namehash }}
+      run: |-
+        {
+          echo "## Proposed ENS contenthash update"
+          echo ""
+          echo "A \`setContenthash\` transaction has been proposed for **${ENS_NAME}** and is awaiting Safe owner confirmation."
+          echo ""
+          echo "| Field | Value |"
+          echo "| --- | --- |"
+          echo "| ENS name | \`${ENS_NAME}\` |"
+          echo "| Contenthash | \`${CONTENT_HASH}\` |"
+          echo "| Safe tx hash | \`${SAFE_TX_HASH}\` |"
+          echo "| Namehash | \`${NAMEHASH}\` |"
+          echo ""
+          echo "[Review in the Safe queue](https://app.safe.global/transactions/queue?safe=eth:${SAFE_ADDRESS})"
+        } >> "$GITHUB_STEP_SUMMARY"
