@@ -16,10 +16,6 @@ inputs:
   ENS_DELEGATE_PRIVATE_KEY:
     description: Private key of the Safe delegate that proposes the transaction
     required: true
-  RPC_URL:
-    description: Ethereum mainnet RPC URL. When empty, viem's built-in mainnet public RPC is used
-    required: false
-    default: ""
   SAFE_API_KEY:
     description: Safe Transaction Service API key. Required when using Safe's hosted service (omit only when SAFE_TX_SERVICE_URL points at a self-hosted service)
     required: false
@@ -28,6 +24,10 @@ inputs:
     description: Custom Safe Transaction Service endpoint. When set, SAFE_API_KEY may be omitted
     required: false
     default: ""
+  TX_ORIGIN:
+    description: Free-text origin label attached to the proposed Safe transaction (shown in the Safe UI)
+    required: false
+    default: hopr-workflows/propose-ens-contenthash
 outputs:
   safe_tx_hash:
     description: Hash of the proposed Safe transaction
@@ -85,9 +85,9 @@ runs:
         RESOLVER_ADDRESS: ${{ inputs.RESOLVER_ADDRESS }}
         SAFE_ADDRESS: ${{ inputs.SAFE_ADDRESS }}
         ENS_DELEGATE_PRIVATE_KEY: ${{ inputs.ENS_DELEGATE_PRIVATE_KEY }}
-        RPC_URL: ${{ inputs.RPC_URL }}
         SAFE_API_KEY: ${{ inputs.SAFE_API_KEY }}
         SAFE_TX_SERVICE_URL: ${{ inputs.SAFE_TX_SERVICE_URL }}
+        TX_ORIGIN: ${{ inputs.TX_ORIGIN }}
     - name: Write a summary of the proposed transaction
       shell: bash
       env:

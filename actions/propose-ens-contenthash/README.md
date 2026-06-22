@@ -17,7 +17,6 @@ the ENS name. The proposal is signed by a **Safe delegate** (`ENS_DELEGATE_PRIVA
     SAFE_ADDRESS: "0x..." # Safe that owns the ENS name
     ENS_DELEGATE_PRIVATE_KEY: ${{ secrets.ENS_DELEGATE_PRIVATE_KEY }}
     SAFE_API_KEY: ${{ secrets.SAFE_API_KEY }} # required for Safe's hosted service
-    RPC_URL: ${{ secrets.RPC_URL }} # optional
 ```
 
 ## Requirements
@@ -39,10 +38,10 @@ the ENS name. The proposal is signed by a **Safe delegate** (`ENS_DELEGATE_PRIVA
 - `ENS_DELEGATE_PRIVATE_KEY`: Private key of the Safe delegate that proposes the transaction. Required.
 - `SAFE_API_KEY`: Safe Transaction Service API key. Required for the hosted service; may be omitted
   only when `SAFE_TX_SERVICE_URL` points at a self-hosted service. Default: empty.
-- `RPC_URL`: Ethereum mainnet RPC URL. When empty, viem's built-in mainnet public RPC is used.
-  Default: empty.
 - `SAFE_TX_SERVICE_URL`: Custom Safe Transaction Service endpoint. When set, `SAFE_API_KEY` may be
   omitted. Default: empty (Safe's hosted mainnet service).
+- `TX_ORIGIN`: Free-text origin label attached to the proposed transaction (shown in the Safe UI).
+  Default: `hopr-workflows/propose-ens-contenthash`.
 
 ## Outputs
 
