@@ -38,6 +38,15 @@ outputs:
   namehash:
     description: The ENS node hash of the name
     value: ${{ steps.propose.outputs.namehash }}
+  domain_hash:
+    description: EIP-712 domain hash of the Safe transaction (as shown in the Safe UI)
+    value: ${{ steps.propose.outputs.domain_hash }}
+  message_hash:
+    description: EIP-712 message hash of the Safe transaction (as shown in the Safe UI)
+    value: ${{ steps.propose.outputs.message_hash }}
+  data:
+    description: The setContenthash calldata sent to the resolver
+    value: ${{ steps.propose.outputs.data }}
 runs:
   using: composite
   steps:
@@ -96,6 +105,9 @@ runs:
         CONTENT_HASH: ${{ steps.propose.outputs.content_hash }}
         SAFE_TX_HASH: ${{ steps.propose.outputs.safe_tx_hash }}
         NAMEHASH: ${{ steps.propose.outputs.namehash }}
+        DOMAIN_HASH: ${{ steps.propose.outputs.domain_hash }}
+        MESSAGE_HASH: ${{ steps.propose.outputs.message_hash }}
+        DATA: ${{ steps.propose.outputs.data }}
       run: |-
         {
           echo "## Proposed ENS contenthash update"
@@ -105,9 +117,12 @@ runs:
           echo "| Field | Value |"
           echo "| --- | --- |"
           echo "| ENS name | \`${ENS_NAME}\` |"
-          echo "| Contenthash | \`${CONTENT_HASH}\` |"
-          echo "| Safe tx hash | \`${SAFE_TX_HASH}\` |"
-          echo "| Namehash | \`${NAMEHASH}\` |"
+          echo "| Node / Namehash | \`${NAMEHASH}\` |"
+          echo "| Content hash | \`${CONTENT_HASH}\` |"
+          echo "| Domain hash | \`${DOMAIN_HASH}\` |"
+          echo "| Message hash | \`${MESSAGE_HASH}\` |"
+          echo "| Safe TX hash | \`${SAFE_TX_HASH}\` |"
+          echo "| Data | \`${DATA}\` |"
           echo ""
-          echo "[Review in the Safe queue](https://app.safe.global/transactions/queue?safe=eth:${SAFE_ADDRESS})"
+          echo "### 🔗 [Review and sign the TX in the Safe queue](https://app.safe.global/transactions/queue?safe=eth:${SAFE_ADDRESS})"
         } >> "$GITHUB_STEP_SUMMARY"

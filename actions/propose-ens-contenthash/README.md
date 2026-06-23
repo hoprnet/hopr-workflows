@@ -48,3 +48,6 @@ the ENS name. The proposal is signed by a **Safe delegate** (`ENS_DELEGATE_PRIVA
 - `safe_tx_hash`: Hash of the proposed Safe transaction.
 - `content_hash`: The encoded ENS contenthash (`0x…`) that was proposed.
 - `namehash`: The ENS node hash of the name.
+- `domain_hash`: EIP-712 domain hash of the Safe transaction (as shown in the Safe UI).
+- `message_hash`: EIP-712 message hash of the Safe transaction (as shown in the Safe UI).
+- `data`: The `setContenthash` calldata sent to the resolver.

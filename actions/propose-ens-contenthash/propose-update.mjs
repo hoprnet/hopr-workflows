@@ -7,6 +7,8 @@ import {
   namehash,
   encodeFunctionData,
   getAddress,
+  hashDomain,
+  hashStruct,
   hashTypedData,
   serializeSignature,
   zeroAddress,
@@ -15,6 +17,22 @@ import { privateKeyToAccount, sign } from "viem/accounts";
 import { encode as encodeContentHash } from "@ensdomains/content-hash";
 
 const CHAIN_ID = 1;
+
+// EIP-712 type of the Safe transaction struct (same across Safe >= 1.0.0).
+const SAFE_TX_TYPES = {
+  SafeTx: [
+    { name: "to", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "data", type: "bytes" },
+    { name: "operation", type: "uint8" },
+    { name: "safeTxGas", type: "uint256" },
+    { name: "baseGas", type: "uint256" },
+    { name: "gasPrice", type: "uint256" },
+    { name: "gasToken", type: "address" },
+    { name: "refundReceiver", type: "address" },
+    { name: "nonce", type: "uint256" },
+  ],
+};
 const cid = process.env.CID;
 const ensName = process.env.ENS_NAME;
 const resolverAddress = getAddress(process.env.RESOLVER_ADDRESS);
@@ -73,6 +91,12 @@ const includesChainId = atLeast130(safeInfo.version);
 const domain = includesChainId
   ? { chainId: CHAIN_ID, verifyingContract: safeAddress }
   : { verifyingContract: safeAddress };
+const eip712DomainType = includesChainId
+  ? [
+      { name: "chainId", type: "uint256" },
+      { name: "verifyingContract", type: "address" },
+    ]
+  : [{ name: "verifyingContract", type: "address" }];
 
 const safeTx = {
   to: resolverAddress,
@@ -89,22 +113,22 @@ const safeTx = {
 
 const safeTxHash = hashTypedData({
   domain,
-  types: {
-    SafeTx: [
-      { name: "to", type: "address" },
-      { name: "value", type: "uint256" },
-      { name: "data", type: "bytes" },
-      { name: "operation", type: "uint8" },
-      { name: "safeTxGas", type: "uint256" },
-      { name: "baseGas", type: "uint256" },
-      { name: "gasPrice", type: "uint256" },
-      { name: "gasToken", type: "address" },
-      { name: "refundReceiver", type: "address" },
-      { name: "nonce", type: "uint256" },
-    ],
-  },
+  types: SAFE_TX_TYPES,
   primaryType: "SafeTx",
   message: safeTx,
+});
+
+// The Safe UI shows these EIP-712 components when an owner reviews the tx:
+//   safeTxHash = keccak256(0x19 0x01 || domainHash || messageHash)
+// Logging them lets a reviewer cross-check against what their wallet displays.
+const domainHash = hashDomain({
+  domain,
+  types: { EIP712Domain: eip712DomainType },
+});
+const messageHash = hashStruct({
+  data: safeTx,
+  primaryType: "SafeTx",
+  types: SAFE_TX_TYPES,
 });
 
 // 5. Sign the hash with the delegate key. Signing the digest directly yields an
@@ -138,8 +162,12 @@ await apiKit.proposeTransaction({
 });
 
 console.log(`Proposed setContenthash for ${ensName}`);
-console.log(`  contenthash: ${encoded}`);
-console.log(`  safeTxHash:  ${safeTxHash}`);
+console.log(`  - Node / Namehash: ${node}`);
+console.log(`  - Content hash: ${encoded}`);
+console.log(`  - Domain hash:  ${domainHash}`);
+console.log(`  - Message hash: ${messageHash}`);
+console.log(`  - Safe TX hash:   ${safeTxHash}`);
+console.log(`  - Data:         ${data}`);
 console.log(
   `\nSafe queue url:    https://app.safe.global/transactions/queue?safe=eth:${safeAddress}`,
 );
@@ -148,7 +176,12 @@ console.log(
 if (process.env.GITHUB_OUTPUT) {
   appendFileSync(
     process.env.GITHUB_OUTPUT,
-    `safe_tx_hash=${safeTxHash}\ncontent_hash=${encoded}\nnamehash=${node}\n`,
+    `safe_tx_hash=${safeTxHash}\n` +
+      `content_hash=${encoded}\n` +
+      `namehash=${node}\n` +
+      `domain_hash=${domainHash}\n` +
+      `message_hash=${messageHash}\n` +
+      `data=${data}\n`,
   );
 }
 
