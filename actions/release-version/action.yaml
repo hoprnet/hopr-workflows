@@ -205,7 +205,7 @@ runs:
         } >> $GITHUB_ENV
     - name: Notify release
       if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
-      uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
+      uses: zulip/github-actions-zulip/send-message@f675f2b4eb2a95fae974215476dcb7ad8dfeff6b # v2.0.2
       with:
         api-key: ${{ inputs.zulip_api_key }}
         email: ${{ inputs.zulip_email }}
