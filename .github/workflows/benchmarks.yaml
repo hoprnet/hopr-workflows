@@ -141,7 +141,7 @@ jobs:
           BENCHER_API_TOKEN: ${{ secrets.bencher_api_token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Notify performance drop (PR)
-        uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
+        uses: zulip/github-actions-zulip/send-message@f675f2b4eb2a95fae974215476dcb7ad8dfeff6b # v2.0.2
         if: failure() && github.event_name == 'pull_request' && env.ZULIP_API_KEY != '' && env.ZULIP_EMAIL != ''
         env:
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
@@ -183,7 +183,7 @@ jobs:
           BENCHER_API_TOKEN: ${{ secrets.bencher_api_token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Notify performance drop (Merge/Push)
-        uses: zulip/github-actions-zulip/send-message@e4c8f27c732ba9bd98ac6be0583096dea82feea5 # v1.0.2
+        uses: zulip/github-actions-zulip/send-message@f675f2b4eb2a95fae974215476dcb7ad8dfeff6b # v2.0.2
         if: failure() && github.event_name != 'pull_request' && env.ZULIP_API_KEY != '' && env.ZULIP_EMAIL != ''
         env:
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
