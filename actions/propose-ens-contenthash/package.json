@@ -1,0 +1,13 @@
+{
+  "name": "propose-ens-contenthash",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Propose an ENS setContenthash transaction to the owning Safe as a delegate",
+  "main": "propose-update.mjs",
+  "dependencies": {
+    "@ensdomains/content-hash": "3.1.1",
+    "@safe-global/api-kit": "4.2.0",
+    "viem": "2.53.1"
+  }
+}
