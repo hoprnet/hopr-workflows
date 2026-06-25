@@ -33,18 +33,18 @@ const SAFE_TX_TYPES = {
     { name: "nonce", type: "uint256" },
   ],
 };
-const cid = process.env.CID;
-const ensName = process.env.ENS_NAME;
-const resolverAddress = getAddress(process.env.RESOLVER_ADDRESS);
-const safeAddress = getAddress(process.env.SAFE_ADDRESS);
-const privateKeyRaw = process.env.ENS_DELEGATE_PRIVATE_KEY;
+const cid = process.env.cid;
+const ensName = process.env.ens_name;
+const resolverAddress = getAddress(process.env.resolver_address);
+const safeAddress = getAddress(process.env.safe_address);
+const privateKeyRaw = process.env.ens_delegate_private_key;
 const privateKey = privateKeyRaw.startsWith("0x")
   ? privateKeyRaw
   : `0x${privateKeyRaw}`;
-const txServiceUrl = process.env.SAFE_TX_SERVICE_URL || "";
+const txServiceUrl = process.env.safe_tx_service_url || "";
 const origin =
-  process.env.TX_ORIGIN || "hopr-workflows/propose-ens-contenthash";
-const apiKey = process.env.SAFE_API_KEY || "";
+  process.env.tx_origin || "hopr-workflows/propose-ens-contenthash";
+const apiKey = process.env.safe_api_key || "";
 
 // 1. Encode the CID as an EIP-1577 ipfs contenthash. The library accepts both
 // CIDv0 (Qm...) and CIDv1 (bafy...) and normalizes them to the same value.

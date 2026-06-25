@@ -1,30 +1,30 @@
 name: Propose ENS Contenthash
 description: Encode an IPFS CID and propose a setContenthash transaction to the Safe that owns the ENS name, signed by a Safe delegate
 inputs:
-  CID:
+  cid:
     description: IPFS CID (CIDv0 or CIDv1) to set as the ENS contenthash
     required: true
-  ENS_NAME:
+  ens_name:
     description: ENS name whose contenthash record is updated (e.g. app.hoprnet.org)
     required: true
-  RESOLVER_ADDRESS:
+  resolver_address:
     description: Address of the ENS resolver contract that holds the record
     required: true
-  SAFE_ADDRESS:
+  safe_address:
     description: Address of the Safe multisig that owns the ENS name
     required: true
-  ENS_DELEGATE_PRIVATE_KEY:
+  ens_delegate_private_key:
     description: Private key of the Safe delegate that proposes the transaction
     required: true
-  SAFE_API_KEY:
-    description: Safe Transaction Service API key. Required when using Safe's hosted service (omit only when SAFE_TX_SERVICE_URL points at a self-hosted service)
+  safe_api_key:
+    description: Safe Transaction Service API key. Required when using Safe's hosted service (omit only when safe_tx_service_url points at a self-hosted service)
     required: false
     default: ""
-  SAFE_TX_SERVICE_URL:
-    description: Custom Safe Transaction Service endpoint. When set, SAFE_API_KEY may be omitted
+  safe_tx_service_url:
+    description: Custom Safe Transaction Service endpoint. When set, safe_api_key may be omitted
     required: false
     default: ""
-  TX_ORIGIN:
+  tx_origin:
     description: Free-text origin label attached to the proposed Safe transaction (shown in the Safe UI)
     required: false
     default: hopr-workflows/propose-ens-contenthash
@@ -53,21 +53,21 @@ runs:
     - name: Validate required inputs
       shell: bash
       env:
-        CID: ${{ inputs.CID }}
-        ENS_NAME: ${{ inputs.ENS_NAME }}
-        RESOLVER_ADDRESS: ${{ inputs.RESOLVER_ADDRESS }}
-        SAFE_ADDRESS: ${{ inputs.SAFE_ADDRESS }}
-        ENS_DELEGATE_PRIVATE_KEY: ${{ inputs.ENS_DELEGATE_PRIVATE_KEY }}
-        SAFE_API_KEY: ${{ inputs.SAFE_API_KEY }}
-        SAFE_TX_SERVICE_URL: ${{ inputs.SAFE_TX_SERVICE_URL }}
+        cid: ${{ inputs.cid }}
+        ens_name: ${{ inputs.ens_name }}
+        resolver_address: ${{ inputs.resolver_address }}
+        safe_address: ${{ inputs.safe_address }}
+        ens_delegate_private_key: ${{ inputs.ens_delegate_private_key }}
+        safe_api_key: ${{ inputs.safe_api_key }}
+        safe_tx_service_url: ${{ inputs.safe_tx_service_url }}
       run: |
         set -euo pipefail
         MISSING=0
-        for n in CID ENS_NAME RESOLVER_ADDRESS SAFE_ADDRESS ENS_DELEGATE_PRIVATE_KEY; do
+        for n in cid ens_name resolver_address safe_address ens_delegate_private_key; do
           [ -n "${!n:-}" ] || { echo "::error::$n is required but not set"; MISSING=1; }
         done
-        if [ -z "${SAFE_API_KEY:-}" ] && [ -z "${SAFE_TX_SERVICE_URL:-}" ]; then
-          echo "::error::SAFE_API_KEY is required when using the hosted Safe Transaction Service (or set SAFE_TX_SERVICE_URL to a self-hosted service)"
+        if [ -z "${safe_api_key:-}" ] && [ -z "${safe_tx_service_url:-}" ]; then
+          echo "::error::safe_api_key is required when using the hosted Safe Transaction Service (or set safe_tx_service_url to a self-hosted service)"
           MISSING=1
         fi
         if [ "$MISSING" -ne 0 ]; then exit 1; fi
@@ -89,40 +89,40 @@ runs:
       working-directory: ${{ github.action_path }}
       run: node ./propose-update.mjs
       env:
-        CID: ${{ inputs.CID }}
-        ENS_NAME: ${{ inputs.ENS_NAME }}
-        RESOLVER_ADDRESS: ${{ inputs.RESOLVER_ADDRESS }}
-        SAFE_ADDRESS: ${{ inputs.SAFE_ADDRESS }}
-        ENS_DELEGATE_PRIVATE_KEY: ${{ inputs.ENS_DELEGATE_PRIVATE_KEY }}
-        SAFE_API_KEY: ${{ inputs.SAFE_API_KEY }}
-        SAFE_TX_SERVICE_URL: ${{ inputs.SAFE_TX_SERVICE_URL }}
-        TX_ORIGIN: ${{ inputs.TX_ORIGIN }}
+        cid: ${{ inputs.cid }}
+        ens_name: ${{ inputs.ens_name }}
+        resolver_address: ${{ inputs.resolver_address }}
+        safe_address: ${{ inputs.safe_address }}
+        ens_delegate_private_key: ${{ inputs.ens_delegate_private_key }}
+        safe_api_key: ${{ inputs.safe_api_key }}
+        safe_tx_service_url: ${{ inputs.safe_tx_service_url }}
+        tx_origin: ${{ inputs.tx_origin }}
     - name: Write a summary of the proposed transaction
       shell: bash
       env:
-        ENS_NAME: ${{ inputs.ENS_NAME }}
-        SAFE_ADDRESS: ${{ inputs.SAFE_ADDRESS }}
-        CONTENT_HASH: ${{ steps.propose.outputs.content_hash }}
-        SAFE_TX_HASH: ${{ steps.propose.outputs.safe_tx_hash }}
-        NAMEHASH: ${{ steps.propose.outputs.namehash }}
-        DOMAIN_HASH: ${{ steps.propose.outputs.domain_hash }}
-        MESSAGE_HASH: ${{ steps.propose.outputs.message_hash }}
-        DATA: ${{ steps.propose.outputs.data }}
+        ens_name: ${{ inputs.ens_name }}
+        safe_address: ${{ inputs.safe_address }}
+        content_hash: ${{ steps.propose.outputs.content_hash }}
+        safe_tx_hash: ${{ steps.propose.outputs.safe_tx_hash }}
+        namehash: ${{ steps.propose.outputs.namehash }}
+        domain_hash: ${{ steps.propose.outputs.domain_hash }}
+        message_hash: ${{ steps.propose.outputs.message_hash }}
+        data: ${{ steps.propose.outputs.data }}
       run: |-
         {
           echo "## Proposed ENS contenthash update"
           echo ""
-          echo "A \`setContenthash\` transaction has been proposed for **${ENS_NAME}** and is awaiting Safe owner confirmation."
+          echo "A \`setContenthash\` transaction has been proposed for **${ens_name}** and is awaiting Safe owner confirmation."
           echo ""
           echo "| Field | Value |"
           echo "| --- | --- |"
-          echo "| ENS name | \`${ENS_NAME}\` |"
-          echo "| Node / Namehash | \`${NAMEHASH}\` |"
-          echo "| Content hash | \`${CONTENT_HASH}\` |"
-          echo "| Domain hash | \`${DOMAIN_HASH}\` |"
-          echo "| Message hash | \`${MESSAGE_HASH}\` |"
-          echo "| Safe TX hash | \`${SAFE_TX_HASH}\` |"
-          echo "| Data | \`${DATA}\` |"
+          echo "| ENS name | \`${ens_name}\` |"
+          echo "| Node / Namehash | \`${namehash}\` |"
+          echo "| Content hash | \`${content_hash}\` |"
+          echo "| Domain hash | \`${domain_hash}\` |"
+          echo "| Message hash | \`${message_hash}\` |"
+          echo "| Safe TX hash | \`${safe_tx_hash}\` |"
+          echo "| Data | \`${data}\` |"
           echo ""
-          echo "### 🔗 [Review and sign the TX in the Safe queue](https://app.safe.global/transactions/queue?safe=eth:${SAFE_ADDRESS})"
+          echo "### 🔗 [Review and sign the TX in the Safe queue](https://app.safe.global/transactions/queue?safe=eth:${safe_address})"
         } >> "$GITHUB_STEP_SUMMARY"
