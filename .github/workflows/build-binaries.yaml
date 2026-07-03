@@ -202,14 +202,14 @@ jobs:
           path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture}}.sha256
       - name: Setup GCP
         if: needs.build.outputs.publish_artifact_registry == 'true'
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@eedb4b7701714299852ca5243f1544b817653f33 # hopr-workflows v0.11.1
         with:
           workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
           service_account: ${{ inputs.gcp_service_account }}
           install_sdk: "true"
       - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
         if: needs.build.outputs.publish_artifact_registry == 'true'
-        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@upload-artifact-registry-v2
+        uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@eedb4b7701714299852ca5243f1544b817653f33 # hopr-workflows v0.11.1
         with:
           source: ${{ github.workspace }}/artifacts
           region: ${{ inputs.gcp_region }}
