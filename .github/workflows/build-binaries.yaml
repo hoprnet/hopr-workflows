@@ -119,7 +119,7 @@ jobs:
           nix_path: ${{ inputs.nix_path }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@621619750f6772109d7840a7013135c212925d58 # set-build-version-v2
+        uses: hoprnet/hopr-workflows/actions/set-build-version@2855f448149188cd9c4da41f0a6cbdf4f3d664a1 # set-build-version-v2
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
@@ -174,7 +174,7 @@ jobs:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts
       - name: Sign binary ${{ inputs.binary }}-${{ inputs.architecture }}
-        uses: hoprnet/hopr-workflows/actions/sign-file@7bfd6309e663ce6f3a80b3f5a8a2eb4ae9d20108 # sign-file-v2
+        uses: hoprnet/hopr-workflows/actions/sign-file@97a7c86f59aafbf8f71581a402a07165de51750e # sign-file-v2
         with:
           path: ${{ github.workspace }}/artifacts/
           architecture: ${{ inputs.architecture }}

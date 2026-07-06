@@ -116,8 +116,9 @@ release_component() {
   echo "Creating ${release_tag} and moving ${alias_tag} to ${HEAD_SHA}"
   git tag -a "$release_tag" -m "$release_tag" "$HEAD_SHA"
   git tag -f "$alias_tag" "$HEAD_SHA"
-  git push origin "$release_tag"
-  git push --force origin "$alias_tag"
+  # Atomic so a failed push cannot publish the release tag while leaving
+  # the alias on the previous release.
+  git push --atomic origin "refs/tags/${release_tag}" "+refs/tags/${alias_tag}"
 }
 
 for component in $(printf '%s\n' "${!COMPONENT_PATHS[@]}" | sort); do

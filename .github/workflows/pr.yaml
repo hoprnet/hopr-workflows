@@ -19,7 +19,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           requireScope: false
-          # action names, reusable workflow file stems, and repo housekeeping
+          # action names, reusable workflow component names (with and
+          # without the workflow- tag-family prefix), and repo housekeeping
           scopes: |
             bump-version
             download-artifact-registry
@@ -42,6 +43,10 @@ jobs:
             checks
             checks-zizmor
             tests
+            workflow-benchmarks
+            workflow-checks
+            workflow-checks-zizmor
+            workflow-tests
             ci
             deps
             docs

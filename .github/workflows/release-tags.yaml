@@ -10,6 +10,9 @@ jobs:
   tag:
     if: github.event.head_commit.author.name != 'github-actions[bot]'
     runs-on: depot-ubuntu-22.04-4
+    # A hung push must not block the serialized concurrency group for the
+    # default 6h job timeout
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:

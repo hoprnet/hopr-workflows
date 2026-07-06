@@ -15,6 +15,10 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
+# The plan below is computed from local tags; make sure they mirror the
+# remote before turning them into remote creates/deletes.
+git fetch --force --prune --prune-tags origin
+
 EXECUTE="${1:-}"
 
 # Live components: every action directory plus the reusable workflow tag
@@ -54,6 +58,12 @@ while read -r tag; do
   major="${BASH_REMATCH[2]}"
   if ! is_live "$component"; then
     DELETIONS+=("$tag")
+    continue
+  fi
+  # If release-tags.sh already released this major, the alias has moved
+  # past its pre-automation commit and a synthetic anchor would only
+  # mislead; the semver baseline exists either way.
+  if [[ -n "$(git tag -l "${component}-v${major}.*.*")" ]]; then
     continue
   fi
   anchor="${component}-v${major}.0.0"
