@@ -103,14 +103,14 @@ runs:
         clean: ${{ inputs.release_notes_file == '' }}
     - name: Get version info
       id: version
-      uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+      uses: hoprnet/hopr-workflows/actions/set-build-version@621619750f6772109d7840a7013135c212925d58 # set-build-version-v2
       with:
         file: "${{ inputs.file }}"
         version_type: release
     - name: Setup GCP
       if: inputs.gcp_artifact_package != ''
       id: gcp
-      uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
+      uses: hoprnet/hopr-workflows/actions/setup-gcp@ac3e0b6137b0ba470a30c373aab2ceba9e0879e4 # setup-gcp-v4
       with:
         workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
         service_account: ${{ inputs.gcp_service_account }}
@@ -125,7 +125,7 @@ runs:
     - name: Download binary files
       if: inputs.gcp_artifact_package != ''
       id: download
-      uses: hoprnet/hopr-workflows/actions/download-artifact-registry@download-artifact-registry-v2
+      uses: hoprnet/hopr-workflows/actions/download-artifact-registry@2cae201c4f92e86cf40480704bdc5c2d53bce772 # download-artifact-registry-v2
       with:
         region: ${{ inputs.gcp_artifact_region }}
         repository: ${{ inputs.gcp_artifact_repository }}
@@ -133,7 +133,7 @@ runs:
         version: ${{ steps.version.outputs.current_version }}
     - name: Generate Release Notes
       if: inputs.release_notes_file == ''
-      uses: hoprnet/hopr-workflows/actions/generate-release-notes@generate-release-notes-v1
+      uses: hoprnet/hopr-workflows/actions/generate-release-notes@8a509c0dd4e60e6a15b4c6d432a618035a0123c8 # generate-release-notes-v1
       with:
         source_branch: ${{ inputs.source_branch }}
         format: github
@@ -181,7 +181,7 @@ runs:
         draft: ${{ inputs.draft }}
     - name: Bump version
       id: bump
-      uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v2
+      uses: hoprnet/hopr-workflows/actions/bump-version@f5d9aeafc2b33fbdba56960df4b92cb5a155496c # bump-version-v2
       with:
         file: ${{ inputs.file }}
         release_type: ${{ inputs.release_type }}

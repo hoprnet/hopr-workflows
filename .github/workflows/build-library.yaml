@@ -95,6 +95,7 @@ jobs:
             [[ "$t" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo "::error::Invalid target triple: $t"; exit 1; }
             target_args="${target_args:+$target_args }--target $t"
           done
+          # shellcheck disable=SC2086 # CONTEXT and target_args are intentionally word-split flag lists
           nix develop -c cargo release publish $CONTEXT $target_args --all-features
       - name: Authenticate with crates.io
         if: inputs.version_type == 'release'
@@ -113,4 +114,5 @@ jobs:
             [[ "$t" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo "::error::Invalid target triple: $t"; exit 1; }
             target_args="${target_args:+$target_args }--target $t"
           done
+          # shellcheck disable=SC2086 # CONTEXT and target_args are intentionally word-split flag lists
           nix develop -c cargo release publish $CONTEXT $target_args --execute --all-features --no-confirm
