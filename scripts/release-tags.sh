@@ -126,6 +126,12 @@ for component in $(printf '%s\n' "${!COMPONENT_PATHS[@]}" | sort); do
   if git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- "$path"; then
     continue
   fi
+  # A workflow re-run for an already-released merge must not mint a
+  # duplicate release at the same commit.
+  if git tag --points-at "$HEAD_SHA" -l "${component}-v*.*.*" | grep -q .; then
+    echo "${component} already released at ${HEAD_SHA}, skipping"
+    continue
+  fi
   current="$(current_version "$component")"
   if [[ -z $current ]]; then
     version="1.0.0"
