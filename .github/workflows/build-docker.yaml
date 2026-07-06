@@ -161,7 +161,7 @@ jobs:
           nix_path: ${{ inputs.nix_path }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@set-build-version-v2
+        uses: hoprnet/hopr-workflows/actions/set-build-version@2855f448149188cd9c4da41f0a6cbdf4f3d664a1 # set-build-version-v2
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
@@ -181,7 +181,7 @@ jobs:
         run: ${{ matrix.build_debug_command }}
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@ac3e0b6137b0ba470a30c373aab2ceba9e0879e4 # setup-gcp-v4
         with:
           workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
           service_account: ${{ inputs.gcp_service_account }}
@@ -275,56 +275,56 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@ac3e0b6137b0ba470a30c373aab2ceba9e0879e4 # setup-gcp-v4
         with:
           workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
           service_account: ${{ inputs.gcp_service_account }}
           login_artifact_registry: 'true'
           install_sdk: 'false'
       - name: Create multi-arch docker manifest - ${{ needs.build.outputs.docker_build_version }}
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_build_version }}
       - name: Create debug multi-arch docker manifest - ${{ needs.build.outputs.docker_debug_version }}
         if: needs.build.outputs.docker_debug_version != ''
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_debug_version }}
       - name: Create multi-arch docker manifest - latest
         if: inputs.version_type == 'pr'
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest
       - name: Create multi-arch docker manifest - latest-main
         if: inputs.version_type == 'pr' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest-main
       - name: Create multi-arch docker manifest - latest-testing
         if: inputs.version_type == 'pr' && contains(github.event.pull_request.base.ref, 'release/')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest-testing
       - name: Create multi-arch docker manifest - release-main
         if: inputs.version_type == 'release' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: release-main
       - name: Create multi-arch docker manifest - release-testing
         if: inputs.version_type == 'release' && contains(github.event.pull_request.base.ref, 'release/')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
@@ -345,7 +345,7 @@ jobs:
           password: ${{ secrets.docker_hub_token }}
       - name: Create multi-arch docker manifest - Docker Hub - ${{ needs.build.outputs.docker_build_version }}
         if: steps.docker_hub.outputs.publish_docker_hub == 'true'
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@multi-arch-manifest-v1
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_hub_registry }}
           image: ${{ inputs.docker_image_name }}
@@ -376,7 +376,7 @@ jobs:
           cosign-release: 'v3.0.5'
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@ac3e0b6137b0ba470a30c373aab2ceba9e0879e4 # setup-gcp-v4
         with:
           workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
           service_account: ${{ inputs.gcp_service_account }}
@@ -387,11 +387,11 @@ jobs:
         run: |
           base_version="${{ needs.build.outputs.docker_build_version }}"
           if [[ "${{ matrix.architecture }}" == "aarch64-linux" ]]; then
-            echo "docker_build_version_platform=${base_version}-linux-arm64" | tee -a $GITHUB_OUTPUT
-            echo "docker_platform=linux-arm64" | tee -a $GITHUB_OUTPUT
+            echo "docker_build_version_platform=${base_version}-linux-arm64" | tee -a "$GITHUB_OUTPUT"
+            echo "docker_platform=linux-arm64" | tee -a "$GITHUB_OUTPUT"
           elif [[ "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
-            echo "docker_build_version_platform=${base_version}-linux-amd64" | tee -a $GITHUB_OUTPUT
-            echo "docker_platform=linux-amd64" | tee -a $GITHUB_OUTPUT
+            echo "docker_build_version_platform=${base_version}-linux-amd64" | tee -a "$GITHUB_OUTPUT"
+            echo "docker_platform=linux-amd64" | tee -a "$GITHUB_OUTPUT"
           else
             echo "Unsupported architecture: ${{ matrix.architecture }}"
             exit 1
@@ -401,20 +401,20 @@ jobs:
         run: |
           gcp_docker_image="${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}"
           docker pull "${gcp_docker_image}" # Pull the image to inspect
-          echo "gcp_docker_image=${gcp_docker_image}" | tee -a $GITHUB_OUTPUT
+          echo "gcp_docker_image=${gcp_docker_image}" | tee -a "$GITHUB_OUTPUT"
           gcp_docker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${gcp_docker_image}" | awk -F'@' '{print $2}')
-          echo "gcp_docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${gcp_docker_digest}" | tee -a $GITHUB_OUTPUT
+          echo "gcp_docker_digest=${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}@${gcp_docker_digest}" | tee -a "$GITHUB_OUTPUT"
           if [[ "${{ needs.build.outputs.publish_docker_hub }}" == "true" ]]; then
             docker_hub_image="${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}:${{ steps.platform.outputs.docker_build_version_platform }}"
             docker pull "${docker_hub_image}" # Pull the image to inspect
-            echo "docker_hub_image=${docker_hub_image}" | tee -a $GITHUB_OUTPUT
+            echo "docker_hub_image=${docker_hub_image}" | tee -a "$GITHUB_OUTPUT"
             docker_hub_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${docker_hub_image}" | awk -F'@' '{print $2}')
-            echo "docker_hub_digest=${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}@${docker_hub_digest}" | tee -a $GITHUB_OUTPUT
+            echo "docker_hub_digest=${{ inputs.docker_hub_registry }}/${{ inputs.docker_image_name }}@${docker_hub_digest}" | tee -a "$GITHUB_OUTPUT"
           fi
           if [ "${{ inputs.fail_on_scan_vulnerabilities }}" = "true" ]; then
-            echo "trivy_exit_code=1" | tee -a $GITHUB_OUTPUT
+            echo "trivy_exit_code=1" | tee -a "$GITHUB_OUTPUT"
           else
-            echo "trivy_exit_code=0" | tee -a $GITHUB_OUTPUT
+            echo "trivy_exit_code=0" | tee -a "$GITHUB_OUTPUT"
           fi
       - name: Run Trivy
         if: inputs.version_type == 'commit'
@@ -449,10 +449,10 @@ jobs:
           } > trivy-results.md
           if [ -s trivy-results.md ]; then
             cat trivy-header.md trivy-results.md > trivy-comment.md
-            echo "trivy_vulnerabilities_found=true" | tee -a $GITHUB_OUTPUT
+            echo "trivy_vulnerabilities_found=true" | tee -a "$GITHUB_OUTPUT"
           else
             echo "No vulnerabilities found or failed to process Trivy results" > trivy-comment.md
-            echo "trivy_vulnerabilities_found=false" | tee -a $GITHUB_OUTPUT
+            echo "trivy_vulnerabilities_found=false" | tee -a "$GITHUB_OUTPUT"
           fi
       - name: Find existing Trivy comment
         if: inputs.version_type == 'commit' && steps.trivy_report.outputs.trivy_vulnerabilities_found == 'true'
@@ -552,7 +552,7 @@ jobs:
     steps:
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@setup-gcp-v4
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@ac3e0b6137b0ba470a30c373aab2ceba9e0879e4 # setup-gcp-v4
         with:
           workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
           service_account: ${{ inputs.gcp_service_account }}

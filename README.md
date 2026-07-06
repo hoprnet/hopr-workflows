@@ -30,7 +30,28 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 
 ## Tags
 
-The reusable workflows and actions use the following tagging pattern:
+Every action and reusable workflow is released independently with two kinds of tags:
 
-- `<action-name>-v<major_version_number>`
-- `<workflow-name>-v<major_version_number>`
+- `<component>-v<major>.<minor>.<patch>`: immutable release tag
+- `<component>-v<major>`: moving alias pointing to the latest release of that major
+
+`<component>` is the action directory name (e.g. `setup-nix`) or the reusable
+workflow tag family (e.g. `build-binaries`, `workflow-tests`).
+
+Tags are created automatically by the [Release Tags](.github/workflows/release-tags.yaml)
+workflow whenever a component changes on `main` (see [release-tags.sh](scripts/release-tags.sh)).
+The bump level is derived from the conventional commit message that landed the change:
+
+- `feat!:` or a `BREAKING CHANGE` footer → major
+- `feat:` → minor
+- anything else → patch
+
+A scoped commit type only applies to the component named in the scope; other
+components touched by the same commit receive a patch release. PR titles are
+linted for the conventional commit format since they become the squash commit
+on `main`.
+
+Consumers should pin to a commit SHA with the release tag in a trailing comment
+(`uses: hoprnet/hopr-workflows/actions/setup-nix@<sha> # setup-nix-v2.1.0`), or
+reference the major alias to follow non-breaking updates automatically. Alias
+tags are never attached to GitHub releases so they stay movable.

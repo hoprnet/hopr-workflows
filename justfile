@@ -1,5 +1,6 @@
-
-
+# Break-glass only: release tags are normally created by the Release Tags
+# workflow (.github/workflows/release-tags.yaml). Use this recipe only to
+# repair an alias tag when the automation cannot.
 tag tagName:
     echo "Updating local tag: {{tagName}}"
     git tag -f {{tagName}}

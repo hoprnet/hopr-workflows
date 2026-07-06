@@ -6,7 +6,7 @@ on:
         required: true
         type: string
       runner:
-        required: true
+        required: false
         type: string
         default: depot-ubuntu-22.04-4
       bencher_project:
@@ -136,7 +136,7 @@ jobs:
           BENCHER_RUN_URL=$(grep -oE "https://bencher.dev/(console/projects/${{ inputs.bencher_project }}/runs/|perf/${{ inputs.bencher_project }}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
           echo "bencher_run_url=${BENCHER_RUN_URL:-https://bencher.dev/console/projects/${{ inputs.bencher_project }}}" >> "$GITHUB_OUTPUT"
 
-          exit $EXIT_CODE
+          exit "$EXIT_CODE"
         env:
           BENCHER_API_TOKEN: ${{ secrets.bencher_api_token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -178,7 +178,7 @@ jobs:
           BENCHER_REPORT_URL=$(grep -oE "https://bencher.dev/(console/projects/${{ inputs.bencher_project }}/reports/|perf/${{ inputs.bencher_project }}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
           echo "bencher_report_url=${BENCHER_REPORT_URL:-https://bencher.dev/console/projects/${{ inputs.bencher_project }}}" >> "$GITHUB_OUTPUT"
 
-          exit $EXIT_CODE
+          exit "$EXIT_CODE"
         env:
           BENCHER_API_TOKEN: ${{ secrets.bencher_api_token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

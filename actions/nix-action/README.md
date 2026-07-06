@@ -7,7 +7,7 @@ Composite action that consolidates common CI boilerplate into a single step: har
 ```yaml
 steps:
   - name: Run tests
-    uses: hoprnet/hopr-workflows/actions/nix-action@8687133e2bae03344b3a080c76593637e16cbb2a # nix-action-v2
+    uses: hoprnet/hopr-workflows/actions/nix-action@fa71078959cf9f892185e8df16551720693a2cd1 # nix-action-v1
     with:
       source_branch: ${{ inputs.source_branch }}
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
