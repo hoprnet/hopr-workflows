@@ -13,7 +13,6 @@ inputs:
   cachix_cache_name:
     description: Cachix cache name (passed to setup-nix)
     required: false
-    default: hoprnet
   cachix_auth_token:
     description: Cachix authentication token (passed to setup-nix)
     required: false
