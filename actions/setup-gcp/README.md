@@ -15,7 +15,7 @@ This action compiles a set of tasks to install and authenticate against GCP
           login_artifact_registry: "true"
           login_gke: "true"
           gke_project: hopr-staging
-          gke_cluster_name: cluster-staging
+          gke_cluster_name: gke-staging
           artifact_registry: europe-west3-docker.pkg.dev
 ```
 

@@ -28,7 +28,7 @@ inputs:
   gke_cluster_name:
     description: GKE Cluster name
     required: false
-    default: cluster-staging
+    default: gke-staging
   artifact_registry:
     description: Artifact Registry URL
     required: false
