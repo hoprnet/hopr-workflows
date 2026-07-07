@@ -62,7 +62,20 @@ runs:
   using: 'composite'
   steps:
     - name: Get PR labels
-      uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # v1.0.9
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if [[ -n "${{ github.event.pull_request.number }}" ]]; then
+          labels=$(gh pr view "${{ github.event.pull_request.number }}" --json labels --jq '.labels[].name')
+        else
+          labels=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].labels[].name' 2>/dev/null || true)
+        fi
+        while IFS= read -r label; do
+          [[ -z "$label" ]] && continue
+          varname="GITHUB_PR_LABEL_$(echo "$label" | tr '[:lower:]' '[:upper:]' | tr ' -' '_')"
+          echo "${varname}=1" >> "$GITHUB_ENV"
+        done <<< "$labels"
     - name: Gather versions
       shell: bash
       id: versions
