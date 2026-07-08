@@ -67,14 +67,6 @@ on:
         type: number
         default: 60
         description: "Timeout for the job in minutes"
-      deployment_namespace:
-        required: false
-        type: string
-        description: "Kubernetes namespace for the deployment to restart in staging"
-      deployment_label_selector:
-        required: false
-        type: string
-        description: "Kubernetes label selector for the deployment to restart in staging"
       fail_on_scan_vulnerabilities:
         required: false
         type: string
@@ -544,32 +536,3 @@ jobs:
         run: |
           rm -f "${GIT_CONFIG_GLOBAL}" || true
           echo "GIT_CONFIG_GLOBAL=" >> "${GITHUB_ENV}"
-  deploy:
-    name: Deploy
-    needs: [build, manifest, scan]
-    if: (needs.build.outputs.deploy_staging == 'true' || (vars.DEPLOY_STAGING_MERGED_PR == 'true' && inputs.version_type == 'pr')) && (inputs.deployment_namespace != '' && inputs.deployment_label_selector != '')
-    runs-on: ${{ inputs.job_runner }}
-    steps:
-      - name: Setup GCP
-        id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@ac3e0b6137b0ba470a30c373aab2ceba9e0879e4 # setup-gcp-v4
-        with:
-          workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
-          service_account: ${{ inputs.gcp_service_account }}
-          install_sdk: 'true'
-          login_gke: 'true'
-          gke_project: hopr-staging
-          gke_cluster_name: gke-staging
-      - name: Deploy in staging
-        run: |
-          echo "Starting deployment restart"
-          if ! kubectl rollout restart deployments -n "${{ inputs.deployment_namespace }}" -l "${{ inputs.deployment_label_selector }}"; then
-            echo "Failed to restart deployment"
-            exit 1
-          fi
-          if ! kubectl rollout status deployments -n "${{ inputs.deployment_namespace }}" -l "${{ inputs.deployment_label_selector }}" --timeout=600s; then
-            echo "Deployment did not complete within the timeout period"
-            exit 1
-          fi
-          echo "Restart completed successfully"
-        timeout-minutes: 15

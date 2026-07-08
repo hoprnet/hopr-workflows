@@ -1,6 +1,6 @@
 # Build Docker
 
-Builds platform-specific Docker images using Nix and creates a multi-architecture manifest. Supports pushing to Google Artifact Registry and Docker Hub, scanning for vulnerabilities (Trivy), and optionally restarting a Kubernetes deployment in staging.
+Builds platform-specific Docker images using Nix and creates a multi-architecture manifest. Supports pushing to Google Artifact Registry and Docker Hub, scanning for vulnerabilities (Trivy).
 
 ## Jobs
 
@@ -10,7 +10,6 @@ Builds platform-specific Docker images using Nix and creates a multi-architectur
 | `smoke-test` | Runs a smoke-test command against the built image (optional)                         |
 | `manifest`   | Creates and pushes the multi-arch manifest                                           |
 | `scan`       | Scans the image for vulnerabilities with Trivy, uploads SARIF to GitHub Security tab |
-| `deploy`     | Restarts a Kubernetes deployment in staging (optional)                               |
 
 ## Usage
 
@@ -18,7 +17,7 @@ Builds platform-specific Docker images using Nix and creates a multi-architectur
 jobs:
   build-docker:
     name: Docker
-    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v3
+    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@<commit-hash>
     needs: build-binaries
     permissions:
       contents: read
@@ -73,11 +72,9 @@ Each entry in the JSON array must include:
 | `docker_hub_registry`          | No       | `docker.io/hoprnet`                                         | Docker Hub registry                                 |
 | `docker_bucket_sboms`          | No       | `docker-images-sboms`                                       | GCS bucket for SBOM files (vulnerability analysis)  |
 | `timeout_minutes`              | No       | `60`                                                        | Timeout in minutes                                  |
-| `deployment_namespace`         | No       | —                                                           | Kubernetes namespace for staging restart            |
-| `deployment_label_selector`    | No       | —                                                           | Kubernetes label selector for staging restart       |
 | `fail_on_scan_vulnerabilities` | No       | `true`                                                      | Fail the build when vulnerabilities are found       |
 | `concurrency_group_suffix`     | No       | `""`                                                        | Extra string appended to the concurrency group key  |
-| `job_runner`                   | No       | `depot-ubuntu-22.04-4`                                      | Runner for non-matrix jobs (manifest, scan, deploy) |
+| `job_runner`                   | No       | `depot-ubuntu-22.04-4`                                      | Runner for non-matrix jobs (manifest, scan).        |
 
 ## Secrets
 

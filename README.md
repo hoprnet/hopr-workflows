@@ -22,7 +22,7 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 
 - [Benchmarks](./.github/workflows/benchmarks.md): Builds, runs, and publishes benchmarks to Bencher.dev with Zulip notifications on regressions.
 - [Build Binaries](./.github/workflows/build-binaries.md): Compiles binaries for a specific architecture using Nix, with optional signing and upload to Artifact Registry.
-- [Build Docker](./.github/workflows/build-docker.md): Builds platform-specific Docker images and their multi-architecture manifest, with vulnerability scanning and optional staging deployment.
+- [Build Docker](./.github/workflows/build-docker.md): Builds platform-specific Docker images and their multi-architecture manifest, with vulnerability scanning.
 - [Build Library](./.github/workflows/build-library.md): Builds a Rust library using Nix and publishes the crate to crates.io (dry-run on non-release builds).
 - [Checks](./.github/workflows/checks.md): Runs configurable code-quality checks (pre-commit, lint, deps, audit) via a matrix strategy.
 - [Checks Zizmor](./.github/workflows/checks-zizmor.md): Scans GitHub Actions workflow files for security issues using zizmor and uploads SARIF to the GitHub Security tab.
