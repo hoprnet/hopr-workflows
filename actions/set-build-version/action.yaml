@@ -55,9 +55,9 @@ outputs:
   publish_github_release:
     description: 'Whether to publish the artifact in the GitHub Release'
     value: ${{ steps.versions.outputs.publish_github_release }}
-  deploy_staging:
-    description: 'Whether to deploy to staging environment'
-    value: ${{ steps.versions.outputs.deploy_staging }}
+  deploy_commits:
+    description: 'Whether to deploy on commit builds'
+    value: ${{ steps.versions.outputs.deploy_commits }}
 runs:
   using: 'composite'
   steps:
@@ -111,7 +111,7 @@ runs:
         release_version="${current_version}"
         publish_artifact_registry=false
         publish_github_release=false
-        deploy_staging=false
+        deploy_commits=false
         prerelease=false
 
         echo "Resolving build version for version_type='${{ inputs.version_type }}'"
@@ -120,9 +120,9 @@ runs:
           if [ "${GITHUB_PR_LABEL_PUBLISH_BINARIES:-0}" == '1' ]; then
             publish_artifact_registry=true
           fi
-          # The applications using the `deploy-staging` label will be deployed on PR commits to staging
-          if [[ "${GITHUB_PR_LABEL_DEPLOY_STAGING:-0}" == '1' ]]; then
-            deploy_staging=true
+          # The applications using the `deploy-commits` label will be deployed on every PR commit
+          if [[ "${GITHUB_PR_LABEL_DEPLOY_COMMITS:-0}" == '1' ]]; then
+            deploy_commits=true
           fi
         elif [[ "${{ inputs.version_type }}" == "pr" ]]; then
           build_version=${pr_version}
@@ -186,7 +186,7 @@ runs:
         echo "docker_platform=${docker_platform}" | tee -a "$GITHUB_OUTPUT"
         echo "publish_artifact_registry=${publish_artifact_registry}" | tee -a "$GITHUB_OUTPUT"
         echo "publish_github_release=${publish_github_release}" | tee -a "$GITHUB_OUTPUT"
-        echo "deploy_staging=${deploy_staging}" | tee -a "$GITHUB_OUTPUT"
+        echo "deploy_commits=${deploy_commits}" | tee -a "$GITHUB_OUTPUT"
     - name: Update build version
       # Equivalent to:  inputs.version_type != 'release'
       if: steps.versions.outputs.current_version != steps.versions.outputs.build_version

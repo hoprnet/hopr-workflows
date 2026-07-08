@@ -118,12 +118,9 @@ jobs:
         include: ${{ fromJSON(inputs.build_matrix) }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     outputs:
-      docker_build_version_platform: ${{ steps.version.outputs.docker_build_version_platform }}
       docker_build_version: ${{ steps.version.outputs.docker_build_version }}
       docker_debug_version: ${{ steps.version.outputs.docker_debug_version }}
-      deploy_staging: ${{ steps.version.outputs.deploy_staging }}
       publish_docker_hub: ${{ steps.docker_hub.outputs.publish_docker_hub }}
-      docker_platform: ${{ steps.version.outputs.docker_platform }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
@@ -203,9 +200,9 @@ jobs:
             # Default image tag for all version types
             publish_image "${GCP_IMAGE_NAME}"
 
-            # Staging publish condition: only publish staging image for x86_64 architecture
-            if [[ "${{ steps.version.outputs.deploy_staging }}" == "true" && "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
-              publish_image "${GCP_STAGING_IMAGE_NAME}"
+            # Edge publish condition: only publish edge image for x86_64 architecture
+            if [[ "${{ steps.version.outputs.deploy_commits }}" == "true" && "${{ matrix.architecture }}" == "x86_64-linux" ]]; then
+              publish_image "${GCP_EDGE_IMAGE_NAME}"
             fi
 
             # Close PR tags
@@ -232,7 +229,7 @@ jobs:
           SKOPEO
         env:
           GCP_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
-          GCP_STAGING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:staging
+          GCP_EDGE_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:edge
           GCP_LATEST_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-${{ steps.version.outputs.docker_platform }}
           GCP_LATEST_MAIN_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-main-${{ steps.version.outputs.docker_platform }}
           GCP_LATEST_TESTING_IMAGE_NAME: ${{ inputs.docker_gcp_registry }}/${{ inputs.docker_image_name }}:latest-testing-${{ steps.version.outputs.docker_platform }}
