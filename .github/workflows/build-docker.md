@@ -58,23 +58,23 @@ Each entry in the JSON array must include:
 
 ## Inputs
 
-| Name                           | Required | Default                                                     | Description                                         |
-| ------------------------------ | -------- | ----------------------------------------------------------- | --------------------------------------------------- |
-| `source_branch`                | Yes      | —                                                           | Source branch to build from                         |
-| `version_type`                 | Yes      | —                                                           | Versioning strategy: `commit`, `pr`, or `release`   |
-| `build_matrix`                 | Yes      | —                                                           | JSON array of matrix entries (see schema above)     |
-| `cachix_cache_name`            | No       | —                                                           | Cachix cache name                                   |
-| `nix_path`                     | No       | `nixpkgs=channel:nixos-26.05`                               | Nix path to use                                     |
-| `build_file`                   | No       | `Cargo.toml`                                                | File to extract version from                        |
-| `docker_image_name`            | Yes      | —                                                           | Docker image name                                   |
-| `docker_image_format`          | No       | `docker`                                                    | Image format: `docker` or `skopeo`                  |
-| `docker_gcp_registry`          | No       | `europe-west3-docker.pkg.dev/hoprassociation/docker-images` | GCP Docker registry                                 |
-| `docker_hub_registry`          | No       | `docker.io/hoprnet`                                         | Docker Hub registry                                 |
-| `docker_bucket_sboms`          | No       | `docker-images-sboms`                                       | GCS bucket for SBOM files (vulnerability analysis)  |
-| `timeout_minutes`              | No       | `60`                                                        | Timeout in minutes                                  |
-| `fail_on_scan_vulnerabilities` | No       | `true`                                                      | Fail the build when vulnerabilities are found       |
-| `concurrency_group_suffix`     | No       | `""`                                                        | Extra string appended to the concurrency group key  |
-| `job_runner`                   | No       | `depot-ubuntu-22.04-4`                                      | Runner for non-matrix jobs (manifest, scan).        |
+| Name                           | Required | Default                                                     | Description                                        |
+| ------------------------------ | -------- | ----------------------------------------------------------- | -------------------------------------------------- |
+| `source_branch`                | Yes      | —                                                           | Source branch to build from                        |
+| `version_type`                 | Yes      | —                                                           | Versioning strategy: `commit`, `pr`, or `release`  |
+| `build_matrix`                 | Yes      | —                                                           | JSON array of matrix entries (see schema above)    |
+| `cachix_cache_name`            | No       | —                                                           | Cachix cache name                                  |
+| `nix_path`                     | No       | `nixpkgs=channel:nixos-26.05`                               | Nix path to use                                    |
+| `build_file`                   | No       | `Cargo.toml`                                                | File to extract version from                       |
+| `docker_image_name`            | Yes      | —                                                           | Docker image name                                  |
+| `docker_image_format`          | No       | `docker`                                                    | Image format: `docker` or `skopeo`                 |
+| `docker_gcp_registry`          | No       | `europe-west3-docker.pkg.dev/hoprassociation/docker-images` | GCP Docker registry                                |
+| `docker_hub_registry`          | No       | `docker.io/hoprnet`                                         | Docker Hub registry                                |
+| `docker_bucket_sboms`          | No       | `docker-images-sboms`                                       | GCS bucket for SBOM files (vulnerability analysis) |
+| `timeout_minutes`              | No       | `60`                                                        | Timeout in minutes                                 |
+| `fail_on_scan_vulnerabilities` | No       | `true`                                                      | Fail the build when vulnerabilities are found      |
+| `concurrency_group_suffix`     | No       | `""`                                                        | Extra string appended to the concurrency group key |
+| `job_runner`                   | No       | `depot-ubuntu-22.04-4`                                      | Runner for non-matrix jobs (manifest, scan).       |
 
 ## Secrets
 
