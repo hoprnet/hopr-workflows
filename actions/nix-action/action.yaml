@@ -11,7 +11,7 @@ inputs:
     required: false
     default: main
   cachix_cache_name:
-    description: Cachix cache name (passed to setup-nix)
+    description: Cachix cache name. Empty defaults to the caller repository name (passed to setup-nix)
     required: false
   cachix_auth_token:
     description: Cachix authentication token (passed to setup-nix)
@@ -43,7 +43,7 @@ runs:
         persist-credentials: ${{ inputs.persist_credentials }}
         ref: ${{ inputs.source_branch }}
     - name: Setup Nix
-      uses: hoprnet/hopr-workflows/actions/setup-nix@eedb4b7701714299852ca5243f1544b817653f33 # setup-nix-v2.0.1
+      uses: hoprnet/hopr-workflows/actions/setup-nix@ade4bbd75f7204255c61d19c23f67d3da221e7d2 # setup-nix-v2.0.2
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
         cachix_auth_token: ${{ inputs.cachix_auth_token }}
