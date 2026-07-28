@@ -72,7 +72,7 @@ jobs:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@eedb4b7701714299852ca5243f1544b817653f33 # setup-nix-v2.0.1
+        uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
         with:
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           nix_path: ${{ inputs.nix_path }}
@@ -99,7 +99,7 @@ jobs:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@eedb4b7701714299852ca5243f1544b817653f33 # setup-nix-v2.0.1
+        uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
         with:
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           nix_path: ${{ inputs.nix_path }}
