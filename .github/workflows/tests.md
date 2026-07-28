@@ -47,6 +47,7 @@ jobs:
 | Name                           | Required | Default                           | Description                                                                     |
 | ------------------------------ | -------- | --------------------------------- | ------------------------------------------------------------------------------- |
 | `source_branch`                | Yes      | —                                 | Source branch to check out                                                      |
+| `cachix_cache_name`            | No       | `<repository name>`               | Cachix cache name                                                               |
 | `enable_unit_tests`            | No       | `true`                            | Enable unit tests                                                               |
 | `enable_integration_tests`     | No       | `false`                           | Enable integration tests                                                        |
 | `enable_nightly_tests`         | No       | `false`                           | Enable nightly tests                                                            |

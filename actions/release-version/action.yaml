@@ -133,7 +133,7 @@ runs:
         version: ${{ steps.version.outputs.current_version }}
     - name: Generate Release Notes
       if: inputs.release_notes_file == ''
-      uses: hoprnet/hopr-workflows/actions/generate-release-notes@8a509c0dd4e60e6a15b4c6d432a618035a0123c8 # generate-release-notes-v1
+      uses: hoprnet/hopr-workflows/actions/generate-release-notes@c20a995078b3a9a66ae9e6689d08d38ea37b5a0b # generate-release-notes-v1.0.1
       with:
         source_branch: ${{ inputs.source_branch }}
         format: github
