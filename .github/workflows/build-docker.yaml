@@ -143,7 +143,7 @@ jobs:
           printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
           echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@eedb4b7701714299852ca5243f1544b817653f33 # setup-nix-v2.0.1
+        uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
@@ -352,7 +352,7 @@ jobs:
       id-token: write # Required for cosign keyless attestation and GCP Workload Identity
     steps:
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@eedb4b7701714299852ca5243f1544b817653f33 # setup-nix-v2.0.1
+        uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
@@ -511,7 +511,7 @@ jobs:
           printf '[http "https://github.com/"]\n\textraheader = AUTHORIZATION: basic %s\n' "${TOKEN_B64}" > "${CONFIG_FILE}"
           echo "GIT_CONFIG_GLOBAL=${CONFIG_FILE}" >> "${GITHUB_ENV}"
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@eedb4b7701714299852ca5243f1544b817653f33 # setup-nix-v2.0.1
+        uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
