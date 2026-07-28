@@ -42,18 +42,12 @@ fetch_merged_prs() {
     # Extract type and component from the title
     # Expected format: "type(component): description" or "type: description"
     if [[ $title == *":"* ]]; then
-      type=$(echo "${title}" | awk -F ':' '{print $1}' | awk -F '(' '{print $1}' | tr '[:upper:]' '[:lower:]' | xargs)
-      # Trim whitespace from type
-      type=${type## }
-      type=${type%% }
+      type=$(echo "${title}" | awk -F ':' '{print $1}' | awk -F '(' '{print $1}' | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
       if [[ $title == *"("*"):"* ]]; then
         # Remove type(component): from title
-        component=$(echo "${title}" | awk -F '(' '{print $2}' | awk -F ')' '{print $1}' | xargs)
+        component=$(echo "${title}" | awk -F '(' '{print $2}' | awk -F ')' '{print $1}' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
       fi
-      title=$(echo "${title}" | awk -F ':' '{print $2}')
-      # Trim whitespace from title
-      title=${title## }
-      title=${title%% }
+      title=$(echo "${title}" | awk -F ':' '{print $2}' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
     fi
 
     # Assign repository as component prefix to distinguish between repos
