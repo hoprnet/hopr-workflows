@@ -114,6 +114,8 @@ runs:
           echo "commit_files=${{ inputs.file }}" | tee -a "$GITHUB_OUTPUT"
         fi
     - uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321 # v10.0.0
+      env:
+        PRE_COMMIT_ALLOW_NO_CONFIG: "1"
       with:
         add: '${{ steps.versions.outputs.commit_files }}'
         new_branch: ${{ github.ref_name }}

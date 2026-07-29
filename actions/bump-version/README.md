@@ -2,6 +2,7 @@
 
 This action modifies the `Cargo.toml` file to bump the `version` attribute based on the parameter `release_type`.
 It also commits the change on the `${{ github.ref_name}}` branch. If the branch is protected, then it's recommended to add a bypass rule for the `bot` user.
+Repository-local Git hooks still run for the automated version-bump commit when configured. A missing `.pre-commit-config.yaml` does not block the commit or push.
 
 ## Usage
 
