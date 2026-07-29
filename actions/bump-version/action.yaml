@@ -113,6 +113,12 @@ runs:
         else
           echo "commit_files=${{ inputs.file }}" | tee -a "$GITHUB_OUTPUT"
         fi
+    - name: Disable Git hooks for automated version bump
+      shell: bash
+      run: |
+        hooks_dir="$RUNNER_TEMP/empty-git-hooks"
+        mkdir -p "$hooks_dir"
+        git config --local core.hooksPath "$hooks_dir"
     - uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321 # v10.0.0
       with:
         add: '${{ steps.versions.outputs.commit_files }}'
