@@ -129,8 +129,9 @@ The release process follows a two-branch model: `main` for active development an
 - `github_app_private_key`: GitHub App Private Key from the Bot with permission to make direct commits and releases
 - `draft`: Whether to create a draft release
 - `override`: Whether to allow updating an existing release for the target tag. When `false` (default), the action fails if the release already exists.
+- `bump_version`: Whether to bump the version file and push the bump commit after creating the release. When `true` (default), the version file is bumped right after the release is published. Set to `false` when the caller wants to defer the bump (e.g. run it in a separate job only after downstream publishing succeeded), so that a failed pipeline can be rolled back by just deleting the release and tag.
 
 ## Outputs
 
 - `current_version`: Current version released
-- `bump_version`: Version bumped
+- `bump_version`: Version bumped. Empty when the `bump_version` input is `false`.
