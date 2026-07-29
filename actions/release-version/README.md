@@ -130,8 +130,9 @@ The release process follows a two-branch model: `main` for active development an
 - `draft`: Whether to create a draft release
 - `override`: Whether to allow updating an existing release for the target tag. When `false` (default), the action fails if the release already exists.
 - `bump_version`: Whether to bump the version file and push the bump commit after creating the release. When `true` (default), the version file is bumped right after the release is published. Set to `false` when the caller wants to defer the bump (e.g. run it in a separate job only after downstream publishing succeeded), so that a failed pipeline can be rolled back by just deleting the release and tag.
+- `continue_on_bump_version`: Whether to continue when the version bump step fails, instead of failing the whole action. When `true` (default), a failed bump is tolerated: the release stays published and the remaining steps (e.g. Zulip notification) still run, but the `bump_version` output is empty. Set to `false` to fail the action when the bump fails.
 
 ## Outputs
 
 - `current_version`: Current version released
-- `bump_version`: Version bumped. Empty when the `bump_version` input is `false`.
+- `bump_version`: Version bumped. Empty when the `bump_version` input is `false` or the bump step failed.
