@@ -25,6 +25,14 @@ inputs:
     description: Whether to allow updating an existing release for the same tag
     required: false
     default: 'false'
+  bump_version:
+    description: Whether to bump the version file and push the bump commit after creating the release. Disable to defer the bump until the caller's pipeline has fully succeeded.
+    required: false
+    default: 'true'
+  continue_on_bump_version:
+    description: Whether to continue when the version bump step fails, instead of failing the whole action
+    required: false
+    default: 'true'
   cachix_cache_name:
     required: false
     description: "Cachix cache name to use"
@@ -181,6 +189,8 @@ runs:
         draft: ${{ inputs.draft }}
     - name: Bump version
       id: bump
+      if: inputs.bump_version == 'true'
+      continue-on-error: ${{ inputs.continue_on_bump_version == 'true' }}
       uses: hoprnet/hopr-workflows/actions/bump-version@64cb8ba34ff2e8caa43e366207d0cb1faa8d43d4 # bump-version-v2
       with:
         file: ${{ inputs.file }}
