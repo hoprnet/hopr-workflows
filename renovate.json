@@ -16,32 +16,20 @@
   },
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": [
-      "security"
-    ],
-    "schedule": [
-      "at any time"
-    ],
+    "labels": ["security"],
+    "schedule": ["at any time"],
     "automerge": true
   },
   "packageRules": [
     {
-      "matchManagers": [
-        "github-actions"
-      ],
-      "matchPackageNames": [
-        "/^hoprnet\\/hopr-workflows/"
-      ],
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["/^hoprnet\\/hopr-workflows/"],
       "enabled": false,
       "description": "Skip self-referential actions \u2014 versions are managed by this repo itself"
     },
     {
-      "matchManagers": [
-        "github-actions"
-      ],
-      "matchPackageNames": [
-        "!/^hoprnet\\/hopr-workflows/"
-      ],
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["!/^hoprnet\\/hopr-workflows/"],
       "groupName": "github-actions",
       "pinDigests": true,
       "commitMessageTopic": "GitHub Actions"
