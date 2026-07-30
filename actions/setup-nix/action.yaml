@@ -40,7 +40,7 @@ runs:
           echo "cachix_cache_name=${{ inputs.cachix_cache_name }}" | tee -a $GITHUB_OUTPUT
         fi
     - name: Use Nix Cache
-      if: steps.check-nix.outputs.installed != 'true'
+      if: steps.check-nix.outputs.installed != 'true' && inputs.cachix_auth_token != ''
       uses: cachix/cachix-action@1eb2ef646ac0255473d23a5907ad7b04ce94065c # v17
       # Assume cachix works reliably until proven otherwise.
       # continue-on-error: true # Allow failure if cachix is not available
