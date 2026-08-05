@@ -1,8 +1,10 @@
 # Build Library
 
-Builds a Rust library for a specific architecture using Nix and publishes it to crates.io. On non-release builds (`version_type != release`) a dry-run is executed to validate the publish without actually uploading. On release builds the crate is published to crates.io with `cargo release publish --execute`.
+Builds a Rust library for a specific architecture and publishes it to crates.io. On non-release builds (`version_type != release`) a dry-run is executed to validate the publish without actually uploading. On release builds the crate is published to crates.io with `cargo release publish --execute`.
 
-The workflow assumes the caller repository's default development shell already provides `cargo release`, so the publish step runs through a single `nix develop` invocation with no nested `nix shell`.
+Callers can provide a cacheable `build_command`, normally a `nix build` command. It runs after Cachix setup, and Cargo package verification is then disabled with `--no-verify` so the same sources and dependencies are not compiled again outside the Nix store. Without `build_command`, the workflow retains its original behavior and lets Cargo compile while verifying the package.
+
+The workflow assumes the caller repository's default development shell provides `cargo release`, so the publish step runs through a single `nix develop` invocation with no nested `nix shell`.
 
 ## Usage
 
@@ -16,6 +18,7 @@ jobs:
       package_name: my-crate
       architecture: x86_64-linux
       cachix_cache_name: hopr
+      build_command: nix build -L .#lib-my-crate-x86_64-linux
       runner: depot-ubuntu-22.04-4
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -46,6 +49,7 @@ with:
 | `cachix_cache_name` | No       | —                             | Cachix cache name                                                                                                                                                                                   |
 | `nix_path`          | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use                                                                                                                                                                                     |
 | `build_file`        | No       | `Cargo.toml`                  | File to extract version from                                                                                                                                                                        |
+| `build_command`     | No       | `""`                          | Cacheable command that builds the library before publication validation. When set, Cargo runs with `--no-verify` to avoid recompiling.                                                              |
 | `timeout_minutes`   | No       | `60`                          | Timeout in minutes                                                                                                                                                                                  |
 | `runner`            | Yes      | —                             | Runner label for the job                                                                                                                                                                            |
 | `enabled`           | No       | `true`                        | Whether to run this job                                                                                                                                                                             |
@@ -62,6 +66,6 @@ with:
 1. **Harden Runner** — applies step-security hardening (no sudo, egress audit)
 2. **Checkout repository** — checks out `source_branch`
 3. **Setup Nix** — configures the Nix environment with Cachix
-4. **Updates build version** — stamps the version using [set-build-version](../actions/set-build-version/README.md)
-5. **Build dry-run library** _(non-release only)_ — runs `cargo release publish --all-features` without `--execute` to validate the package through the caller's default dev shell
-6. **Publish library** _(release only)_ — runs `cargo release publish --execute --all-features --no-confirm` through the caller's default dev shell
+4. **Build library** _(when `build_command` is set)_ — runs the caller's cacheable build command
+5. **Build dry-run library** _(non-release only)_ — validates the package through the caller's default dev shell; adds `--no-verify` when the cacheable build already ran
+6. **Publish library** _(release only)_ — publishes through the caller's default dev shell; adds `--no-verify` when the cacheable build already ran
