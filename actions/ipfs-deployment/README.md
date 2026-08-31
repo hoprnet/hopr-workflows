@@ -6,12 +6,12 @@ This is a composite action that runs inside the caller's job: point `build_dir` 
 
 The site is always packed locally into a single-root CAR file (UnixFS, CIDv1), so the deployed CID is computed **before** any upload and is identical on every provider. The provider is selected by the credentials passed as inputs:
 
-| `pinata_jwt` | Filebase inputs | Behavior                                                                  |
-| ------------ | --------------- | -------------------------------------------------------------------------- |
-| set          | unset           | Uploads the CAR to Pinata via the v3 TUS upload API                       |
-| unset        | set             | Uploads the CAR to Filebase via their S3-compatible API                   |
-| set          | set             | Uploads the same CAR to both providers — both serve the identical CID     |
-| unset        | unset           | Fails validation                                                          |
+| `pinata_jwt` | Filebase inputs | Behavior                                                              |
+| ------------ | --------------- | --------------------------------------------------------------------- |
+| set          | unset           | Uploads the CAR to Pinata via the v3 TUS upload API                   |
+| unset        | set             | Uploads the CAR to Filebase via their S3-compatible API               |
+| set          | set             | Uploads the same CAR to both providers — both serve the identical CID |
+| unset        | unset           | Fails validation                                                      |
 
 The IPFS gateway list is owned by [`deploy-to-ipfs.sh`](./deploy-to-ipfs.sh) — it is assembled from the enabled providers' dedicated gateways (Pinata first when enabled) plus the public `ipfs.io` and `dweb.link` gateways. The first entry is the primary gateway used for verification and reported as `ipfs_url`.
 
@@ -122,11 +122,11 @@ Pass the credential inputs from secrets (`pinata_jwt: ${{ secrets.PINATA_JWT }}`
 
 ## Outputs
 
-| Name           | Description                                                                                   |
-| -------------- | --------------------------------------------------------------------------------------------- |
-| `ipfs_hash`    | Deployed IPFS CID — always CIDv1 (`bafy…`), the locally computed CAR root                     |
-| `ipfs_url`     | Primary gateway URL for the deployed hash (the active provider's dedicated gateway)           |
-| `pinata_url`   | Dedicated Pinata gateway URL (`https://<gateway>/ipfs/<hash>/`), empty when Pinata is unused  |
+| Name           | Description                                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `ipfs_hash`    | Deployed IPFS CID — always CIDv1 (`bafy…`), the locally computed CAR root                                        |
+| `ipfs_url`     | Primary gateway URL for the deployed hash (the active provider's dedicated gateway)                              |
+| `pinata_url`   | Dedicated Pinata gateway URL (`https://<gateway>/ipfs/<hash>/`), empty when Pinata is unused                     |
 | `filebase_url` | Dedicated Filebase gateway URL (`https://gnosis-vpn.myfilebase.com/ipfs/<hash>/`), empty when Filebase is unused |
 
 ## Steps
@@ -151,18 +151,18 @@ Because this is a composite action, job-level concerns stay with the caller:
 
 ## Troubleshooting
 
-| Symptom                                        | Cause and fix                                                                                                                                             |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Build directory 'out' not found`              | `build_dir` does not point at the build output — check the build step ran in the same job and wrote to that path, or pass `build_artifact_name` if the build ran in a different job |
-| `Build directory is empty`                     | The build produced no files                                                                                                                               |
-| `no IPFS provider configured`                  | Neither `pinata_jwt` nor the Filebase inputs were passed — check the `with:` block                                                                        |
-| `filebase_bucket is required`                  | The Filebase keys were passed without `filebase_bucket` (or vice versa)                                                                                   |
+| Symptom                                        | Cause and fix                                                                                                                                                                                                                              |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Build directory 'out' not found`              | `build_dir` does not point at the build output — check the build step ran in the same job and wrote to that path, or pass `build_artifact_name` if the build ran in a different job                                                        |
+| `Build directory is empty`                     | The build produced no files                                                                                                                                                                                                                |
+| `no IPFS provider configured`                  | Neither `pinata_jwt` nor the Filebase inputs were passed — check the `with:` block                                                                                                                                                         |
+| `filebase_bucket is required`                  | The Filebase keys were passed without `filebase_bucket` (or vice versa)                                                                                                                                                                    |
 | `401` / `403` from Pinata                      | `pinata_jwt` is invalid, expired, missing the `org:files:write` scope, or the account is on a free plan (CAR uploads require a paid plan) — regenerate the key on the [Pinata API keys page](https://app.pinata.cloud/developers/api-keys) |
-| `SignatureDoesNotMatch` / `InvalidAccessKeyId` | The Filebase S3 credentials are wrong — check `filebase_access_key` and `filebase_secret_key`                                                             |
-| `Uploaded object has no 'cid' metadata`        | The Filebase bucket is not on the IPFS storage network — CAR imports only work on IPFS buckets                                                            |
-| `returned CID …, expected the CAR root …`      | The provider re-interpreted the CAR instead of importing its root — the deploy fails safely instead of publishing a CID that does not match the providers |
-| `Network error` / `ETIMEDOUT`                  | Uploads are retried with exponential backoff; for large sites raise `upload_timeout_ms` (Pinata uploads treat it as a stall timeout between progress events) |
-| `Invalid or missing IPFS hash`                 | The provider returned an unexpected response — check the upload output in the logs and the provider's status page for rate limiting (429)                 |
+| `SignatureDoesNotMatch` / `InvalidAccessKeyId` | The Filebase S3 credentials are wrong — check `filebase_access_key` and `filebase_secret_key`                                                                                                                                              |
+| `Uploaded object has no 'cid' metadata`        | The Filebase bucket is not on the IPFS storage network — CAR imports only work on IPFS buckets                                                                                                                                             |
+| `returned CID …, expected the CAR root …`      | The provider re-interpreted the CAR instead of importing its root — the deploy fails safely instead of publishing a CID that does not match the providers                                                                                  |
+| `Network error` / `ETIMEDOUT`                  | Uploads are retried with exponential backoff; for large sites raise `upload_timeout_ms` (Pinata uploads treat it as a stall timeout between progress events)                                                                               |
+| `Invalid or missing IPFS hash`                 | The provider returned an unexpected response — check the upload output in the logs and the provider's status page for rate limiting (429)                                                                                                  |
 
 ## Notes
 

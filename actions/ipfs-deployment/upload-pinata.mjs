@@ -65,7 +65,9 @@ function uploadCar() {
         const percent = Math.floor((bytesUploaded / bytesTotal) * 100);
         if (percent >= lastLoggedPercent + 10) {
           lastLoggedPercent = percent;
-          console.error(`📤 Uploaded ${percent}% (${bytesUploaded}/${bytesTotal} bytes)`);
+          console.error(
+            `📤 Uploaded ${percent}% (${bytesUploaded}/${bytesTotal} bytes)`,
+          );
         }
       },
       onAfterResponse(_req, res) {
@@ -89,9 +91,7 @@ function uploadCar() {
       clearTimeout(stallTimer);
       stallTimer = setTimeout(() => {
         upload.abort();
-        reject(
-          new Error(`Upload made no progress for ${UPLOAD_TIMEOUT_MS}ms`),
-        );
+        reject(new Error(`Upload made no progress for ${UPLOAD_TIMEOUT_MS}ms`));
       }, UPLOAD_TIMEOUT_MS);
     };
 
