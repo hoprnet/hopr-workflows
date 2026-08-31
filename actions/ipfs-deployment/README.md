@@ -2,7 +2,7 @@
 
 Deploys a **prebuilt** static site to IPFS via [Pinata](https://pinata.cloud) and/or [Filebase](https://filebase.com).
 
-This is a composite action that runs inside the caller's job, right after the build step: point `build_dir` at the built site and the action uploads it, verifies gateway accessibility, writes a job summary and exposes the CID and gateway URLs as outputs. The uploader scripts, including their Node dependencies, ship with the action — nothing is fetched at runtime.
+This is a composite action that runs inside the caller's job: point `build_dir` at the built site and the action uploads it, verifies gateway accessibility, writes a job summary and exposes the CID and gateway URLs as outputs. The built site can either already be on disk (build step in the same job) or come from a GitHub Actions artifact uploaded earlier in the run — pass `build_artifact_name` and the action downloads it into `build_dir` first. The uploader scripts, including their Node dependencies, ship with the action — nothing is fetched at runtime.
 
 The provider is selected by the credentials passed as inputs:
 
@@ -33,6 +33,35 @@ jobs:
         with:
           environment: prod
           project_name: my-app
+          build_dir: out
+          pinata_jwt: ${{ secrets.PINATA_JWT }}
+```
+
+Deploy a build artifact uploaded by an earlier job in the same run:
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm ci && npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: site-build
+          path: out
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: hoprnet/hopr-workflows/actions/ipfs-deployment@ipfs-deployment-v1
+        with:
+          environment: prod
+          project_name: my-app
+          build_artifact_name: site-build
           build_dir: out
           pinata_jwt: ${{ secrets.PINATA_JWT }}
 ```
@@ -77,6 +106,7 @@ Deploy to Pinata and pin the CID on Filebase as a backup, then propose the new c
 | `environment`                | Yes      | —        | Deployment environment name slug, must match `^[a-zA-Z0-9_-]+$` (e.g. `dev`, `staging`, `prod`) |
 | `project_name`               | Yes      | —        | Project name used for pin/upload metadata                                                       |
 | `build_dir`                  | Yes      | —        | Directory containing the built site to deploy, relative to the workspace                        |
+| `build_artifact_name`        | No       | `""`     | GitHub Actions artifact (uploaded earlier in the same run) to download into `build_dir` first   |
 | `pinata_jwt`                 | No       | `""`     | Pinata JWT with the `pinFileToIPFS` scope, enables the Pinata provider                          |
 | `filebase_access_key`        | No       | `""`     | Filebase S3 access key, enables the Filebase provider together with the other Filebase inputs   |
 | `filebase_secret_key`        | No       | `""`     | Filebase S3 secret key belonging to `filebase_access_key`                                       |
@@ -101,15 +131,16 @@ Pass the credential inputs from secrets (`pinata_jwt: ${{ secrets.PINATA_JWT }}`
 
 ## Steps
 
-1. **Validate inputs** — rejects unsafe slugs and paths, out-of-range timeouts, and a missing or empty `build_dir`
-2. **Detect providers** — decides which providers are configured from the credential inputs, rejects partial Filebase configuration
-3. **Setup pnpm / Setup Node.js** — Node 24, pnpm 9
-4. **Install uploader dependencies** — `pnpm install --frozen-lockfile` in the action directory
-5. **Deploy to IPFS** — uploads the directory to the configured provider(s), with retries and exponential backoff, and writes `deployments/<environment>/latest.json` into the workspace
-6. **Extract deployment info** — reads the CID and gateway URLs back out of the deployment JSON
-7. **Upload deployment artifacts** _(when `upload_deployment_artifact`)_ — uploads `deployments/` as `deployment-<environment>-<sha>`
-8. **Health check** _(when `health_check`)_ — probes every gateway, retrying up to three times; fails only if not a single gateway serves the content
-9. **Summary** — writes the providers, access URLs and both CIDv0 and CIDv1 to the job summary
+1. **Download build artifact** _(when `build_artifact_name`)_ — downloads the named run artifact into `build_dir`
+2. **Validate inputs** — rejects unsafe slugs and paths, out-of-range timeouts, and a missing or empty `build_dir`
+3. **Detect providers** — decides which providers are configured from the credential inputs, rejects partial Filebase configuration
+4. **Setup pnpm / Setup Node.js** — Node 24, pnpm 9
+5. **Install uploader dependencies** — `pnpm install --frozen-lockfile` in the action directory
+6. **Deploy to IPFS** — uploads the directory to the configured provider(s), with retries and exponential backoff, and writes `deployments/<environment>/latest.json` into the workspace
+7. **Extract deployment info** — reads the CID and gateway URLs back out of the deployment JSON
+8. **Upload deployment artifacts** _(when `upload_deployment_artifact`)_ — uploads `deployments/` as `deployment-<environment>-<sha>`
+9. **Health check** _(when `health_check`)_ — probes every gateway, retrying up to three times; fails only if not a single gateway serves the content
+10. **Summary** — writes the providers, access URLs and both CIDv0 and CIDv1 to the job summary
 
 ## Caller responsibilities
 
@@ -122,7 +153,7 @@ Because this is a composite action, job-level concerns stay with the caller:
 
 | Symptom                                        | Cause and fix                                                                                                                                             |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Build directory 'out' not found`              | `build_dir` does not point at the build output — check the build step ran in the same job and wrote to that path                                          |
+| `Build directory 'out' not found`              | `build_dir` does not point at the build output — check the build step ran in the same job and wrote to that path, or pass `build_artifact_name` if the build ran in a different job |
 | `Build directory is empty`                     | The build produced no files                                                                                                                               |
 | `no IPFS provider configured`                  | Neither `pinata_jwt` nor the Filebase inputs were passed — check the `with:` block                                                                        |
 | `filebase_bucket is required`                  | The Filebase keys were passed without `filebase_bucket` (or vice versa)                                                                                   |
