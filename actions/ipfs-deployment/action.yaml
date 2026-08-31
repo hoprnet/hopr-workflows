@@ -1,0 +1,342 @@
+name: IPFS Deployment
+description: Deploy a prebuilt static site to IPFS via Pinata and/or Filebase, selected by which credentials are passed, with gateway health checks and a CID summary
+inputs:
+  environment:
+    description: Deployment environment name slug, must match ^[a-zA-Z0-9_-]+$ (e.g. dev, staging, prod)
+    required: true
+  project_name:
+    description: Project name used for pin/upload metadata
+    required: true
+  build_dir:
+    description: Directory containing the built site to deploy, relative to the workspace
+    required: true
+  pinata_jwt:
+    description: Pinata JWT with the pinFileToIPFS scope. Enables the Pinata provider
+    required: false
+    default: ""
+  filebase_access_key:
+    description: Filebase S3 access key. Enables the Filebase provider together with filebase_secret_key and filebase_bucket
+    required: false
+    default: ""
+  filebase_secret_key:
+    description: Filebase S3 secret key belonging to filebase_access_key
+    required: false
+    default: ""
+  filebase_bucket:
+    description: Filebase bucket on the IPFS storage network, required when the Filebase keys are set
+    required: false
+    default: ""
+  upload_timeout_ms:
+    description: Upload HTTP request timeout in milliseconds, must be >= 10000
+    required: false
+    default: "300000"
+  health_check:
+    description: Run post-deploy gateway health checks before writing the job summary
+    required: false
+    default: "true"
+  upload_deployment_artifact:
+    description: Upload the deployments/ metadata JSON as a run artifact
+    required: false
+    default: "true"
+  retention_days:
+    description: Retention in days for the deployment metadata artifact
+    required: false
+    default: "30"
+outputs:
+  ipfs_hash:
+    description: Deployed IPFS CID
+    value: ${{ steps.deployment.outputs.ipfs_hash }}
+  ipfs_url:
+    description: Primary gateway URL for the deployed hash (the active provider's dedicated gateway)
+    value: ${{ steps.deployment.outputs.ipfs_url }}
+  pinata_url:
+    description: Dedicated Pinata gateway URL for the deployed hash, empty when Pinata is not used
+    value: ${{ steps.deployment.outputs.pinata_url }}
+  filebase_url:
+    description: Filebase gateway URL for the deployed hash, empty when Filebase is not used
+    value: ${{ steps.deployment.outputs.filebase_url }}
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        PROJECT_NAME: ${{ inputs.project_name }}
+        BUILD_DIR: ${{ inputs.build_dir }}
+        UPLOAD_TIMEOUT_MS: ${{ inputs.upload_timeout_ms }}
+      run: |
+        # environment is used as a path segment, so keep it a safe slug
+        if ! echo "$ENVIRONMENT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+          echo "❌ Error: environment must match ^[a-zA-Z0-9_-]+$, got: $ENVIRONMENT"
+          exit 1
+        fi
+
+        if ! echo "$UPLOAD_TIMEOUT_MS" | grep -qE '^[0-9]+$' || [ "$UPLOAD_TIMEOUT_MS" -lt 10000 ]; then
+          echo "❌ Error: upload_timeout_ms must be a number >= 10000"
+          exit 1
+        fi
+
+        if [ -z "$PROJECT_NAME" ]; then
+          echo "❌ Error: project_name cannot be empty"
+          exit 1
+        fi
+        if echo "$PROJECT_NAME" | grep -qE '[^[:alnum:]_-]'; then
+          echo "⚠️  Warning: project_name contains special characters, will be sanitized"
+        fi
+
+        if [ -z "$BUILD_DIR" ]; then
+          echo "❌ Error: build_dir cannot be empty"
+          exit 1
+        fi
+        if echo "$BUILD_DIR" | grep -qE '\.\.|^/'; then
+          echo "❌ Error: build_dir cannot contain '..' or be an absolute path, got: $BUILD_DIR"
+          exit 1
+        fi
+        if [ ! -d "$BUILD_DIR" ]; then
+          echo "❌ Error: Build directory '$BUILD_DIR' not found"
+          exit 1
+        fi
+        FILE_COUNT=$(find "$BUILD_DIR" -type f | wc -l)
+        if [ "$FILE_COUNT" -eq 0 ]; then
+          echo "❌ Error: Build directory '$BUILD_DIR' is empty"
+          exit 1
+        fi
+
+        echo "✅ Input validation passed ($FILE_COUNT files to deploy)"
+    - name: Detect providers
+      id: providers
+      shell: bash
+      env:
+        PINATA_JWT: ${{ inputs.pinata_jwt }}
+        FILEBASE_ACCESS_KEY: ${{ inputs.filebase_access_key }}
+        FILEBASE_SECRET_KEY: ${{ inputs.filebase_secret_key }}
+        FILEBASE_BUCKET: ${{ inputs.filebase_bucket }}
+      run: |
+        PINATA=false
+        FILEBASE=false
+
+        if [ -n "$PINATA_JWT" ]; then
+          PINATA=true
+        fi
+
+        if [ -n "$FILEBASE_ACCESS_KEY" ] || [ -n "$FILEBASE_SECRET_KEY" ] || [ -n "$FILEBASE_BUCKET" ]; then
+          if [ -z "$FILEBASE_ACCESS_KEY" ] || [ -z "$FILEBASE_SECRET_KEY" ]; then
+            echo "❌ Error: both filebase_access_key and filebase_secret_key are required to use Filebase"
+            exit 1
+          fi
+          if [ -z "$FILEBASE_BUCKET" ]; then
+            echo "❌ Error: filebase_bucket is required when the Filebase keys are set"
+            exit 1
+          fi
+          # the bucket name is embedded in the pinning token, keep it a safe slug
+          if ! echo "$FILEBASE_BUCKET" | grep -qE '^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$'; then
+            echo "❌ Error: filebase_bucket must be a valid S3 bucket name, got: $FILEBASE_BUCKET"
+            exit 1
+          fi
+          FILEBASE=true
+        fi
+
+        if [ "$PINATA" = "false" ] && [ "$FILEBASE" = "false" ]; then
+          echo "❌ Error: no IPFS provider configured — set pinata_jwt and/or filebase_access_key+filebase_secret_key+filebase_bucket"
+          exit 1
+        fi
+
+        {
+          echo "pinata=$PINATA"
+          echo "filebase=$FILEBASE"
+        } >>"$GITHUB_OUTPUT"
+        echo "✅ Providers: pinata=$PINATA filebase=$FILEBASE"
+    - name: Setup pnpm
+      uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      with:
+        version: 9
+    - name: Setup Node.js
+      uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      with:
+        node-version: 24
+    - name: Install uploader dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: pnpm install --frozen-lockfile
+    - name: Deploy to IPFS
+      shell: bash
+      env:
+        PINATA_JWT: ${{ inputs.pinata_jwt }}
+        FILEBASE_ACCESS_KEY: ${{ inputs.filebase_access_key }}
+        FILEBASE_SECRET_KEY: ${{ inputs.filebase_secret_key }}
+        FILEBASE_BUCKET: ${{ inputs.filebase_bucket }}
+        UPLOAD_TIMEOUT_MS: ${{ inputs.upload_timeout_ms }}
+        SCRIPTS_DIR: ${{ github.action_path }}
+        ENVIRONMENT: ${{ inputs.environment }}
+        BUILD_DIR: ${{ inputs.build_dir }}
+        PROJECT_NAME: ${{ inputs.project_name }}
+        BRANCH: ${{ github.ref_name }}
+        COMMIT_SHA: ${{ github.sha }}
+      run: |
+        mkdir -p "deployments/$ENVIRONMENT" deployments/logs
+        "$SCRIPTS_DIR/deploy-to-ipfs.sh" \
+          "$ENVIRONMENT" \
+          "$BUILD_DIR" \
+          "$PROJECT_NAME" \
+          "$(date +%Y%m%d-%H%M%S)" \
+          "$BRANCH" \
+          "$COMMIT_SHA"
+    - name: Extract deployment info
+      id: deployment
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+      run: |
+        FILE="deployments/$ENVIRONMENT/latest.json"
+        if [ ! -f "$FILE" ]; then
+          echo "❌ Deployment info not found at $FILE"
+          exit 1
+        fi
+        if ! jq empty "$FILE" 2>/dev/null; then
+          echo "❌ Invalid JSON in deployment file: $FILE"
+          exit 1
+        fi
+
+        IPFS_HASH=$(jq -r '.ipfs_hash' "$FILE")
+        if [ -z "$IPFS_HASH" ] || [ "$IPFS_HASH" = "null" ]; then
+          echo "❌ Invalid or missing IPFS hash in deployment file"
+          exit 1
+        fi
+
+        # Gateway URLs are owned by the deploy script and stored in the
+        # deployment JSON — read them back here instead of re-defining the
+        # gateway list. Provider URLs are null when a provider is unused.
+        IPFS_URL=$(jq -r '.ipfs_url // empty' "$FILE")
+        PINATA_URL=$(jq -r '.pinata_url // empty' "$FILE")
+        FILEBASE_URL=$(jq -r '.filebase_url // empty' "$FILE")
+        if [ -z "$IPFS_URL" ]; then
+          echo "❌ Invalid or missing ipfs_url in deployment file"
+          exit 1
+        fi
+        if [ -z "$PINATA_URL" ] && [ -z "$FILEBASE_URL" ]; then
+          echo "❌ Deployment file names no provider URL"
+          exit 1
+        fi
+        if [ "$(jq -r '.urls.ipfs | length' "$FILE")" -eq 0 ]; then
+          echo "❌ Deployment file contains no gateway URLs"
+          exit 1
+        fi
+
+        {
+          echo "ipfs_hash=$IPFS_HASH"
+          echo "ipfs_url=$IPFS_URL"
+          echo "pinata_url=$PINATA_URL"
+          echo "filebase_url=$FILEBASE_URL"
+          echo "gateways<<__GATEWAYS_EOF__"
+          jq -r '.urls.ipfs[]' "$FILE"
+          echo "__GATEWAYS_EOF__"
+        } >>"$GITHUB_OUTPUT"
+
+        echo "✅ Deployment info extracted successfully"
+    - name: Upload deployment artifacts
+      if: ${{ always() && inputs.upload_deployment_artifact == 'true' }}
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: deployment-${{ inputs.environment }}-${{ github.sha }}
+        path: |
+          deployments/${{ inputs.environment }}/
+          deployments/logs/
+        retention-days: ${{ inputs.retention_days }}
+        if-no-files-found: ignore
+    - name: Health check (gateway accessibility)
+      if: ${{ success() && inputs.health_check == 'true' }}
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        GATEWAYS: ${{ steps.deployment.outputs.gateways }}
+      run: |
+        echo "🏥 Checking gateway accessibility for $ENVIRONMENT deployment..."
+
+        mapfile -t GATEWAY_LIST <<<"$GATEWAYS"
+        TOTAL=${#GATEWAY_LIST[@]}
+
+        # Give content a moment to propagate, then probe all gateways with retries.
+        sleep 5
+        SUCCESSFUL=0
+        for attempt in 1 2 3; do
+          SUCCESSFUL=0
+          for gateway in "${GATEWAY_LIST[@]}"; do
+            if curl -s --head --max-time 30 "$gateway" >/dev/null; then
+              echo "✅ $gateway - accessible"
+              SUCCESSFUL=$((SUCCESSFUL + 1))
+            else
+              echo "❌ $gateway - not accessible"
+            fi
+          done
+          if [ "$SUCCESSFUL" -gt 0 ]; then
+            break
+          fi
+          echo "⚠️ No gateway accessible yet (attempt $attempt), retrying..."
+          sleep 15
+        done
+
+        echo "📊 Accessibility: $SUCCESSFUL/$TOTAL gateways"
+        # Only fail if NOT a single gateway served the content.
+        if [ "$SUCCESSFUL" -eq 0 ]; then
+          echo "❌ No gateway is accessible"
+          exit 1
+        fi
+        echo "✅ At least one gateway is accessible"
+    - name: Summary
+      if: success()
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        PROJECT_NAME: ${{ inputs.project_name }}
+        BRANCH: ${{ github.ref_name }}
+        COMMIT_SHA: ${{ github.sha }}
+        IPFS_HASH: ${{ steps.deployment.outputs.ipfs_hash }}
+        GATEWAYS: ${{ steps.deployment.outputs.gateways }}
+        PINATA_ENABLED: ${{ steps.providers.outputs.pinata }}
+        FILEBASE_ENABLED: ${{ steps.providers.outputs.filebase }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        # Gateway list comes from the deploy script (first = primary/dedicated).
+        mapfile -t GATEWAY_LIST <<<"$GATEWAYS"
+
+        PROVIDERS=""
+        [ "$PINATA_ENABLED" = "true" ] && PROVIDERS="pinata"
+        [ "$FILEBASE_ENABLED" = "true" ] && PROVIDERS="${PROVIDERS:+$PROVIDERS, }filebase"
+
+        # Derive both CID representations (v0 base58 "Qm...", v1 base32 "bafy...").
+        CID_V0="$IPFS_HASH"
+        CID_V1="$IPFS_HASH"
+        if CID_OUT="$(node "$ACTION_PATH/cid-convert.mjs" "$IPFS_HASH" 2>/dev/null)"; then
+          # Parse the key=value lines explicitly (never eval untrusted output).
+          while IFS='=' read -r key value; do
+            case "$key" in
+            cid_v0) CID_V0="$value" ;;
+            cid_v1) CID_V1="$value" ;;
+            esac
+          done <<<"$CID_OUT"
+        fi
+
+        {
+          echo "# 🚀 $ENVIRONMENT deployment complete"
+          echo ''
+          echo '## 📊 Deployment details'
+          echo "- **Environment**: \`$ENVIRONMENT\`"
+          echo "- **Project**: \`$PROJECT_NAME\`"
+          echo "- **Providers**: \`$PROVIDERS\`"
+          echo "- **Branch**: \`$BRANCH\`"
+          echo "- **Commit**: \`$COMMIT_SHA\`"
+          echo "- **Timestamp**: \`$(date -Iseconds)\`"
+          echo ''
+          echo '## 🌐 Primary access URL'
+          echo "- **Primary gateway**: [${GATEWAY_LIST[0]}](${GATEWAY_LIST[0]})"
+          echo ''
+          echo '## 🔗 Alternative gateways'
+          for gw in "${GATEWAY_LIST[@]:1}"; do
+            echo "- [${gw}](${gw})"
+          done
+          echo ''
+          echo '## 📋 Technical details'
+          echo "- **CID (v0)**: \`${CID_V0}\`"
+          echo "- **CID (v1)**: \`${CID_V1}\`"
+        } >>"$GITHUB_STEP_SUMMARY"

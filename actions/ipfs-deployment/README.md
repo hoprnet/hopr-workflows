@@ -1,0 +1,145 @@
+# IPFS Deployment
+
+Deploys a **prebuilt** static site to IPFS via [Pinata](https://pinata.cloud) and/or [Filebase](https://filebase.com).
+
+This is a composite action that runs inside the caller's job, right after the build step: point `build_dir` at the built site and the action uploads it, verifies gateway accessibility, writes a job summary and exposes the CID and gateway URLs as outputs. The uploader scripts, including their Node dependencies, ship with the action — nothing is fetched at runtime.
+
+The provider is selected by the credentials passed as inputs:
+
+| `pinata_jwt` | Filebase inputs | Behavior                                                                                         |
+| ------------ | --------------- | ------------------------------------------------------------------------------------------------ |
+| set          | unset           | Uploads the site to Pinata                                                                       |
+| unset        | set             | Packs the site into a CAR file and uploads it to Filebase via their S3-compatible API            |
+| set          | set             | Uploads the site to Pinata, then pins the resulting CID on Filebase for redundancy (best-effort) |
+| unset        | unset           | Fails validation                                                                                 |
+
+The IPFS gateway list is owned by [`deploy-to-ipfs.sh`](./deploy-to-ipfs.sh) — it is assembled from the enabled providers' dedicated gateways (Pinata first when enabled) plus the public `ipfs.io` and `dweb.link` gateways. The first entry is the primary gateway used for verification and reported as `ipfs_url`.
+
+## Usage
+
+Deploy to Pinata:
+
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm ci && npm run build
+      - uses: hoprnet/hopr-workflows/actions/ipfs-deployment@ipfs-deployment-v1
+        with:
+          environment: prod
+          project_name: my-app
+          build_dir: out
+          pinata_jwt: ${{ secrets.PINATA_JWT }}
+```
+
+Deploy to Filebase only:
+
+```yaml
+- uses: hoprnet/hopr-workflows/actions/ipfs-deployment@ipfs-deployment-v1
+  with:
+    environment: prod
+    project_name: my-app
+    build_dir: out
+    filebase_access_key: ${{ secrets.FILEBASE_ACCESS_KEY }}
+    filebase_secret_key: ${{ secrets.FILEBASE_SECRET_KEY }}
+    filebase_bucket: my-app-prod
+```
+
+Deploy to Pinata and pin the CID on Filebase as a backup, then propose the new contenthash to ENS:
+
+```yaml
+- uses: hoprnet/hopr-workflows/actions/ipfs-deployment@ipfs-deployment-v1
+  id: deploy
+  with:
+    environment: prod
+    project_name: my-app
+    build_dir: out
+    pinata_jwt: ${{ secrets.PINATA_JWT }}
+    filebase_access_key: ${{ secrets.FILEBASE_ACCESS_KEY }}
+    filebase_secret_key: ${{ secrets.FILEBASE_SECRET_KEY }}
+    filebase_bucket: my-app-prod
+- uses: hoprnet/hopr-workflows/actions/propose-ens-contenthash@propose-ens-contenthash-v1
+  with:
+    cid: ${{ steps.deploy.outputs.ipfs_hash }}
+    ens_name: my-app.example.eth
+    # ...
+```
+
+## Inputs
+
+| Name                         | Required | Default  | Description                                                                                     |
+| ---------------------------- | -------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `environment`                | Yes      | —        | Deployment environment name slug, must match `^[a-zA-Z0-9_-]+$` (e.g. `dev`, `staging`, `prod`) |
+| `project_name`               | Yes      | —        | Project name used for pin/upload metadata                                                       |
+| `build_dir`                  | Yes      | —        | Directory containing the built site to deploy, relative to the workspace                        |
+| `pinata_jwt`                 | No       | `""`     | Pinata JWT with the `pinFileToIPFS` scope, enables the Pinata provider                          |
+| `filebase_access_key`        | No       | `""`     | Filebase S3 access key, enables the Filebase provider together with the other Filebase inputs   |
+| `filebase_secret_key`        | No       | `""`     | Filebase S3 secret key belonging to `filebase_access_key`                                       |
+| `filebase_bucket`            | No       | `""`     | Filebase bucket on the IPFS storage network, required when the Filebase keys are set            |
+| `upload_timeout_ms`          | No       | `300000` | Upload HTTP request timeout in milliseconds, must be `>= 10000`                                 |
+| `health_check`               | No       | `true`   | Run post-deploy gateway health checks before writing the job summary                            |
+| `upload_deployment_artifact` | No       | `true`   | Upload the `deployments/` metadata JSON as a run artifact                                       |
+| `retention_days`             | No       | `30`     | Retention in days for the deployment metadata artifact                                          |
+
+At least one provider must be fully configured: `pinata_jwt`, and/or both Filebase keys together with `filebase_bucket`. Partial Filebase configuration (one key missing, or keys without a bucket) fails validation.
+
+Pass the credential inputs from secrets (`pinata_jwt: ${{ secrets.PINATA_JWT }}`) so GitHub's log masking applies. Store them as organization secrets (**Settings → Secrets and variables → Actions**) restricted to the repositories that deploy.
+
+## Outputs
+
+| Name           | Description                                                                                   |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| `ipfs_hash`    | Deployed IPFS CID (CIDv0 `Qm…` when Pinata uploads, CIDv1 `bafy…` when only Filebase does)    |
+| `ipfs_url`     | Primary gateway URL for the deployed hash (the active provider's dedicated gateway)           |
+| `pinata_url`   | Dedicated Pinata gateway URL (`https://<gateway>/ipfs/<hash>/`), empty when Pinata is unused  |
+| `filebase_url` | Filebase gateway URL (`https://ipfs.filebase.io/ipfs/<hash>/`), empty when Filebase is unused |
+
+## Steps
+
+1. **Validate inputs** — rejects unsafe slugs and paths, out-of-range timeouts, and a missing or empty `build_dir`
+2. **Detect providers** — decides which providers are configured from the credential inputs, rejects partial Filebase configuration
+3. **Setup pnpm / Setup Node.js** — Node 24, pnpm 9
+4. **Install uploader dependencies** — `pnpm install --frozen-lockfile` in the action directory
+5. **Deploy to IPFS** — uploads the directory to the configured provider(s), with retries and exponential backoff, and writes `deployments/<environment>/latest.json` into the workspace
+6. **Extract deployment info** — reads the CID and gateway URLs back out of the deployment JSON
+7. **Upload deployment artifacts** _(when `upload_deployment_artifact`)_ — uploads `deployments/` as `deployment-<environment>-<sha>`
+8. **Health check** _(when `health_check`)_ — probes every gateway, retrying up to three times; fails only if not a single gateway serves the content
+9. **Summary** — writes the providers, access URLs and both CIDv0 and CIDv1 to the job summary
+
+## Caller responsibilities
+
+Because this is a composite action, job-level concerns stay with the caller:
+
+- **Runner hardening** — when using `step-security/harden-runner` with a blocking egress policy, allow: `api.pinata.cloud` (Pinata upload), `s3.filebase.com` (Filebase upload), `api.filebase.io` (Filebase pinning), the pnpm registry, and the gateway hosts probed by the health check (`gnosis.mypinata.cloud`, `ipfs.filebase.io`, `ipfs.io`, `dweb.link`).
+- **Timeout and concurrency** — set `timeout-minutes` on the job and a `concurrency` group if parallel deploys of the same environment must not overlap.
+
+## Troubleshooting
+
+| Symptom                                        | Cause and fix                                                                                                                                             |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Build directory 'out' not found`              | `build_dir` does not point at the build output — check the build step ran in the same job and wrote to that path                                          |
+| `Build directory is empty`                     | The build produced no files                                                                                                                               |
+| `no IPFS provider configured`                  | Neither `pinata_jwt` nor the Filebase inputs were passed — check the `with:` block                                                                        |
+| `filebase_bucket is required`                  | The Filebase keys were passed without `filebase_bucket` (or vice versa)                                                                                   |
+| `NO_SCOPES_FOUND` / `403 Forbidden`            | `pinata_jwt` is missing the `pinFileToIPFS` scope — check the [Pinata API keys page](https://app.pinata.cloud/developers/api-keys)                        |
+| `401 Unauthorized`                             | `pinata_jwt` is invalid or expired, or the Filebase pin token was rejected — check the keys and that `filebase_bucket` matches an existing bucket         |
+| `SignatureDoesNotMatch` / `InvalidAccessKeyId` | The Filebase S3 credentials are wrong — check `filebase_access_key` and `filebase_secret_key`                                                             |
+| `Uploaded object has no 'cid' metadata`        | The Filebase bucket is not on the IPFS storage network — CAR imports only work on IPFS buckets                                                            |
+| `Pin still 'pinning' after …ms`                | Not an error: Filebase is still fetching the CID from the IPFS network and keeps pinning in the background — check the request id in the Filebase console |
+| `Network error` / `ETIMEDOUT`                  | Uploads are retried with exponential backoff; for large sites raise `upload_timeout_ms`                                                                   |
+| `Invalid or missing IPFS hash`                 | The provider returned an unexpected response — check the upload output in the logs and the provider's status page for rate limiting (429)                 |
+
+## Notes
+
+- The uploaders never print credentials: script output is filtered for `jwt`, `token`, `secret`, `password`, `auth`, `bearer` and `authorization` before it reaches the log.
+- `project_name` is sanitized to `[:alnum:]-_` (100 characters) before it is written to the deployment metadata.
+- Filebase uploads pack the site into a CAR file (UnixFS, CIDv1) and import it via the S3-compatible API (`s3.filebase.com`, `import=car`); the root CID is read back from the object's `x-amz-meta-cid` metadata. The bucket must be on Filebase's **IPFS storage network**.
+- The Filebase pin token used in both-providers mode is `base64(access_key:secret_key:bucket)` against their [IPFS Pinning Service API](https://filebase.com/docs/ipfs/pinning-service-api).
+- In both-providers mode the Filebase pin is **best-effort**: the job fails only if Filebase rejects the pin request or reports the pin as `failed`. A pin still `queued`/`pinning` at the polling deadline (3 minutes) is logged as a warning and completes server-side.
+- The same site deployed via Pinata and via Filebase-only yields **different CIDs** (Pinata returns CIDv0 with its own chunking, the CAR import returns CIDv1) — this is expected.
+- File size and request rate are subject to the providers' API limits.

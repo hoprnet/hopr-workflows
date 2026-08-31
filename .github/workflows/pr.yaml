@@ -25,6 +25,7 @@ jobs:
             bump-version
             download-artifact-registry
             generate-release-notes
+            ipfs-deployment
             multi-arch-manifest
             nix-action
             propose-ens-contenthash
