@@ -3,11 +3,14 @@
 # IPFS Deployment (Pinata and/or Filebase) with Environment Support
 # Usage: ./deploy-to-ipfs.sh <environment> <build_dir> <project_name> <timestamp> <branch> <commit_hash>
 #
+# The build directory is packed once into a single-root CAR file (UnixFS,
+# CIDv1); the same CAR is then uploaded to every configured provider, so all
+# of them serve the exact same CID.
+#
 # Provider selection (from environment variables):
-# - PINATA_JWT set                              -> deploy to Pinata
-# - FILEBASE_ACCESS_KEY/SECRET_KEY/BUCKET set   -> deploy to Filebase (CAR upload)
-# - both sets present                           -> deploy to Pinata, then pin the
-#                                                  resulting CID on Filebase
+# - PINATA_JWT set                              -> upload the CAR to Pinata
+# - FILEBASE_ACCESS_KEY/SECRET_KEY/BUCKET set   -> upload the CAR to Filebase
+# - both sets present                           -> upload the same CAR to both
 #
 # Optional: SCRIPTS_DIR to override the uploader script location,
 #           UPLOAD_TIMEOUT_MS for the provider HTTP timeout.
@@ -18,10 +21,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="${SCRIPTS_DIR:-$SCRIPT_DIR}"
 
-# Cleanup trap for temp directory
+# Cleanup trap for temp directory and CAR file
 cleanup() {
   if [ -n "${TEMP_DIR:-}" ] && [ -d "${TEMP_DIR:-}" ]; then
     rm -rf "$TEMP_DIR"
+  fi
+  if [ -n "${CAR_FILE:-}" ] && [ -f "${CAR_FILE:-}" ]; then
+    rm -f "$CAR_FILE"
   fi
 }
 trap cleanup EXIT ERR
@@ -92,7 +98,7 @@ LOG_FILE="${DEPLOYMENTS_DIR}/logs/${ENVIRONMENT}-deployments.log"
 # metadata are derived from this list, and the workflow reads them back out of
 # the deployment JSON (no duplication).
 PINATA_GATEWAY="https://gnosis.mypinata.cloud/ipfs"
-FILEBASE_GATEWAY="https://ipfs.filebase.io/ipfs"
+FILEBASE_GATEWAY="https://gnosis-vpn.myfilebase.com/ipfs"
 IPFS_GATEWAYS=()
 if $PINATA_ENABLED; then
   IPFS_GATEWAYS+=("$PINATA_GATEWAY")
@@ -164,9 +170,10 @@ run_node_json() {
     echo ""
 
     # Check for specific error types and provide helpful messages
-    if grep -qi "NO_SCOPES_FOUND\|scopes" "$output_file"; then
+    if grep -qi "org:files:write\|NO_SCOPES_FOUND\|scopes" "$output_file"; then
       echo -e "${YELLOW}💡 Tip: Your PINATA_JWT token is missing required scopes.${NC}"
-      echo -e "${YELLOW}   Please ensure your Pinata API key has the 'pinFileToIPFS' scope enabled.${NC}"
+      echo -e "${YELLOW}   The v3 upload API needs a key with the 'org:files:write' scope,${NC}"
+      echo -e "${YELLOW}   and CAR uploads require a paid Pinata plan.${NC}"
       echo -e "${YELLOW}   Check your Pinata dashboard: https://app.pinata.cloud/developers/api-keys${NC}"
       echo ""
     elif grep -qi "SignatureDoesNotMatch\|InvalidAccessKeyId" "$output_file"; then
@@ -227,53 +234,44 @@ jq -n \
 
 echo -e "${GREEN}✅ Files prepared in temporary directory (${FILE_COUNT} files)${NC}"
 
-# Step 2: Upload to the primary provider
+# Step 2: Pack the directory into a single-root CAR file. The root CID is
+# computed locally, so it is known before any provider is contacted, and every
+# provider that imports this CAR serves the same CID.
+echo -e "${YELLOW}📦 Packing files into a CAR file...${NC}"
+CAR_FILE=$(mktemp --suffix=.car)
+run_node_json "$SCRIPTS_DIR/pack-car.mjs" "$TEMP_DIR" "$CAR_FILE"
+
+IPFS_HASH=$(echo "$RUN_JSON" | jq -r '.root // empty' 2>/dev/null)
+if [ -z "$IPFS_HASH" ] || [ "$IPFS_HASH" = "null" ]; then
+  echo -e "${RED}❌ Failed to parse root CID from CAR packing output${NC}"
+  echo "Last line of packing output: $RUN_JSON"
+  exit 1
+fi
+echo -e "${GREEN}✅ CAR packed${NC}"
+echo -e "   IPFS Hash: ${YELLOW}${IPFS_HASH}${NC}"
+
+# Step 3: Upload the same CAR to every configured provider. The uploader
+# scripts verify that the provider imported exactly the local root CID.
 DEPLOY_NAME="${PROJECT_NAME}-${ENVIRONMENT}-${TIMESTAMP}"
-IPFS_HASH=""
 PINATA_URL=""
 FILEBASE_URL=""
 PINATA_RESPONSE_JSON=null
 FILEBASE_RESPONSE_JSON=null
 
 if $PINATA_ENABLED; then
-  echo -e "${YELLOW}📤 Uploading directory to Pinata...${NC}"
-  run_node_json "$SCRIPTS_DIR/upload-pinata.mjs" "$TEMP_DIR" "$DEPLOY_NAME"
-
-  IPFS_HASH=$(echo "$RUN_JSON" | jq -r '.IpfsHash // empty' 2>/dev/null)
-  if [ -z "$IPFS_HASH" ] || [ "$IPFS_HASH" = "null" ]; then
-    echo -e "${RED}❌ Failed to parse IPFS hash from Pinata response${NC}"
-    echo "Last line of upload output: $RUN_JSON"
-    exit 1
-  fi
+  echo -e "${YELLOW}📤 Uploading CAR to Pinata...${NC}"
+  run_node_json "$SCRIPTS_DIR/upload-pinata.mjs" "$CAR_FILE" "$DEPLOY_NAME" "$IPFS_HASH"
   PINATA_RESPONSE_JSON=$(echo "$RUN_JSON" | jq . 2>/dev/null || echo "null")
   PINATA_URL="$(gateway_url "$PINATA_GATEWAY" "$IPFS_HASH")"
   echo -e "${GREEN}✅ Successfully uploaded to Pinata${NC}"
-  echo -e "   IPFS Hash: ${YELLOW}${IPFS_HASH}${NC}"
-else
-  echo -e "${YELLOW}📤 Uploading directory to Filebase (CAR import)...${NC}"
-  run_node_json "$SCRIPTS_DIR/upload-filebase.mjs" "$TEMP_DIR" "${DEPLOY_NAME}.car"
-
-  IPFS_HASH=$(echo "$RUN_JSON" | jq -r '.cid // empty' 2>/dev/null)
-  if [ -z "$IPFS_HASH" ] || [ "$IPFS_HASH" = "null" ]; then
-    echo -e "${RED}❌ Failed to parse CID from Filebase response${NC}"
-    echo "Last line of upload output: $RUN_JSON"
-    exit 1
-  fi
-  FILEBASE_RESPONSE_JSON=$(echo "$RUN_JSON" | jq . 2>/dev/null || echo "null")
-  echo -e "${GREEN}✅ Successfully uploaded to Filebase${NC}"
-  echo -e "   IPFS Hash: ${YELLOW}${IPFS_HASH}${NC}"
 fi
 
-# Step 3: When both providers are configured, pin the Pinata CID on Filebase
-# for redundancy. The pin is best-effort: pin-filebase.mjs fails the deploy
-# only when Filebase rejects the request or reports the pin as failed.
-if $PINATA_ENABLED && $FILEBASE_ENABLED; then
-  echo -e "${YELLOW}📌 Pinning CID on Filebase for redundancy...${NC}"
-  run_node_json "$SCRIPTS_DIR/pin-filebase.mjs" "$IPFS_HASH" "$DEPLOY_NAME"
-  FILEBASE_RESPONSE_JSON=$(echo "$RUN_JSON" | jq . 2>/dev/null || echo "null")
-fi
 if $FILEBASE_ENABLED; then
+  echo -e "${YELLOW}📤 Uploading CAR to Filebase...${NC}"
+  run_node_json "$SCRIPTS_DIR/upload-filebase.mjs" "$CAR_FILE" "${DEPLOY_NAME}.car" "$IPFS_HASH"
+  FILEBASE_RESPONSE_JSON=$(echo "$RUN_JSON" | jq . 2>/dev/null || echo "null")
   FILEBASE_URL="$(gateway_url "$FILEBASE_GATEWAY" "$IPFS_HASH")"
+  echo -e "${GREEN}✅ Successfully uploaded to Filebase${NC}"
 fi
 
 # Step 4: Verify via the primary gateway (best-effort)

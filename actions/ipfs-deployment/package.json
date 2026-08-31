@@ -10,11 +10,8 @@
     "@aws-sdk/client-s3": "^3.750.0",
     "@aws-sdk/lib-storage": "^3.750.0",
     "@ipld/car": "^5.4.0",
-    "base-path-converter": "^1.0.2",
     "blockstore-core": "^5.0.4",
-    "form-data": "^4.0.6",
-    "got": "^14.4.5",
     "ipfs-unixfs-importer": "^15.3.2",
-    "recursive-fs": "^2.1.0"
+    "tus-js-client": "^4.3.1"
   }
 }

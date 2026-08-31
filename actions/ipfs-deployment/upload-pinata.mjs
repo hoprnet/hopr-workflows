@@ -1,139 +1,143 @@
 import fs from "node:fs";
-import FormData from "form-data";
-import rfs from "recursive-fs";
-import basePathConverter from "base-path-converter";
-import got from "got";
+import * as tus from "tus-js-client";
 
 const PINATA_JWT = process.env.PINATA_JWT;
 const UPLOAD_TIMEOUT_MS =
   Number.parseInt(process.env.UPLOAD_TIMEOUT_MS || "", 10) || 300000;
-const src = process.argv[2];
+const carPath = process.argv[2];
 const pinName = process.argv[3];
+const expectedRoot = process.argv[4];
 
-if (!PINATA_JWT || !src || !pinName) {
+if (!PINATA_JWT || !carPath || !pinName || !expectedRoot) {
   console.error(
-    "❌ Usage: PINATA_JWT=<token> node scripts/upload-pinata.mjs <build_dir> <pin_name>",
+    "❌ Usage: PINATA_JWT=<token> node upload-pinata.mjs <car_path> <pin_name> <expected_root>",
   );
   process.exit(1);
 }
 
-// Validate source directory exists and has files
-if (!fs.existsSync(src)) {
-  console.error(`❌ Error: Source directory does not exist: ${src}`);
+if (!fs.existsSync(carPath) || !fs.statSync(carPath).isFile()) {
+  console.error(`❌ Error: CAR file does not exist: ${carPath}`);
   process.exit(1);
 }
 
-const stats = fs.statSync(src);
-if (!stats.isDirectory()) {
-  console.error(`❌ Error: Source path is not a directory: ${src}`);
+const size = fs.statSync(carPath).size;
+
+// Pinata rejects uploads above 25 GB (15 GB recommended).
+const PINATA_MAX_BYTES = 25 * 1024 * 1024 * 1024;
+if (size > PINATA_MAX_BYTES) {
+  console.error(
+    `❌ Error: CAR file is ${size} bytes, above Pinata's 25 GB upload cap`,
+  );
   process.exit(1);
 }
 
-async function pinDirectoryToPinata(retries = 3) {
-  const url = "https://api.pinata.cloud/pinning/pinFileToIPFS";
+// The v3 upload endpoint is TUS-compatible and TUS is required above ~100 MB,
+// so every upload goes through TUS: one code path for any size. The `car`
+// upload-metadata key makes Pinata import the CAR instead of re-hashing it,
+// and `network=public` is mandatory — the default is private, which is not
+// announced to the IPFS network.
+// PINATA_UPLOAD_ENDPOINT is an override for tests only.
+const ENDPOINT =
+  process.env.PINATA_UPLOAD_ENDPOINT || "https://uploads.pinata.cloud/v3/files";
+// Chunk size shipped by Pinata's own SDK for its TUS uploads.
+const CHUNK_SIZE = 52428801;
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      // Read files from source directory
-      const { files } = await rfs.read(src);
+function uploadCar() {
+  return new Promise((resolve, reject) => {
+    let uploadCid = null;
+    let stallTimer = null;
+    let lastLoggedPercent = -10;
 
-      if (!files || files.length === 0) {
-        console.error(`❌ Error: No files found in source directory: ${src}`);
-        process.exit(1);
-      }
-
-      console.error(
-        `📤 Uploading ${files.length} files to Pinata (attempt ${attempt}/${retries})...`,
-      );
-
-      const data = new FormData();
-      for (const file of files) {
-        data.append("file", fs.createReadStream(file), {
-          filepath: basePathConverter(src, file),
-        });
-      }
-      data.append("pinataMetadata", JSON.stringify({ name: pinName }));
-
-      const response = await got
-        .post(url, {
-          headers: {
-            Authorization: `Bearer ${PINATA_JWT}`,
-            ...data.getHeaders(),
-          },
-          body: data,
-          timeout: {
-            request: UPLOAD_TIMEOUT_MS,
-          },
-        })
-        .json();
-
-      // Validate response structure
-      if (!response || !response.IpfsHash) {
-        throw new Error(
-          `Invalid response from Pinata: ${JSON.stringify(response)}`,
-        );
-      }
-
-      // Print only JSON (deploy scripts parse last line)
-      console.log(JSON.stringify(response));
-      return response.IpfsHash;
-    } catch (error) {
-      const isLastAttempt = attempt === retries;
-
-      if (error.response) {
-        // HTTP error response
-        const statusCode = error.response.statusCode;
-        const statusMessage = error.response.statusMessage || "Unknown error";
-        const body = error.response.body || "";
-
-        console.error(`❌ Pinata API error (attempt ${attempt}/${retries}):`);
-        console.error(`   Status: ${statusCode} ${statusMessage}`);
-
-        if (body) {
-          try {
-            const errorBody = JSON.parse(body);
-            console.error(
-              `   Message: ${errorBody.error?.message || errorBody.message || body}`,
-            );
-          } catch {
-            console.error(`   Response: ${body.substring(0, 200)}`);
-          }
+    const upload = new tus.Upload(fs.createReadStream(carPath), {
+      endpoint: ENDPOINT,
+      uploadSize: size,
+      chunkSize: CHUNK_SIZE,
+      retryDelays: [1000, 2000, 4000, 8000],
+      headers: { Authorization: `Bearer ${PINATA_JWT}` },
+      metadata: {
+        filename: `${pinName}.car`,
+        filetype: "application/vnd.ipld.car",
+        network: "public",
+        car: "true",
+      },
+      onProgress(bytesUploaded, bytesTotal) {
+        armStallTimer();
+        const percent = Math.floor((bytesUploaded / bytesTotal) * 100);
+        if (percent >= lastLoggedPercent + 10) {
+          lastLoggedPercent = percent;
+          console.error(`📤 Uploaded ${percent}% (${bytesUploaded}/${bytesTotal} bytes)`);
         }
-
-        // Don't retry on auth errors
-        if (statusCode === 401 || statusCode === 403) {
-          console.error(
-            "❌ Authentication failed - check your PINATA_JWT token",
-          );
-          process.exit(1);
+      },
+      onAfterResponse(_req, res) {
+        // The final PATCH answers with the imported root CID.
+        const cid = res.getHeader("upload-cid");
+        if (cid) {
+          uploadCid = cid;
         }
+      },
+      onSuccess() {
+        clearTimeout(stallTimer);
+        resolve(uploadCid);
+      },
+      onError(error) {
+        clearTimeout(stallTimer);
+        reject(error);
+      },
+    });
 
-        // Don't retry on client errors (4xx) except 429 (rate limit)
-        if (statusCode >= 400 && statusCode < 500 && statusCode !== 429) {
-          console.error("❌ Client error - not retrying");
-          process.exit(1);
-        }
-      } else if (error.code === "ETIMEDOUT" || error.code === "ECONNRESET") {
-        console.error(
-          `❌ Network error (attempt ${attempt}/${retries}): ${error.message}`,
+    const armStallTimer = () => {
+      clearTimeout(stallTimer);
+      stallTimer = setTimeout(() => {
+        upload.abort();
+        reject(
+          new Error(`Upload made no progress for ${UPLOAD_TIMEOUT_MS}ms`),
         );
-      } else {
-        console.error(
-          `❌ Error (attempt ${attempt}/${retries}): ${error.message}`,
-        );
-      }
+      }, UPLOAD_TIMEOUT_MS);
+    };
 
-      if (isLastAttempt) {
-        console.error("❌ Failed to upload to Pinata after all retry attempts");
-        process.exit(1);
-      }
+    console.error(
+      `📤 Uploading CAR to Pinata via TUS (${size} bytes, name "${pinName}")...`,
+    );
+    armStallTimer();
+    upload.start();
+  });
+}
 
-      // Wait before retry (exponential backoff)
-      const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-      console.error(`⏳ Waiting ${waitTime}ms before retry...`);
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-    }
+let cid;
+try {
+  cid = await uploadCar();
+} catch (error) {
+  const status = error?.originalResponse?.getStatus?.();
+  console.error(`❌ Pinata upload failed: ${error.message}`);
+  if (status === 401 || status === 403) {
+    console.error(
+      "❌ Authentication/authorization failed - the JWT needs the org:files:write scope, and CAR uploads require a paid Pinata plan",
+    );
   }
+  const body = error?.originalResponse?.getBody?.();
+  if (body) {
+    console.error(`   Response: ${String(body).substring(0, 300)}`);
+  }
+  process.exit(1);
 }
 
-pinDirectoryToPinata();
+if (!cid) {
+  console.error(
+    "❌ Pinata did not return an upload-cid header — cannot confirm the imported root CID",
+  );
+  process.exit(1);
+}
+
+// The root must be exactly what we packed locally; a different CID would mean
+// Pinata re-interpreted the CAR and the published URLs would not match it.
+if (cid.toLowerCase() !== expectedRoot.toLowerCase()) {
+  console.error(
+    `❌ Pinata returned CID ${cid}, expected the CAR root ${expectedRoot}`,
+  );
+  process.exit(1);
+}
+
+console.error(`✅ Pinata imported the CAR (root ${cid})`);
+
+// Print only JSON (deploy scripts parse last line)
+console.log(JSON.stringify({ cid, size, name: pinName }));

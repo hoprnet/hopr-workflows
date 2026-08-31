@@ -15,7 +15,7 @@ inputs:
     required: false
     default: ""
   pinata_jwt:
-    description: Pinata JWT with the pinFileToIPFS scope. Enables the Pinata provider
+    description: Pinata JWT with the org:files:write scope (CAR uploads also require a paid Pinata plan). Enables the Pinata provider
     required: false
     default: ""
   filebase_access_key:
@@ -303,6 +303,8 @@ runs:
         COMMIT_SHA: ${{ github.sha }}
         IPFS_HASH: ${{ steps.deployment.outputs.ipfs_hash }}
         GATEWAYS: ${{ steps.deployment.outputs.gateways }}
+        PINATA_URL: ${{ steps.deployment.outputs.pinata_url }}
+        FILEBASE_URL: ${{ steps.deployment.outputs.filebase_url }}
         PINATA_ENABLED: ${{ steps.providers.outputs.pinata }}
         FILEBASE_ENABLED: ${{ steps.providers.outputs.filebase }}
         ACTION_PATH: ${{ github.action_path }}
@@ -338,11 +340,19 @@ runs:
           echo "- **Commit**: \`$COMMIT_SHA\`"
           echo "- **Timestamp**: \`$(date -Iseconds)\`"
           echo ''
-          echo '## 🌐 Primary access URL'
-          echo "- **Primary gateway**: [${GATEWAY_LIST[0]}](${GATEWAY_LIST[0]})"
+          echo '## 🌐 Primary access URLs'
+          if [ -n "$PINATA_URL" ]; then
+            echo "- **Pinata gateway**: [${PINATA_URL}](${PINATA_URL})"
+          fi
+          if [ -n "$FILEBASE_URL" ]; then
+            echo "- **Filebase gateway**: [${FILEBASE_URL}](${FILEBASE_URL})"
+          fi
           echo ''
           echo '## 🔗 Alternative gateways'
-          for gw in "${GATEWAY_LIST[@]:1}"; do
+          for gw in "${GATEWAY_LIST[@]}"; do
+            if [ "$gw" = "$PINATA_URL" ] || [ "$gw" = "$FILEBASE_URL" ]; then
+              continue
+            fi
             echo "- [${gw}](${gw})"
           done
           echo ''
