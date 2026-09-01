@@ -1,5 +1,5 @@
 name: IPFS Deployment
-description: Deploy a prebuilt static site to IPFS via Pinata and/or Filebase, selected by which credentials are passed, with gateway health checks and a CID summary
+description: Deploy a prebuilt static site to IPFS via Pinata and/or Filebase, selected by which credentials are passed, with gateway health checks and a CID summary. With both providers configured the CAR is uploaded to Filebase and the CID is then pinned on Pinata (pin-by-CID, no second upload)
 inputs:
   environment:
     description: Deployment environment name slug, must match ^[a-zA-Z0-9_-]+$ (e.g. dev, staging, prod)
@@ -15,7 +15,7 @@ inputs:
     required: false
     default: ""
   pinata_jwt:
-    description: Pinata JWT with the org:files:write scope (CAR uploads also require a paid Pinata plan). Enables the Pinata provider
+    description: Pinata JWT with the org:files:write and org:files:read scopes (a paid Pinata plan is required). Enables the Pinata provider. When Filebase is also configured, Pinata only pins the CID instead of receiving a second CAR upload
     required: false
     default: ""
   filebase_access_key:
@@ -34,6 +34,10 @@ inputs:
     description: Upload HTTP request timeout in milliseconds, must be >= 10000
     required: false
     default: "300000"
+  pin_timeout_ms:
+    description: How long to wait for the Pinata pin-by-CID request to confirm before continuing with a warning, in milliseconds, must be >= 10000. Only used when both providers are configured
+    required: false
+    default: "600000"
   health_check:
     description: Run post-deploy gateway health checks before writing the job summary
     required: false
@@ -51,7 +55,7 @@ outputs:
     description: Deployed IPFS CID
     value: ${{ steps.deployment.outputs.ipfs_hash }}
   ipfs_url:
-    description: Primary gateway URL for the deployed hash (the active provider's dedicated gateway)
+    description: Primary gateway URL for the deployed hash — the Filebase gateway when Filebase is enabled, otherwise the Pinata gateway
     value: ${{ steps.deployment.outputs.ipfs_url }}
   pinata_url:
     description: Dedicated Pinata gateway URL for the deployed hash, empty when Pinata is not used
@@ -75,6 +79,7 @@ runs:
         PROJECT_NAME: ${{ inputs.project_name }}
         BUILD_DIR: ${{ inputs.build_dir }}
         UPLOAD_TIMEOUT_MS: ${{ inputs.upload_timeout_ms }}
+        PIN_TIMEOUT_MS: ${{ inputs.pin_timeout_ms }}
       run: |
         # environment is used as a path segment, so keep it a safe slug
         if ! echo "$ENVIRONMENT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
@@ -84,6 +89,11 @@ runs:
 
         if ! echo "$UPLOAD_TIMEOUT_MS" | grep -qE '^[0-9]+$' || [ "$UPLOAD_TIMEOUT_MS" -lt 10000 ]; then
           echo "❌ Error: upload_timeout_ms must be a number >= 10000"
+          exit 1
+        fi
+
+        if ! echo "$PIN_TIMEOUT_MS" | grep -qE '^[0-9]+$' || [ "$PIN_TIMEOUT_MS" -lt 10000 ]; then
+          echo "❌ Error: pin_timeout_ms must be a number >= 10000"
           exit 1
         fi
 
@@ -177,6 +187,7 @@ runs:
         FILEBASE_SECRET_KEY: ${{ inputs.filebase_secret_key }}
         FILEBASE_BUCKET: ${{ inputs.filebase_bucket }}
         UPLOAD_TIMEOUT_MS: ${{ inputs.upload_timeout_ms }}
+        PIN_TIMEOUT_MS: ${{ inputs.pin_timeout_ms }}
         SCRIPTS_DIR: ${{ github.action_path }}
         ENVIRONMENT: ${{ inputs.environment }}
         BUILD_DIR: ${{ inputs.build_dir }}
@@ -233,11 +244,15 @@ runs:
           exit 1
         fi
 
+        # Pin status is only present when Pinata ran in pin-by-CID mode.
+        PINATA_PIN_STATUS=$(jq -r '.pinata_response.status // empty' "$FILE")
+
         {
           echo "ipfs_hash=$IPFS_HASH"
           echo "ipfs_url=$IPFS_URL"
           echo "pinata_url=$PINATA_URL"
           echo "filebase_url=$FILEBASE_URL"
+          echo "pinata_pin_status=$PINATA_PIN_STATUS"
           echo "gateways<<__GATEWAYS_EOF__"
           jq -r '.urls.ipfs[]' "$FILE"
           echo "__GATEWAYS_EOF__"
@@ -305,6 +320,7 @@ runs:
         GATEWAYS: ${{ steps.deployment.outputs.gateways }}
         PINATA_URL: ${{ steps.deployment.outputs.pinata_url }}
         FILEBASE_URL: ${{ steps.deployment.outputs.filebase_url }}
+        PINATA_PIN_STATUS: ${{ steps.deployment.outputs.pinata_pin_status }}
         PINATA_ENABLED: ${{ steps.providers.outputs.pinata }}
         FILEBASE_ENABLED: ${{ steps.providers.outputs.filebase }}
         ACTION_PATH: ${{ github.action_path }}
@@ -313,8 +329,8 @@ runs:
         mapfile -t GATEWAY_LIST <<<"$GATEWAYS"
 
         PROVIDERS=""
-        [ "$PINATA_ENABLED" = "true" ] && PROVIDERS="pinata"
-        [ "$FILEBASE_ENABLED" = "true" ] && PROVIDERS="${PROVIDERS:+$PROVIDERS, }filebase"
+        [ "$FILEBASE_ENABLED" = "true" ] && PROVIDERS="filebase"
+        [ "$PINATA_ENABLED" = "true" ] && PROVIDERS="${PROVIDERS:+$PROVIDERS, }pinata"
 
         # Derive both CID representations (v0 base58 "Qm...", v1 base32 "bafy...").
         CID_V0="$IPFS_HASH"
@@ -336,6 +352,9 @@ runs:
           echo "- **Environment**: \`$ENVIRONMENT\`"
           echo "- **Project**: \`$PROJECT_NAME\`"
           echo "- **Providers**: \`$PROVIDERS\`"
+          if [ -n "$PINATA_PIN_STATUS" ]; then
+            echo "- **Pinata pin**: \`$PINATA_PIN_STATUS\`"
+          fi
           echo "- **Branch**: \`$BRANCH\`"
           echo "- **Commit**: \`$COMMIT_SHA\`"
           echo "- **Timestamp**: \`$(date -Iseconds)\`"

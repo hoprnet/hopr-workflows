@@ -4,16 +4,19 @@
 # Usage: ./deploy-to-ipfs.sh <environment> <build_dir> <project_name> <timestamp> <branch> <commit_hash>
 #
 # The build directory is packed once into a single-root CAR file (UnixFS,
-# CIDv1); the same CAR is then uploaded to every configured provider, so all
-# of them serve the exact same CID.
+# CIDv1), so the root CID is known before any provider is contacted and every
+# provider serves the exact same CID.
 #
 # Provider selection (from environment variables):
 # - PINATA_JWT set                              -> upload the CAR to Pinata
 # - FILEBASE_ACCESS_KEY/SECRET_KEY/BUCKET set   -> upload the CAR to Filebase
-# - both sets present                           -> upload the same CAR to both
+# - both sets present                           -> upload the CAR to Filebase,
+#                                                  then pin the CID on Pinata
+#                                                  (pin-by-CID, no 2nd upload)
 #
 # Optional: SCRIPTS_DIR to override the uploader script location,
-#           UPLOAD_TIMEOUT_MS for the provider HTTP timeout.
+#           UPLOAD_TIMEOUT_MS for the provider HTTP timeout,
+#           PIN_TIMEOUT_MS for how long to wait for the Pinata pin-by-CID.
 
 set -euo pipefail
 
@@ -93,18 +96,19 @@ DEPLOYMENT_FILE="${DEPLOYMENTS_DIR}/${ENVIRONMENT}/deployment-${TIMESTAMP}.json"
 LOG_FILE="${DEPLOYMENTS_DIR}/logs/${ENVIRONMENT}-deployments.log"
 
 # IPFS gateway bases — single source of truth for this deployment.
-# The first entry is the primary gateway (the active provider's dedicated
-# gateway) used for verification and as the canonical ipfs_url. Full URLs and
-# metadata are derived from this list, and the workflow reads them back out of
-# the deployment JSON (no duplication).
+# The first entry is the primary gateway used for verification and as the
+# canonical ipfs_url. Filebase comes first: it receives the full CAR and
+# serves the CID immediately, while a Pinata pin-by-CID may still be
+# propagating. Full URLs and metadata are derived from this list, and the
+# workflow reads them back out of the deployment JSON (no duplication).
 PINATA_GATEWAY="https://gnosis.mypinata.cloud/ipfs"
 FILEBASE_GATEWAY="https://gnosis-vpn.myfilebase.com/ipfs"
 IPFS_GATEWAYS=()
-if $PINATA_ENABLED; then
-  IPFS_GATEWAYS+=("$PINATA_GATEWAY")
-fi
 if $FILEBASE_ENABLED; then
   IPFS_GATEWAYS+=("$FILEBASE_GATEWAY")
+fi
+if $PINATA_ENABLED; then
+  IPFS_GATEWAYS+=("$PINATA_GATEWAY")
 fi
 IPFS_GATEWAYS+=(
   "https://ipfs.io/ipfs"
@@ -117,8 +121,8 @@ gateway_url() {
 }
 
 PROVIDERS=()
-$PINATA_ENABLED && PROVIDERS+=("pinata")
 $FILEBASE_ENABLED && PROVIDERS+=("filebase")
+$PINATA_ENABLED && PROVIDERS+=("pinata")
 PROVIDERS_LABEL=$(
   IFS=,
   echo "${PROVIDERS[*]}"
@@ -172,9 +176,16 @@ run_node_json() {
     # Check for specific error types and provide helpful messages
     if grep -qi "org:files:write\|NO_SCOPES_FOUND\|scopes" "$output_file"; then
       echo -e "${YELLOW}💡 Tip: Your PINATA_JWT token is missing required scopes.${NC}"
-      echo -e "${YELLOW}   The v3 upload API needs a key with the 'org:files:write' scope,${NC}"
+      echo -e "${YELLOW}   The v3 upload API needs a key with the 'org:files:write' scope${NC}"
+      echo -e "${YELLOW}   (pin-by-CID polling additionally needs 'org:files:read'),${NC}"
       echo -e "${YELLOW}   and CAR uploads require a paid Pinata plan.${NC}"
       echo -e "${YELLOW}   Check your Pinata dashboard: https://app.pinata.cloud/developers/api-keys${NC}"
+      echo ""
+    elif grep -qi "terminal status" "$output_file"; then
+      echo -e "${YELLOW}💡 Tip: The Pinata pin-by-CID request failed permanently.${NC}"
+      echo -e "${YELLOW}   'invalid_object' means the CID could not be retrieved as valid content,${NC}"
+      echo -e "${YELLOW}   'over_free_limit'/'over_max_size' point at Pinata plan limits, and${NC}"
+      echo -e "${YELLOW}   'expired'/'bad_host_node' mean the content was not retrievable in time.${NC}"
       echo ""
     elif grep -qi "SignatureDoesNotMatch\|InvalidAccessKeyId" "$output_file"; then
       echo -e "${YELLOW}💡 Tip: Filebase rejected the credentials. Check FILEBASE_ACCESS_KEY and FILEBASE_SECRET_KEY.${NC}"
@@ -250,21 +261,16 @@ fi
 echo -e "${GREEN}✅ CAR packed${NC}"
 echo -e "   IPFS Hash: ${YELLOW}${IPFS_HASH}${NC}"
 
-# Step 3: Upload the same CAR to every configured provider. The uploader
-# scripts verify that the provider imported exactly the local root CID.
+# Step 3: Get the CAR to every configured provider. Filebase receives the
+# full CAR first; when Pinata is configured alongside it, Pinata only pins the
+# already-known CID (fetched from the IPFS network) instead of taking a second
+# upload. With a single provider the CAR is uploaded to it directly. The
+# uploader scripts verify that the provider imported exactly the local root CID.
 DEPLOY_NAME="${PROJECT_NAME}-${ENVIRONMENT}-${TIMESTAMP}"
 PINATA_URL=""
 FILEBASE_URL=""
 PINATA_RESPONSE_JSON=null
 FILEBASE_RESPONSE_JSON=null
-
-if $PINATA_ENABLED; then
-  echo -e "${YELLOW}📤 Uploading CAR to Pinata...${NC}"
-  run_node_json "$SCRIPTS_DIR/upload-pinata.mjs" "$CAR_FILE" "$DEPLOY_NAME" "$IPFS_HASH"
-  PINATA_RESPONSE_JSON=$(echo "$RUN_JSON" | jq . 2>/dev/null || echo "null")
-  PINATA_URL="$(gateway_url "$PINATA_GATEWAY" "$IPFS_HASH")"
-  echo -e "${GREEN}✅ Successfully uploaded to Pinata${NC}"
-fi
 
 if $FILEBASE_ENABLED; then
   echo -e "${YELLOW}📤 Uploading CAR to Filebase...${NC}"
@@ -274,7 +280,27 @@ if $FILEBASE_ENABLED; then
   echo -e "${GREEN}✅ Successfully uploaded to Filebase${NC}"
 fi
 
-# Step 4: Verify via the primary gateway (best-effort)
+if $PINATA_ENABLED; then
+  if $FILEBASE_ENABLED; then
+    echo -e "${YELLOW}📌 Pinning CID on Pinata (content hosted by Filebase)...${NC}"
+    run_node_json "$SCRIPTS_DIR/pin-pinata.mjs" "$IPFS_HASH" "$DEPLOY_NAME"
+    if [ "$(echo "$RUN_JSON" | jq -r '.pinned // false' 2>/dev/null)" = "true" ]; then
+      echo -e "${GREEN}✅ Pinata pin confirmed${NC}"
+    else
+      echo -e "${YELLOW}⚠️  Pinata pin still propagating — the request continues server-side${NC}"
+    fi
+  else
+    echo -e "${YELLOW}📤 Uploading CAR to Pinata...${NC}"
+    run_node_json "$SCRIPTS_DIR/upload-pinata.mjs" "$CAR_FILE" "$DEPLOY_NAME" "$IPFS_HASH"
+    echo -e "${GREEN}✅ Successfully uploaded to Pinata${NC}"
+  fi
+  PINATA_RESPONSE_JSON=$(echo "$RUN_JSON" | jq . 2>/dev/null || echo "null")
+  PINATA_URL="$(gateway_url "$PINATA_GATEWAY" "$IPFS_HASH")"
+fi
+
+# Step 4: Verify via the primary gateway (best-effort). The primary is the
+# Filebase gateway whenever Filebase is enabled — it holds the full upload,
+# while a Pinata pin-by-CID may still be propagating.
 IPFS_URL="$(gateway_url "${IPFS_GATEWAYS[0]}" "$IPFS_HASH")"
 echo -e "${YELLOW}🔍 Verifying deployment (primary gateway)...${NC}"
 if curl -s --head --max-time 10 "$IPFS_URL" >/dev/null; then
