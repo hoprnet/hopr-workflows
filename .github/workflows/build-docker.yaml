@@ -185,7 +185,8 @@ jobs:
         run: |
           nix shell github:hoprnet/nix-lib#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
-            base_branch=${{ github.event.pull_request.base.ref }}
+            # base.ref is only set on pull_request events; release runs are workflow_dispatch
+            base_branch="${{ github.event.pull_request.base.ref || github.ref_name }}"
             publish_image() {
               local target_image="${1}"
               echo "Publishing image ${target_image}"
@@ -305,14 +306,14 @@ jobs:
           image: ${{ inputs.docker_image_name }}
           version: latest-testing
       - name: Create multi-arch docker manifest - release-main
-        if: inputs.version_type == 'release' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
+        if: inputs.version_type == 'release' && ((github.event.pull_request.base.ref || github.ref_name) == 'main' || (github.event.pull_request.base.ref || github.ref_name) == 'master')
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: release-main
       - name: Create multi-arch docker manifest - release-testing
-        if: inputs.version_type == 'release' && contains(github.event.pull_request.base.ref, 'release/')
+        if: inputs.version_type == 'release' && startsWith(github.event.pull_request.base.ref || github.ref_name, 'release/')
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
