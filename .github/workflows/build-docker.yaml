@@ -299,7 +299,7 @@ jobs:
           image: ${{ inputs.docker_image_name }}
           version: latest-main
       - name: Create multi-arch docker manifest - latest-testing
-        if: inputs.version_type == 'pr' && contains(github.event.pull_request.base.ref, 'release/')
+        if: inputs.version_type == 'pr' && startsWith(inputs.source_branch, 'release/')
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
