@@ -207,8 +207,8 @@ jobs:
 
             # Close PR tags
             if [[ "${{ inputs.version_type }}" == "pr" ]]; then
-              publish_image "${GCP_LATEST_IMAGE_NAME}"
               if [[ "${base_branch}" == "main" ]] || [[ "${base_branch}" == "master" ]]; then
+                publish_image "${GCP_LATEST_IMAGE_NAME}"
                 publish_image "${GCP_LATEST_MAIN_IMAGE_NAME}"
               elif [[ "${base_branch}" =~ ^release/* ]]; then
                 publish_image "${GCP_LATEST_TESTING_IMAGE_NAME}"
@@ -284,7 +284,7 @@ jobs:
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_debug_version }}
       - name: Create multi-arch docker manifest - latest
-        if: inputs.version_type == 'pr'
+        if: inputs.version_type == 'pr' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
