@@ -186,7 +186,7 @@ jobs:
           nix shell github:hoprnet/nix-lib#skopeo -c bash << 'SKOPEO'
             set -euo pipefail
             # base.ref is only set on pull_request events; release runs are workflow_dispatch
-            base_branch="${{ github.event.pull_request.base.ref || github.ref_name }}"
+            base_branch="${{ github.event.pull_request.base.ref || inputs.source_branch }}"
             publish_image() {
               local target_image="${1}"
               echo "Publishing image ${target_image}"
