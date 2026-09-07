@@ -102,7 +102,7 @@ runs:
         client-id: ${{ inputs.github_app_client_id }}
         private-key: ${{ inputs.github_app_private_key }}
     - name: Checkout hoprnet repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       with:
         ref: ${{ inputs.source_branch }}
         fetch-depth: 0
@@ -179,7 +179,7 @@ runs:
           exit 1
         fi
     - name: Create Release
-      uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+      uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
       with:
         tag_name: "${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
         prerelease: ${{ steps.version.outputs.prerelease }}

@@ -25,7 +25,7 @@ runs:
         fi
     - name: Install Nix
       if: steps.check-nix.outputs.installed != 'true'
-      uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
+      uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
       with:
         nix_path: ${{ inputs.nix_path }}
     - name: Set cache name
@@ -41,7 +41,7 @@ runs:
         fi
     - name: Use Nix Cache
       if: steps.check-nix.outputs.installed != 'true' && inputs.cachix_auth_token != ''
-      uses: cachix/cachix-action@1eb2ef646ac0255473d23a5907ad7b04ce94065c # v17
+      uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
       continue-on-error: true # Allow failure if cachix cache/token is unavailable
       with:
         name: ${{ steps.cache-name.outputs.cachix_cache_name }}

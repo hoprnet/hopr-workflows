@@ -31,7 +31,7 @@ runs:
   using: composite
   steps:
     - name: Checkout repo
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       with:
         persist-credentials: false
         repository: ${{ inputs.source_repo }}
@@ -51,7 +51,7 @@ runs:
       run: git config --global http.postBuffer 524288000
     - name: Deploy
       if: inputs.publish
-      uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
+      uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
       with:
         github_token: ${{ inputs.github_token }}
         publish_dir: ./result/share/doc/
