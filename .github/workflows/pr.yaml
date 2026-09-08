@@ -56,7 +56,7 @@ jobs:
     uses: ./.github/workflows/checks.yaml
     with:
       source_branch: ${{ github.event.pull_request.head.sha }}
-      pre_commit: false
+      pre_commit: true
       deps: false
       audit: false
       lint: true
