@@ -56,7 +56,8 @@ jobs:
     uses: ./.github/workflows/checks.yaml
     with:
       source_branch: ${{ github.event.pull_request.head.sha }}
-      pre_commit: false
+      pre_commit: true
+      pre_commit_command: "nix develop .#pre-commit --command pre-commit run --all-files"
       deps: false
       audit: false
       lint: true
