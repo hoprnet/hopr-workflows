@@ -113,6 +113,7 @@ The release process follows a two-branch model: `main` for active development an
 - `file`: The filepath to the version file (e.g. `Cargo.toml` or `package.json`).
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
 - `release_tag_prefix`: Prefix for the release tag and release name (Default: `v`).
+- `target_commitish`: Branch or SHA the release tag is created from. When empty (default), GitHub creates the tag on the repository's default branch, so set it to the dispatching branch when releasing from a `release/<MAJOR>.<MINOR>` branch.
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
 - `nix_path`: Nix path to use. Default value: `nixpkgs=channel:nixos-26.05`.
