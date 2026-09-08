@@ -70,7 +70,7 @@
                 name = "action-validator";
                 # actionlint only covers workflows; this catches malformed composite action metadata
                 entry = "${pkgs.action-validator}/bin/action-validator";
-                files = "(^\\.github/workflows/.*|(^|/)action)\\.ya?ml$";
+                files = "(^|/)action\\.ya?ml$";
                 language = "system";
                 pass_filenames = true;
               };
@@ -113,6 +113,11 @@
               ${pre-commit-check.shellHook}
               export GITHUB_TOKEN="$(gh auth token 2>/dev/null || true)"
             '';
+          };
+          # Runs hooks outside the nix sandbox so network-dependent ones (pinact, renovate) are enforced
+          devShells.pre-commit = pkgs.mkShell {
+            buildInputs = pre-commit-check.enabledPackages;
+            shellHook = pre-commit-check.shellHook;
           };
           apps.cleanup-docker-images = flake-utils.lib.mkApp {
             drv = pkgs.writeShellScriptBin "cleanup-docker-images" ''
