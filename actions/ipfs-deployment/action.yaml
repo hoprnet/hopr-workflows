@@ -37,7 +37,7 @@ inputs:
   pin_timeout_ms:
     description: How long to wait for the Pinata pin-by-CID request to confirm before continuing with a warning, in milliseconds, must be >= 10000. Only used when both providers are configured
     required: false
-    default: "600000"
+    default: "600000" # 10 minutes
   health_check:
     description: Run post-deploy gateway health checks before writing the job summary
     required: false
