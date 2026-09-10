@@ -12,6 +12,7 @@
     "@ipld/car": "^5.4.0",
     "blockstore-core": "^5.0.4",
     "ipfs-unixfs-importer": "^15.3.2",
+    "multiformats": "^14.0.5",
     "tus-js-client": "^4.3.1"
   }
 }
