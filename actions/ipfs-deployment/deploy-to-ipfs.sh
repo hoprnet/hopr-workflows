@@ -3,6 +3,9 @@
 # IPFS Deployment (Pinata and/or Filebase) with Environment Support
 # Usage: ./deploy-to-ipfs.sh <environment> <build_dir> <project_name> <timestamp> <branch> <commit_hash>
 #
+# Invoked by action.yaml, which validates every argument and credential
+# combination beforehand; those checks are not repeated here.
+#
 # The build directory is packed once into a single-root CAR file (UnixFS,
 # CIDv1), so the root CID is known before any provider is contacted and every
 # provider serves the exact same CID.
@@ -63,53 +66,24 @@ log_success() {
   log_with_color "$GREEN" "$@"
 }
 
-# Parse arguments
-ENVIRONMENT=${1:-}
-BUILD_DIR=${2:-}
-PROJECT_NAME=${3:-}
-TIMESTAMP=${4:-}
+# Parse arguments. The first four are required; set -u reports a missing one.
+ENVIRONMENT=$1
+BUILD_DIR=$2
+PROJECT_NAME=$3
+TIMESTAMP=$4
 BRANCH=${5:-unknown}
 COMMIT_HASH=${6:-unknown}
 
-# Validate arguments
-if [ -z "$ENVIRONMENT" ] || [ -z "$BUILD_DIR" ] || [ -z "$PROJECT_NAME" ] || [ -z "$TIMESTAMP" ]; then
-  log_error "❌ Usage: $0 <environment> <build_dir> <project_name> <timestamp> [branch] [commit_hash]"
-  log_warn "   environment: name slug (e.g. dev, prod, staging)"
-  log_warn "   build_dir: path to build directory"
-  log_warn "   project_name: name of the project"
-  log_warn "   timestamp: deployment timestamp"
-  exit 1
-fi
-
-# environment is used as a path segment, so keep it a safe slug
-if ! echo "$ENVIRONMENT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
-  log_error "❌ Environment must match ^[a-zA-Z0-9_-]+\$ (got: $ENVIRONMENT)"
-  exit 1
-fi
-
-# Check build directory exists
-if [ ! -d "$BUILD_DIR" ]; then
-  log_error "❌ Build directory '$BUILD_DIR' not found"
-  exit 1
-fi
-
-# Provider detection — the workflow validates this too, but keep the checks
-# here so the script fails safely when run outside the workflow.
+# Provider selection. action.yaml validates the credential combinations before
+# this script runs (see its "Detect providers" step), so they are not re-checked
+# here — these flags only select the upload path and the gateway list below.
 PINATA_ENABLED=false
 FILEBASE_ENABLED=false
 if [ -n "${PINATA_JWT:-}" ]; then
   PINATA_ENABLED=true
 fi
-if [ -n "${FILEBASE_ACCESS_KEY:-}" ] || [ -n "${FILEBASE_SECRET_KEY:-}" ] || [ -n "${FILEBASE_BUCKET:-}" ]; then
-  if [ -z "${FILEBASE_ACCESS_KEY:-}" ] || [ -z "${FILEBASE_SECRET_KEY:-}" ] || [ -z "${FILEBASE_BUCKET:-}" ]; then
-    log_error "❌ Partial Filebase configuration: FILEBASE_ACCESS_KEY, FILEBASE_SECRET_KEY and FILEBASE_BUCKET must all be set"
-    exit 1
-  fi
+if [ -n "${FILEBASE_ACCESS_KEY:-}" ] && [ -n "${FILEBASE_SECRET_KEY:-}" ] && [ -n "${FILEBASE_BUCKET:-}" ]; then
   FILEBASE_ENABLED=true
-fi
-if ! $PINATA_ENABLED && ! $FILEBASE_ENABLED; then
-  log_error "❌ No IPFS provider configured: set PINATA_JWT and/or FILEBASE_ACCESS_KEY+FILEBASE_SECRET_KEY+FILEBASE_BUCKET"
-  exit 1
 fi
 
 # Configuration
