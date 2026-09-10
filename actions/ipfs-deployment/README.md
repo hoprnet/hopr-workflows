@@ -104,6 +104,7 @@ Deploy to Filebase and pin the CID on Pinata as a backup, then propose the new c
 | Name                         | Required | Default  | Description                                                                                            |
 | ---------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------ |
 | `environment_name`           | Yes      | —        | Deployment environment name slug, must match `^[a-zA-Z0-9_-]+$` (e.g. `dev`, `staging`, `prod`)        |
+| `environment`                | No       | `""`     | Deprecated alias for `environment_name`; kept for backward compatibility                               |
 | `project_name`               | Yes      | —        | Project name used for pin/upload metadata                                                              |
 | `build_dir`                  | Yes      | —        | Directory containing the built site to deploy, relative to the workspace                               |
 | `build_artifact_name`        | No       | `""`     | GitHub Actions artifact (uploaded earlier in the same run) to download into `build_dir` first          |

@@ -96,6 +96,11 @@ runs:
           exit 1
         fi
 
+        if [ -z "$ENVIRONMENT" ]; then
+          echo "❌ Error: one of environment_name or environment is required"
+          exit 1
+        fi
+
         # environment is used as a path segment, so keep it a safe slug
         if ! echo "$ENVIRONMENT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
           echo "❌ Error: environment_name must match ^[a-zA-Z0-9_-]+$, got: $ENVIRONMENT"
