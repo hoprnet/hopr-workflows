@@ -31,7 +31,7 @@ jobs:
       - run: npm ci && npm run build
       - uses: hoprnet/hopr-workflows/actions/ipfs-deployment@ipfs-deployment-v1
         with:
-          environment: prod
+          environment_name: prod
           project_name: my-app
           build_dir: out
           pinata_jwt: ${{ secrets.PINATA_JWT }}
@@ -59,7 +59,7 @@ jobs:
     steps:
       - uses: hoprnet/hopr-workflows/actions/ipfs-deployment@ipfs-deployment-v1
         with:
-          environment: prod
+          environment_name: prod
           project_name: my-app
           build_artifact_name: site-build
           build_dir: out
@@ -71,7 +71,7 @@ Deploy to Filebase only:
 ```yaml
 - uses: hoprnet/hopr-workflows/actions/ipfs-deployment@ipfs-deployment-v1
   with:
-    environment: prod
+    environment_name: prod
     project_name: my-app
     build_dir: out
     filebase_access_key: ${{ secrets.FILEBASE_ACCESS_KEY }}
@@ -85,7 +85,7 @@ Deploy to Filebase and pin the CID on Pinata as a backup, then propose the new c
 - uses: hoprnet/hopr-workflows/actions/ipfs-deployment@ipfs-deployment-v1
   id: deploy
   with:
-    environment: prod
+    environment_name: prod
     project_name: my-app
     build_dir: out
     pinata_jwt: ${{ secrets.PINATA_JWT }}
@@ -103,7 +103,7 @@ Deploy to Filebase and pin the CID on Pinata as a backup, then propose the new c
 
 | Name                         | Required | Default  | Description                                                                                            |
 | ---------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------ |
-| `environment`                | Yes      | —        | Deployment environment name slug, must match `^[a-zA-Z0-9_-]+$` (e.g. `dev`, `staging`, `prod`)        |
+| `environment_name`           | Yes      | —        | Deployment environment name slug, must match `^[a-zA-Z0-9_-]+$` (e.g. `dev`, `staging`, `prod`)        |
 | `project_name`               | Yes      | —        | Project name used for pin/upload metadata                                                              |
 | `build_dir`                  | Yes      | —        | Directory containing the built site to deploy, relative to the workspace                               |
 | `build_artifact_name`        | No       | `""`     | GitHub Actions artifact (uploaded earlier in the same run) to download into `build_dir` first          |
@@ -118,6 +118,8 @@ Deploy to Filebase and pin the CID on Pinata as a backup, then propose the new c
 | `retention_days`             | No       | `30`     | Retention in days for the deployment metadata artifact                                                 |
 
 At least one provider must be fully configured: `pinata_jwt`, and/or both Filebase keys together with `filebase_bucket`. Partial Filebase configuration (one key missing, or keys without a bucket) fails validation.
+
+`environment` remains accepted as a deprecated alias for `environment_name` so existing callers keep working.
 
 Pass the credential inputs from secrets (`pinata_jwt: ${{ secrets.PINATA_JWT }}`) so GitHub's log masking applies. Store them as organization secrets (**Settings → Secrets and variables → Actions**) restricted to the repositories that deploy.
 

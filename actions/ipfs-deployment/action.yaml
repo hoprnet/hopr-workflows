@@ -1,9 +1,14 @@
 name: IPFS Deployment
 description: Deploy a prebuilt static site to IPFS via Pinata and/or Filebase, selected by which credentials are passed, with gateway health checks and a CID summary. With both providers configured the CAR is uploaded to Filebase and the CID is then pinned on Pinata (pin-by-CID, no second upload)
 inputs:
-  environment:
+  environment_name:
     description: Deployment environment name slug, must match ^[a-zA-Z0-9_-]+$ (e.g. dev, staging, prod)
-    required: true
+    required: false
+    default: ""
+  environment:
+    description: Deprecated alias for environment_name
+    required: false
+    default: ""
   project_name:
     description: Project name used for pin/upload metadata
     required: true
@@ -73,17 +78,27 @@ runs:
         name: ${{ inputs.build_artifact_name }}
         path: ${{ inputs.build_dir }}
     - name: Validate inputs
+      id: validate
       shell: bash
       env:
-        ENVIRONMENT: ${{ inputs.environment }}
+        ENVIRONMENT_NAME: ${{ inputs.environment_name }}
+        LEGACY_ENVIRONMENT: ${{ inputs.environment }}
         PROJECT_NAME: ${{ inputs.project_name }}
         BUILD_DIR: ${{ inputs.build_dir }}
         UPLOAD_TIMEOUT_MS: ${{ inputs.upload_timeout_ms }}
         PIN_TIMEOUT_MS: ${{ inputs.pin_timeout_ms }}
       run: |
+        ENVIRONMENT="$ENVIRONMENT_NAME"
+        if [ -z "$ENVIRONMENT" ]; then
+          ENVIRONMENT="$LEGACY_ENVIRONMENT"
+        elif [ -n "$LEGACY_ENVIRONMENT" ] && [ "$LEGACY_ENVIRONMENT" != "$ENVIRONMENT" ]; then
+          echo "❌ Error: environment_name and environment must match when both are set"
+          exit 1
+        fi
+
         # environment is used as a path segment, so keep it a safe slug
         if ! echo "$ENVIRONMENT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
-          echo "❌ Error: environment must match ^[a-zA-Z0-9_-]+$, got: $ENVIRONMENT"
+          echo "❌ Error: environment_name must match ^[a-zA-Z0-9_-]+$, got: $ENVIRONMENT"
           exit 1
         fi
 
@@ -124,6 +139,7 @@ runs:
         fi
 
         echo "✅ Input validation passed ($FILE_COUNT files to deploy)"
+        echo "environment_name=$ENVIRONMENT" >>"$GITHUB_OUTPUT"
     - name: Detect providers
       id: providers
       shell: bash
@@ -189,7 +205,7 @@ runs:
         UPLOAD_TIMEOUT_MS: ${{ inputs.upload_timeout_ms }}
         PIN_TIMEOUT_MS: ${{ inputs.pin_timeout_ms }}
         SCRIPTS_DIR: ${{ github.action_path }}
-        ENVIRONMENT: ${{ inputs.environment }}
+        ENVIRONMENT: ${{ steps.validate.outputs.environment_name }}
         BUILD_DIR: ${{ inputs.build_dir }}
         PROJECT_NAME: ${{ inputs.project_name }}
         BRANCH: ${{ github.ref_name }}
@@ -207,7 +223,7 @@ runs:
       id: deployment
       shell: bash
       env:
-        ENVIRONMENT: ${{ inputs.environment }}
+        ENVIRONMENT: ${{ steps.validate.outputs.environment_name }}
       run: |
         FILE="deployments/$ENVIRONMENT/latest.json"
         if [ ! -f "$FILE" ]; then
@@ -263,9 +279,9 @@ runs:
       if: ${{ always() && inputs.upload_deployment_artifact == 'true' }}
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
-        name: deployment-${{ inputs.environment }}-${{ github.sha }}
+        name: deployment-${{ steps.validate.outputs.environment_name }}-${{ github.sha }}
         path: |
-          deployments/${{ inputs.environment }}/
+          deployments/${{ steps.validate.outputs.environment_name }}/
           deployments/logs/
         retention-days: ${{ inputs.retention_days }}
         if-no-files-found: ignore
@@ -273,7 +289,7 @@ runs:
       if: ${{ success() && inputs.health_check == 'true' }}
       shell: bash
       env:
-        ENVIRONMENT: ${{ inputs.environment }}
+        ENVIRONMENT: ${{ steps.validate.outputs.environment_name }}
         GATEWAYS: ${{ steps.deployment.outputs.gateways }}
       run: |
         echo "🏥 Checking gateway accessibility for $ENVIRONMENT deployment..."
@@ -312,7 +328,7 @@ runs:
       if: success()
       shell: bash
       env:
-        ENVIRONMENT: ${{ inputs.environment }}
+        ENVIRONMENT: ${{ steps.validate.outputs.environment_name }}
         PROJECT_NAME: ${{ inputs.project_name }}
         BRANCH: ${{ github.ref_name }}
         COMMIT_SHA: ${{ github.sha }}
