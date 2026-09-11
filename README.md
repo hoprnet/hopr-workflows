@@ -7,6 +7,7 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 - [Bump Version](./actions/bump-version/README.md): Bumps project version and commit.
 - [Download Artifact Registry](./actions/download-artifact-registry/README.md): Downloads artifacts from Google Artifact Registry.
 - [Generate Release Notes](./actions/generate-release-notes/README.md): Generate Release notes
+- [IPFS Deployment](./actions/ipfs-deployment/README.md): Deploys a prebuilt static site to IPFS via Pinata and/or Filebase, with gateway health checks and a CID summary.
 - [Multi Architecture Manifest](./actions/multi-arch-manifest/README.md): Publishes a multi-arch docker manifest
 - [Publish Rust Docs](./actions/publish-rust-docs/README.md): Publishes rust docs in GitHub Pages
 - [Release Version](./actions/release-version/README.md): Creates a GitHub release
