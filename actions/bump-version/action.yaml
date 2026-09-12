@@ -121,5 +121,5 @@ runs:
         new_branch: ${{ github.ref_name }}
         message: "ci: Bump to version ${{ steps.versions.outputs.bump_version }}"
         pathspec_error_handling: ignore
-        default_author: user_info
+        default_author: github_actor
         github_token: ${{ inputs.github_token }}
