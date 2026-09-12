@@ -119,7 +119,7 @@ jobs:
           nix_path: ${{ inputs.nix_path }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@2855f448149188cd9c4da41f0a6cbdf4f3d664a1 # set-build-version-v2
+        uses: hoprnet/hopr-workflows/actions/set-build-version@25898d13dab1b3fbf4c33c394e7c581578a2b0d7 # set-build-version-v2.1.0
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
