@@ -18,7 +18,7 @@ inputs:
     required: false
     default: "v"
   target_commitish:
-    description: Branch or SHA the release tag is created from. Empty lets GitHub default to the repository's default branch.
+    description: Branch or SHA the release tag is created from. Defaults to source_branch when unset.
     required: false
     default: ''
   draft:
@@ -186,7 +186,7 @@ runs:
       uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
       with:
         tag_name: "${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
-        target_commitish: ${{ inputs.target_commitish }}
+        target_commitish: ${{ inputs.target_commitish || inputs.source_branch }}
         prerelease: ${{ steps.version.outputs.prerelease }}
         name: "${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
         body_path: ${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}
