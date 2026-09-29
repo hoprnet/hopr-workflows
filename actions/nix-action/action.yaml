@@ -43,7 +43,7 @@ runs:
         persist-credentials: ${{ inputs.persist_credentials }}
         ref: ${{ inputs.source_branch }}
     - name: Setup Nix
-      uses: hoprnet/hopr-workflows/actions/setup-nix@ade4bbd75f7204255c61d19c23f67d3da221e7d2 # setup-nix-v2.0.2
+      uses: hoprnet/hopr-workflows/actions/setup-nix@98ff26b295ecc80f052498d7637c9730bfef185d # setup-nix-v2.1.3
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
         cachix_auth_token: ${{ inputs.cachix_auth_token }}
