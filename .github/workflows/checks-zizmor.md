@@ -20,12 +20,14 @@ jobs:
 
 ## Inputs
 
-| Name             | Required | Default                                                                    | Description                |
-| ---------------- | -------- | -------------------------------------------------------------------------- | -------------------------- |
-| `source_branch`  | Yes      | —                                                                          | Source branch to check out |
-| `runner`         | No       | `depot-ubuntu-22.04`                                                       | Runner for the job         |
-| `zizmor_command` | No       | `nix develop -L .#ci -c bash -c "zizmor --format sarif . > results.sarif"` | Command to run zizmor      |
-| `nix_path`       | No       | `nixpkgs=channel:nixos-26.05`                                              | Nix path to use            |
+| Name                      | Required | Default                                                                    | Description                                                                           |
+| ------------------------- | -------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `source_branch`           | Yes      | —                                                                          | Source branch to check out                                                            |
+| `cachix_cache_name`       | No       | `<repository name>`                                                        | Cachix cache name                                                                     |
+| `cachix_extra_pull_names` | No       | —                                                                          | Comma-separated list of additional Cachix caches to pull (substitute) from, read-only |
+| `runner`                  | No       | `depot-ubuntu-22.04`                                                       | Runner for the job                                                                    |
+| `zizmor_command`          | No       | `nix develop -L .#ci -c bash -c "zizmor --format sarif . > results.sarif"` | Command to run zizmor                                                                 |
+| `nix_path`                | No       | `nixpkgs=channel:nixos-26.05`                                              | Nix path to use                                                                       |
 
 ## Secrets
 

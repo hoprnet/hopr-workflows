@@ -16,6 +16,10 @@ on:
         required: false
         type: string
         description: Cachix cache name. Defaults to the caller repository name (passed to setup-nix).
+      cachix_extra_pull_names:
+        required: false
+        type: string
+        description: Comma-separated list of additional Cachix caches to pull (substitute) from, read-only
       pre_commit:
         required: false
         type: boolean
@@ -123,6 +127,7 @@ jobs:
         with:
           source_branch: ${{ inputs.source_branch }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           command: ${{ matrix.command }}
           disable_sudo: ${{ inputs.disable_sudo }}

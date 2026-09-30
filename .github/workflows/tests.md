@@ -44,28 +44,29 @@ jobs:
 
 ## Inputs
 
-| Name                           | Required | Default                           | Description                                                                     |
-| ------------------------------ | -------- | --------------------------------- | ------------------------------------------------------------------------------- |
-| `source_branch`                | Yes      | —                                 | Source branch to check out                                                      |
-| `cachix_cache_name`            | No       | `<repository name>`               | Cachix cache name                                                               |
-| `enable_unit_tests`            | No       | `true`                            | Enable unit tests                                                               |
-| `enable_integration_tests`     | No       | `false`                           | Enable integration tests                                                        |
-| `enable_nightly_tests`         | No       | `false`                           | Enable nightly tests                                                            |
-| `enable_benchmarks`            | No       | `false`                           | Enable benchmarks                                                               |
-| `enable_unit_coverage`         | No       | `false`                           | Enable unit coverage report                                                     |
-| `enable_integration_coverage`  | No       | `false`                           | Enable integration coverage report                                              |
-| `unit_test_command`            | No       | `nix build -L .#test-unit`        | Command for unit tests                                                          |
-| `integration_test_command`     | No       | `nix build -L .#test-integration` | Command for integration tests                                                   |
-| `nightly_test_command`         | No       | `nix build -L .#test-nightly`     | Command for nightly tests                                                       |
-| `benchmark_command`            | No       | `nix build .#bench-build`         | Command for benchmarks                                                          |
-| `unit_coverage_command`        | No       | `nix run .#coverage-unit`         | Command for unit coverage                                                       |
-| `integration_coverage_command` | No       | `nix run .#coverage-integration`  | Command for integration coverage                                                |
-| `runner_unit`                  | No       | `depot-ubuntu-22.04`              | Runner for unit tests, nightly tests, benchmarks, and unit coverage             |
-| `runner_integration`           | No       | `""`                              | Runner for integration tests and coverage. Falls back to `runner_unit` if empty |
-| `test_timeout`                 | No       | `60`                              | Timeout in minutes for test jobs                                                |
-| `benchmark_timeout`            | No       | `20`                              | Timeout in minutes for benchmark job                                            |
-| `coverage_timeout`             | No       | `60`                              | Timeout in minutes for coverage jobs                                            |
-| `nix_path`                     | No       | `nixpkgs=channel:nixos-26.05`     | Nix path to use                                                                 |
+| Name                           | Required | Default                           | Description                                                                           |
+| ------------------------------ | -------- | --------------------------------- | ------------------------------------------------------------------------------------- |
+| `source_branch`                | Yes      | —                                 | Source branch to check out                                                            |
+| `cachix_cache_name`            | No       | `<repository name>`               | Cachix cache name                                                                     |
+| `cachix_extra_pull_names`      | No       | —                                 | Comma-separated list of additional Cachix caches to pull (substitute) from, read-only |
+| `enable_unit_tests`            | No       | `true`                            | Enable unit tests                                                                     |
+| `enable_integration_tests`     | No       | `false`                           | Enable integration tests                                                              |
+| `enable_nightly_tests`         | No       | `false`                           | Enable nightly tests                                                                  |
+| `enable_benchmarks`            | No       | `false`                           | Enable benchmarks                                                                     |
+| `enable_unit_coverage`         | No       | `false`                           | Enable unit coverage report                                                           |
+| `enable_integration_coverage`  | No       | `false`                           | Enable integration coverage report                                                    |
+| `unit_test_command`            | No       | `nix build -L .#test-unit`        | Command for unit tests                                                                |
+| `integration_test_command`     | No       | `nix build -L .#test-integration` | Command for integration tests                                                         |
+| `nightly_test_command`         | No       | `nix build -L .#test-nightly`     | Command for nightly tests                                                             |
+| `benchmark_command`            | No       | `nix build .#bench-build`         | Command for benchmarks                                                                |
+| `unit_coverage_command`        | No       | `nix run .#coverage-unit`         | Command for unit coverage                                                             |
+| `integration_coverage_command` | No       | `nix run .#coverage-integration`  | Command for integration coverage                                                      |
+| `runner_unit`                  | No       | `depot-ubuntu-22.04`              | Runner for unit tests, nightly tests, benchmarks, and unit coverage                   |
+| `runner_integration`           | No       | `""`                              | Runner for integration tests and coverage. Falls back to `runner_unit` if empty       |
+| `test_timeout`                 | No       | `60`                              | Timeout in minutes for test jobs                                                      |
+| `benchmark_timeout`            | No       | `20`                              | Timeout in minutes for benchmark job                                                  |
+| `coverage_timeout`             | No       | `60`                              | Timeout in minutes for coverage jobs                                                  |
+| `nix_path`                     | No       | `nixpkgs=channel:nixos-26.05`     | Nix path to use                                                                       |
 
 ## Secrets
 
