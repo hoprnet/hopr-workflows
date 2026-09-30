@@ -21,6 +21,7 @@ None
 
 - `cachix_cache_name`: Cachix cache name. Default value. GitHub repository name
 - `cachix_auth_token`: Cachix authentication token
+- `cachix_extra_pull_names`: Comma-separated list of additional Cachix caches to pull (substitute) from, read-only
 - `nix_path`: Nix path to use. Default value: "nixpkgs=channel:nixos-26.05"
 
 ## Outputs

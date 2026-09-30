@@ -13,6 +13,9 @@ inputs:
   cachix_cache_name:
     description: Cachix cache name. Empty defaults to the caller repository name (passed to setup-nix)
     required: false
+  cachix_extra_pull_names:
+    required: false
+    description: Comma-separated list of additional Cachix caches to pull (substitute) from, read-only
   cachix_auth_token:
     description: Cachix authentication token (passed to setup-nix)
     required: false
@@ -46,6 +49,7 @@ runs:
       uses: hoprnet/hopr-workflows/actions/setup-nix@98ff26b295ecc80f052498d7637c9730bfef185d # setup-nix-v2.1.3
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
+        cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
         cachix_auth_token: ${{ inputs.cachix_auth_token }}
         nix_path: ${{ inputs.nix_path }}
     - name: Run command

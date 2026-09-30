@@ -7,6 +7,9 @@ inputs:
   cachix_auth_token:
     description: Cachix authentication token
     required: false
+  cachix_extra_pull_names:
+    description: Comma-separated list of additional Cachix caches to pull (substitute) from, read-only
+    required: false
   nix_path:
     description: Nix path to use
     required: false
@@ -40,11 +43,12 @@ runs:
           echo "cachix_cache_name=${{ inputs.cachix_cache_name }}" | tee -a $GITHUB_OUTPUT
         fi
     - name: Use Nix Cache
-      if: steps.check-nix.outputs.installed != 'true' && inputs.cachix_auth_token != ''
+      if: steps.check-nix.outputs.installed != 'true'
       uses: cachix/cachix-action@1eb2ef646ac0255473d23a5907ad7b04ce94065c # v17
       continue-on-error: true # Allow failure if cachix cache/token is unavailable
       with:
         name: ${{ steps.cache-name.outputs.cachix_cache_name }}
         authToken: ${{ inputs.cachix_auth_token }}
+        extraPullNames: ${{ inputs.cachix_extra_pull_names }}
       env:
         USER: runner
