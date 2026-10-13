@@ -1,0 +1,18 @@
+{
+  "name": "hopr-workflows-ipfs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Uploader dependencies for the IPFS deployment action (Pinata and Filebase).",
+  "license": "GPL-3.0",
+  "packageManager": "pnpm@9.0.0",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@aws-sdk/lib-storage": "^3.750.0",
+    "@ipld/car": "^5.4.0",
+    "blockstore-core": "^5.0.4",
+    "ipfs-unixfs-importer": "^15.3.2",
+    "multiformats": "^14.0.5",
+    "tus-js-client": "^4.3.1"
+  }
+}

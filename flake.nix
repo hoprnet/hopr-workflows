@@ -65,21 +65,45 @@
               actionlint = {
                 enable = true;
               };
+              action-validator = {
+                enable = true;
+                name = "action-validator";
+                # actionlint only covers workflows; this catches malformed composite action metadata
+                entry = "${pkgs.action-validator}/bin/action-validator";
+                files = "(^|/)action\\.ya?ml$";
+                language = "system";
+                pass_filenames = true;
+              };
               pinact = {
                 enable = true;
                 name = "pinact";
                 description = "Check GitHub Action refs are SHA-pinned and resolvable";
-                # Exclude self-referencing composite action paths that pinact cannot resolve
-                entry = "${pkgs.pinact}/bin/pinact run --check --exclude '^hoprnet/hopr-workflows'";
+                # Resolving refs needs the GitHub API, unreachable from the nix build sandbox
+                entry = "${pkgs.writeShellScript "pinact-check" ''
+                  if [ -n "''${NIX_BUILD_TOP:-}" ]; then exit 0; fi
+                  # Exclude self-referencing composite action paths that pinact cannot resolve
+                  exec ${pkgs.pinact}/bin/pinact run --check --exclude '^hoprnet/hopr-workflows'
+                ''}";
                 files = "\\.ya?ml$";
                 language = "system";
                 pass_filenames = false;
+              };
+              dependabot-validator = {
+                enable = true;
+                name = "Dependabot config validator";
+                entry = "${pkgs.check-jsonschema}/bin/check-jsonschema --builtin-schema vendor.dependabot";
+                files = "\\.github/dependabot\\.yml$";
+                language = "system";
+                pass_filenames = true;
               };
             };
             tools = pkgs;
           };
         in
         {
+          # Exposed so CI can run the same hook set as the devShell installs
+          packages.pre-commit-check = pre-commit-check;
+
           # Checks that run with `nix flake check` (and `nix run .#check`).
           checks.multi-arch-manifest =
             pkgs.runCommand "multi-arch-manifest-test"
@@ -105,6 +129,11 @@
               ${pre-commit-check.shellHook}
               export GITHUB_TOKEN="$(gh auth token 2>/dev/null || true)"
             '';
+          };
+          # Runs hooks outside the nix sandbox so network-dependent ones (pinact, renovate) are enforced
+          devShells.pre-commit = pkgs.mkShell {
+            buildInputs = pre-commit-check.enabledPackages;
+            shellHook = pre-commit-check.shellHook;
           };
           apps.cleanup-docker-images = flake-utils.lib.mkApp {
             drv = pkgs.writeShellScriptBin "cleanup-docker-images" ''

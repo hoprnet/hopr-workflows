@@ -113,8 +113,10 @@ The release process follows a two-branch model: `main` for active development an
 - `file`: The filepath to the version file (e.g. `Cargo.toml` or `package.json`).
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
 - `release_tag_prefix`: Prefix for the release tag and release name (Default: `v`).
+- `target_commitish`: Optional branch or SHA the release tag is created from. When empty (default), the action uses `source_branch`, preventing GitHub from defaulting the tag to the repository's default branch.
 - `cachix_cache_name` (Required): The name of the Cachix cache to use.
 - `cachix_auth_token` (Required): Auth token for Cachix cache.
+- `cachix_extra_pull_names` (Optional): Comma-separated list of additional Cachix caches to pull (substitute) from, read-only
 - `nix_path`: Nix path to use. Default value: `nixpkgs=channel:nixos-26.05`.
 - `zulip_email`: Email of the user used to send Zulip notifications.
 - `zulip_api_key`: Api key of the zulip user.

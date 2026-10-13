@@ -17,6 +17,10 @@ inputs:
     description: Prefix for the release tag
     required: false
     default: "v"
+  target_commitish:
+    description: Branch or SHA the release tag is created from. Defaults to source_branch when unset.
+    required: false
+    default: ''
   draft:
     description: Whether to create a draft release
     required: false
@@ -36,6 +40,9 @@ inputs:
   cachix_cache_name:
     required: false
     description: "Cachix cache name to use"
+  cachix_extra_pull_names:
+    required: false
+    description: Comma-separated list of additional Cachix caches to pull (substitute) from, read-only
   cachix_auth_token:
     required: true
     description: "Cachix authentication token"
@@ -111,7 +118,7 @@ runs:
         clean: ${{ inputs.release_notes_file == '' }}
     - name: Get version info
       id: version
-      uses: hoprnet/hopr-workflows/actions/set-build-version@2855f448149188cd9c4da41f0a6cbdf4f3d664a1 # set-build-version-v2
+      uses: hoprnet/hopr-workflows/actions/set-build-version@25898d13dab1b3fbf4c33c394e7c581578a2b0d7 # set-build-version-v2.1.0
       with:
         file: "${{ inputs.file }}"
         version_type: release
@@ -128,6 +135,7 @@ runs:
       uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
+        cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
         cachix_auth_token: "${{ inputs.cachix_auth_token }}"
         nix_path: ${{ inputs.nix_path }}
     - name: Download binary files
@@ -182,6 +190,7 @@ runs:
       uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
       with:
         tag_name: "${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
+        target_commitish: ${{ inputs.target_commitish || inputs.source_branch }}
         prerelease: ${{ steps.version.outputs.prerelease }}
         name: "${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
         body_path: ${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}
