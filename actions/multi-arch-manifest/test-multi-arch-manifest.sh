@@ -11,14 +11,14 @@ workdir="$(mktemp -d)"
 trap 'rm -rf "$workdir"' EXIT
 
 # A `docker` stub recording invocations. MISSING (newline-separated image refs)
-# makes `manifest inspect` report those members as absent.
+# makes `manifest inspect` report those members as absent. POSIX /bin/sh so it
+# execs both locally and inside the Nix build sandbox (no /usr/bin/env there).
 cat >"${workdir}/docker" <<'STUB'
-#!/usr/bin/env bash
+#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "inspect" ]; then
-  img="$3"
-  while IFS= read -r missing; do
-    [ -n "$missing" ] && [ "$missing" = "$img" ] && exit 1
-  done <<< "${MISSING:-}"
+  if [ -n "${MISSING:-}" ] && printf '%s\n' "${MISSING}" | grep -Fxq "$3"; then
+    exit 1
+  fi
   exit 0
 fi
 printf '%s\n' "$*" >> "${CAPTURE}"

@@ -80,6 +80,21 @@
           };
         in
         {
+          # Checks that run with `nix flake check` (and `nix run .#check`).
+          checks.multi-arch-manifest =
+            pkgs.runCommand "multi-arch-manifest-test"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.coreutils
+                  pkgs.gnugrep
+                ];
+              }
+              ''
+                bash ${./actions/multi-arch-manifest}/test-multi-arch-manifest.sh
+                touch $out
+              '';
+
           devShells.default = pkgs.mkShell {
             buildInputs = [
               pythonEnv
