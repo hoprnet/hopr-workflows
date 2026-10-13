@@ -89,15 +89,20 @@ Each entry in the JSON array must include:
 ## Tags
 
 On every build the multi-arch manifest is pushed under the full version
-(`docker_build_version`). A stable `release` build (not a `-rc` pre-release) also
-pushes floating manifests for the bare major and the major.minor, pointing at the same
-platform images, so consumers can pin to a line and pick up patches:
+(`docker_build_version`). A stable `release` build (a clean `X.Y.Z`, not a
+pre-release such as `-rc.N` or `-beta.N`) also pushes floating manifests for the
+bare major and the major.minor, pointing at the same platform images, so consumers
+can pin to a line and pick up patches:
 
-| Version type           | Tags pushed (per registry)            |
+| Version type           | Version tags pushed (per registry)    |
 | ---------------------- | ------------------------------------- |
 | `commit` / `pr`        | full version only                     |
 | `release` (e.g. 5.0.1) | `5.0.1`, `5.0`, `5`                   |
 | `release` pre-release  | full version only (e.g. `5.0.1-rc.1`) |
+
+Separately, the `manifest` job also maintains tracking (non-version) tags: `edge`
+on deploy-commit builds, `latest` / `latest-main` / `latest-testing` for PR builds,
+and `release-main` / `release-testing` for releases.
 
 ## Outputs
 

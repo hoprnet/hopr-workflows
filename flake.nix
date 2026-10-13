@@ -105,7 +105,7 @@
           # Exposed so CI can run the same hook set as the devShell installs
           packages.pre-commit-check = pre-commit-check;
 
-          # Checks that run with `nix flake check` (and `nix run .#check`).
+          # Check that runs with `nix flake check`.
           checks.multi-arch-manifest =
             pkgs.runCommand "multi-arch-manifest-test"
               {
