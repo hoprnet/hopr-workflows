@@ -120,6 +120,7 @@ jobs:
     outputs:
       docker_build_version: ${{ steps.version.outputs.docker_build_version }}
       docker_debug_version: ${{ steps.version.outputs.docker_debug_version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
       publish_docker_hub: ${{ steps.docker_hub.outputs.publish_docker_hub }}
     steps:
       - name: Harden Runner
@@ -276,6 +277,34 @@ jobs:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_build_version }}
+      # Floating release tags: point bare major (e.g. 5) and major.minor (e.g. 5.0) at the
+      # just-built full-version platform images. Stable releases only; never for a pre-release.
+      - name: Compute floating release tags
+        id: floating
+        if: inputs.version_type == 'release' && needs.build.outputs.prerelease == 'false'
+        run: |
+          major="${BUILD_VERSION%%.*}"
+          minor="${BUILD_VERSION%.*}"
+          echo "major=${major}" | tee -a "$GITHUB_OUTPUT"
+          echo "minor=${minor}" | tee -a "$GITHUB_OUTPUT"
+        env:
+          BUILD_VERSION: ${{ needs.build.outputs.docker_build_version }}
+      - name: Create multi-arch docker manifest - major ${{ steps.floating.outputs.major }}
+        if: inputs.version_type == 'release' && needs.build.outputs.prerelease == 'false'
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: ${{ steps.floating.outputs.major }}
+          source_version: ${{ needs.build.outputs.docker_build_version }}
+      - name: Create multi-arch docker manifest - major.minor ${{ steps.floating.outputs.minor }}
+        if: inputs.version_type == 'release' && needs.build.outputs.prerelease == 'false'
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_gcp_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: ${{ steps.floating.outputs.minor }}
+          source_version: ${{ needs.build.outputs.docker_build_version }}
       - name: Create debug multi-arch docker manifest - ${{ needs.build.outputs.docker_debug_version }}
         if: needs.build.outputs.docker_debug_version != ''
         uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
@@ -339,6 +368,24 @@ jobs:
           registry: ${{ inputs.docker_hub_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_build_version }}
+      # publish_docker_hub is only true on a release, so the `floating` step above has
+      # already computed these tags; reuse its outputs here.
+      - name: Create multi-arch docker manifest - Docker Hub - major ${{ steps.floating.outputs.major }}
+        if: steps.docker_hub.outputs.publish_docker_hub == 'true' && needs.build.outputs.prerelease == 'false'
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_hub_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: ${{ steps.floating.outputs.major }}
+          source_version: ${{ needs.build.outputs.docker_build_version }}
+      - name: Create multi-arch docker manifest - Docker Hub - major.minor ${{ steps.floating.outputs.minor }}
+        if: steps.docker_hub.outputs.publish_docker_hub == 'true' && needs.build.outputs.prerelease == 'false'
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@15db9fb5571957317b77567abef997b1554f2fbb # multi-arch-manifest-v1
+        with:
+          registry: ${{ inputs.docker_hub_registry }}
+          image: ${{ inputs.docker_image_name }}
+          version: ${{ steps.floating.outputs.minor }}
+          source_version: ${{ needs.build.outputs.docker_build_version }}
   scan:
     name: Scan (${{ matrix.architecture }})
     needs: build
