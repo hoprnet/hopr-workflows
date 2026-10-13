@@ -13,9 +13,7 @@ inputs:
     required: true
   source_version:
     description: >-
-      Version whose per-arch images (<source_version>-<arch>) are used as the
-      manifest members. Defaults to `version`. Set it to point a floating tag
-      (e.g. a bare major "5") at the images pushed under the full version.
+      Version whose per-arch images (<source_version>-<arch>) are used as the manifest members. Defaults to `version`. Set it to point a floating tag (e.g. a bare major "5") at the images pushed under the full version.
     required: false
     default: ""
 runs:

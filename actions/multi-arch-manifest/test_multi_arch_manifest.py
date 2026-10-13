@@ -77,9 +77,15 @@ def run_script(tmp_path, monkeypatch):
         ("5.0", "5.0.1", "5.0", "5.0.1"),
     ],
 )
-def test_manifest_members(run_script, version, source_version, expected_tag, member_version):
+def test_manifest_members(
+    run_script, version, source_version, expected_tag, member_version
+):
     assert run_script(version, source_version) == [
-        create(expected_tag, member(member_version, "linux-arm64"), member(member_version, "linux-amd64"))
+        create(
+            expected_tag,
+            member(member_version, "linux-arm64"),
+            member(member_version, "linux-amd64"),
+        )
     ]
 
 

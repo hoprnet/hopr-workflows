@@ -93,11 +93,11 @@ On every build the multi-arch manifest is pushed under the full version
 pushes floating manifests for the bare major and the major.minor, pointing at the same
 platform images, so consumers can pin to a line and pick up patches:
 
-| Version type          | Tags pushed (per registry)                |
-| --------------------- | ----------------------------------------- |
-| `commit` / `pr`       | full version only                         |
-| `release` (e.g. 5.0.1)| `5.0.1`, `5.0`, `5`                       |
-| `release` pre-release | full version only (e.g. `5.0.1-rc.1`)     |
+| Version type           | Tags pushed (per registry)            |
+| ---------------------- | ------------------------------------- |
+| `commit` / `pr`        | full version only                     |
+| `release` (e.g. 5.0.1) | `5.0.1`, `5.0`, `5`                   |
+| `release` pre-release  | full version only (e.g. `5.0.1-rc.1`) |
 
 ## Outputs
 
