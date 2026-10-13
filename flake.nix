@@ -39,6 +39,7 @@
             ps: with ps; [
               google-cloud-artifact-registry
               google-auth
+              pytest
             ]
           );
           pre-commit-check = pre-commit.lib.${system}.run {
@@ -110,12 +111,14 @@
               {
                 nativeBuildInputs = [
                   pkgs.bash
-                  pkgs.coreutils
-                  pkgs.gnugrep
+                  pythonEnv
                 ];
               }
               ''
-                bash ${./actions/multi-arch-manifest}/test-multi-arch-manifest.sh
+                cp -r ${./actions/multi-arch-manifest}/. action
+                chmod -R u+w action
+                export PYTHONDONTWRITEBYTECODE=1
+                python -m pytest -q action/test_multi_arch_manifest.py
                 touch $out
               '';
 
