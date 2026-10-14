@@ -100,6 +100,13 @@ can pin to a line and pick up patches:
 | `release` (e.g. 5.0.1) | `5.0.1`, `5.0`, `5`                   |
 | `release` pre-release  | full version only (e.g. `5.0.1-rc.1`) |
 
+The floating versions come from the `set-build-version` action's `major_version`
+and `minor_version` outputs. Manifest members use the full `docker_build_version`
+via `source_version`; no separate `5-linux-*` or `5.0-linux-*` images are built.
+The workflow must pin a manifest action revision that supports `source_version`.
+Older revisions ignore that input, look for nonexistent floating-tag platform
+images, and skip publishing the floating manifests.
+
 Separately, the `manifest` job also maintains tracking (non-version) tags: `edge`
 on deploy-commit builds, `latest` / `latest-main` / `latest-testing` for PR builds,
 and `release-main` / `release-testing` for releases.
