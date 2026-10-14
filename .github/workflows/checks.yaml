@@ -75,7 +75,7 @@ on:
       conflict_markers:
         required: false
         type: boolean
-        default: true
+        default: false
         description: Fail PRs whose diff adds git conflict markers
       nix_path:
         required: false
