@@ -122,6 +122,23 @@
                 touch $out
               '';
 
+          checks.set-build-version =
+            pkgs.runCommand "set-build-version-test"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.jq
+                  pythonEnv
+                ];
+              }
+              ''
+                cp -r ${./actions/set-build-version}/. action
+                chmod -R u+w action
+                export PYTHONDONTWRITEBYTECODE=1
+                python -m pytest -q action/test_set_build_version.py
+                touch $out
+              '';
+
           devShells.default = pkgs.mkShell {
             buildInputs = [
               pythonEnv
