@@ -28,6 +28,12 @@ outputs:
   release_version:
     description: 'Release version'
     value: ${{ steps.versions.outputs.release_version }}
+  major_version:
+    description: 'Floating major version for a clean X.Y.Z release; empty otherwise'
+    value: ${{ steps.versions.outputs.major_version }}
+  minor_version:
+    description: 'Floating major.minor version for a clean X.Y.Z release; empty otherwise'
+    value: ${{ steps.versions.outputs.minor_version }}
   prerelease:
     description: 'Whether the version is a prerelease'
     value: ${{ steps.versions.outputs.prerelease }}
@@ -109,6 +115,8 @@ runs:
         commit_version="${current_version}${semver_delimiter}commit.${commit_sha}"
         pr_version="${current_version}${semver_delimiter}pr.${{ github.event.pull_request.number }}"
         release_version="${current_version}"
+        major_version=""
+        minor_version=""
         publish_artifact_registry=false
         publish_github_release=false
         deploy_commits=false
@@ -131,6 +139,10 @@ runs:
           build_version=${release_version}
           publish_github_release=true
           publish_artifact_registry=true
+          if [[ "${release_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            major_version="${release_version%%.*}"
+            minor_version="${release_version%.*}"
+          fi
           if [[ $current_version == *"-rc."* ]]; then
             prerelease=true
           fi
@@ -179,6 +191,8 @@ runs:
         echo "commit_version=${commit_version}" | tee -a "$GITHUB_OUTPUT"
         echo "pr_version=${pr_version}" | tee -a "$GITHUB_OUTPUT"
         echo "release_version=${release_version}" | tee -a "$GITHUB_OUTPUT"
+        echo "major_version=${major_version}" | tee -a "$GITHUB_OUTPUT"
+        echo "minor_version=${minor_version}" | tee -a "$GITHUB_OUTPUT"
         echo "prerelease=${prerelease}" | tee -a "$GITHUB_OUTPUT"
         echo "build_version=${build_version}" | tee -a "$GITHUB_OUTPUT"
         echo "docker_build_version=${docker_build_version}" | tee -a "$GITHUB_OUTPUT"

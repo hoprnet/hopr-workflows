@@ -39,6 +39,7 @@
             ps: with ps; [
               google-cloud-artifact-registry
               google-auth
+              pytest
             ]
           );
           pre-commit-check = pre-commit.lib.${system}.run {
@@ -103,6 +104,41 @@
         {
           # Exposed so CI can run the same hook set as the devShell installs
           packages.pre-commit-check = pre-commit-check;
+
+          # Check that runs with `nix flake check`.
+          checks.multi-arch-manifest =
+            pkgs.runCommand "multi-arch-manifest-test"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pythonEnv
+                ];
+              }
+              ''
+                cp -r ${./actions/multi-arch-manifest}/. action
+                chmod -R u+w action
+                export PYTHONDONTWRITEBYTECODE=1
+                python -m pytest -q action/test_multi_arch_manifest.py
+                touch $out
+              '';
+
+          checks.set-build-version =
+            pkgs.runCommand "set-build-version-test"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.jq
+                  pythonEnv
+                ];
+              }
+              ''
+                cp -r ${./actions/set-build-version}/. action
+                chmod -R u+w action
+                export PYTHONDONTWRITEBYTECODE=1
+                python -m pytest -q action/test_set_build_version.py
+                touch $out
+              '';
+
           devShells.default = pkgs.mkShell {
             buildInputs = [
               pythonEnv

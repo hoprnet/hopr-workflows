@@ -23,7 +23,8 @@ This action should be invoked after the docker build image is created for each p
 
 - `registry`: The Google Artifact registry.
 - `image`: The docker image name.
-- `version`: The docker version.
+- `version`: The docker version. Names the manifest (`registry/image:version`).
+- `source_version` (optional): Version whose per-arch images (`source_version-<arch>`) become the manifest members. Defaults to `version`. Set it to point a floating tag (e.g. a bare major `5`) at images already pushed under a full version (`5.0.1`).
 
 ## Outputs
 
