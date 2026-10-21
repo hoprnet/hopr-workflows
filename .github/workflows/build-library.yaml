@@ -112,6 +112,12 @@ jobs:
           done
           # shellcheck disable=SC2086 # CONTEXT, target_args, and NO_VERIFY are intentionally word-split flag lists
           nix develop -c cargo release publish $CONTEXT $target_args --all-features $NO_VERIFY
+          # cargo-release exits 2 when no packages need publishing (all already published at
+          # their current version). Treat that as a success for dry-run: nothing to verify.
+          # shellcheck disable=SC2181 # Separate from the pipe above
+          if [ $? -eq 2 ]; then
+            echo "Nothing to publish — all packages already published at current version"
+          fi
       - name: Authenticate with crates.io
         if: inputs.version_type == 'release'
         id: auth
