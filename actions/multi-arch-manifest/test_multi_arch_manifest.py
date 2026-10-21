@@ -54,10 +54,14 @@ def run_script(tmp_path, monkeypatch):
 
     def run(version, source_version=None, missing=()):
         monkeypatch.setenv("MISSING", " ".join(missing))
-        args = [str(SCRIPT), REGISTRY, IMAGE, version]
-        if source_version is not None:
-            args.append(source_version)
-        subprocess.run(["bash", *args], check=True)
+        monkeypatch.setenv("REGISTRY", REGISTRY)
+        monkeypatch.setenv("IMAGE", IMAGE)
+        monkeypatch.setenv("VERSION", version)
+        if source_version is None:
+            monkeypatch.delenv("SOURCE_VERSION", raising=False)
+        else:
+            monkeypatch.setenv("SOURCE_VERSION", source_version)
+        subprocess.run(["bash", str(SCRIPT)], check=True)
         calls = capture.read_text().splitlines() if capture.exists() else []
         return [c for c in calls if c.startswith("manifest create")]
 

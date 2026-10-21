@@ -22,4 +22,9 @@ runs:
     - name: Create multi-arch docker manifest
       id: manifest
       shell: bash
-      run: bash "${{ github.action_path }}/multi-arch-manifest.sh" "${{ inputs.registry }}" "${{ inputs.image }}" "${{ inputs.version }}" "${{ inputs.source_version }}"
+      env:
+        REGISTRY: ${{ inputs.registry }}
+        IMAGE: ${{ inputs.image }}
+        VERSION: ${{ inputs.version }}
+        SOURCE_VERSION: ${{ inputs.source_version }}
+      run: bash "${{ github.action_path }}/multi-arch-manifest.sh"
