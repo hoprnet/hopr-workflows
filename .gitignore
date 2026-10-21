@@ -4,3 +4,7 @@
 
 # pnpm install output for actions with Node dependencies
 node_modules/
+
+# pytest / python bytecode
+__pycache__/
+.pytest_cache/

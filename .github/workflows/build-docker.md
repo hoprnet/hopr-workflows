@@ -8,7 +8,7 @@ Builds platform-specific Docker images using Nix and creates a multi-architectur
 | ------------ | ------------------------------------------------------------------------------------ |
 | `build`      | Matrix build: one job per entry in `build_matrix`                                    |
 | `smoke-test` | Runs a smoke-test command against the built image (optional)                         |
-| `manifest`   | Creates and pushes the multi-arch manifest                                           |
+| `manifest`   | Creates and pushes the multi-arch manifest (incl. floating release tags, see below)  |
 | `scan`       | Scans the image for vulnerabilities with Trivy, uploads SARIF to GitHub Security tab |
 
 ## Usage
@@ -85,6 +85,31 @@ Each entry in the JSON array must include:
 | `cachix_auth_token`   | Yes      | Auth token for Cachix cache                                          |
 | `docker_hub_username` | No       | Docker Hub username (required for release builds)                    |
 | `docker_hub_token`    | No       | Docker Hub token (required for release builds)                       |
+
+## Tags
+
+On every build the multi-arch manifest is pushed under the full version
+(`docker_build_version`). A stable `release` build (a clean `X.Y.Z`, not a
+pre-release such as `-rc.N` or `-beta.N`) also pushes floating manifests for the
+bare major and the major.minor, pointing at the same platform images, so consumers
+can pin to a line and pick up patches:
+
+| Version type           | Version tags pushed (per registry)    |
+| ---------------------- | ------------------------------------- |
+| `commit` / `pr`        | full version only                     |
+| `release` (e.g. 5.0.1) | `5.0.1`, `5.0`, `5`                   |
+| `release` pre-release  | full version only (e.g. `5.0.1-rc.1`) |
+
+The floating versions come from the `set-build-version` action's `major_version`
+and `minor_version` outputs. Manifest members use the full `docker_build_version`
+via `source_version`; no separate `5-linux-*` or `5.0-linux-*` images are built.
+The workflow must pin a manifest action revision that supports `source_version`.
+Older revisions ignore that input, look for nonexistent floating-tag platform
+images, and skip publishing the floating manifests.
+
+Separately, the `manifest` job also maintains tracking (non-version) tags: `edge`
+on deploy-commit builds, `latest` / `latest-main` / `latest-testing` for PR builds,
+and `release-main` / `release-testing` for releases.
 
 ## Outputs
 
