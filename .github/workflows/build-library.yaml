@@ -111,7 +111,8 @@ jobs:
             target_args="${target_args:+$target_args }--target $t"
           done
           # shellcheck disable=SC2086 # CONTEXT, target_args, and NO_VERIFY are intentionally word-split flag lists
-          nix develop -c cargo release publish $CONTEXT $target_args --all-features $NO_VERIFY
+          nix develop -c cargo release publish $CONTEXT $target_args --all-features $NO_VERIFY \
+            || { rc=$?; [ $rc -eq 2 ] && echo "Nothing to publish — all packages already published at current version" || exit $rc; }
       - name: Authenticate with crates.io
         if: inputs.version_type == 'release'
         id: auth

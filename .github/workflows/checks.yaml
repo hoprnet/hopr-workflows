@@ -3,7 +3,7 @@
 #
 # Runs configurable code-quality checks (format, pre-commit, lint, deps, audit)
 # via a matrix strategy with per-check enable/disable toggles and command
-# overrides.
+# overrides. A separate job fails PRs that add git conflict markers.
 ################################################################################
 name: Checks
 on:
@@ -72,6 +72,11 @@ on:
         required: false
         type: boolean
         default: true
+      conflict_markers:
+        required: false
+        type: boolean
+        default: false
+        description: Fail PRs whose diff adds git conflict markers
       nix_path:
         required: false
         type: string
@@ -132,3 +137,30 @@ jobs:
           command: ${{ matrix.command }}
           disable_sudo: ${{ inputs.disable_sudo }}
           nix_path: ${{ inputs.nix_path }}
+  conflict-markers:
+    name: Conflict markers
+    # Only pull requests have a base to diff against.
+    if: inputs.conflict_markers && github.base_ref != ''
+    runs-on: ${{ inputs.runner_small }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.source_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fail on added conflict markers
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        # Port bots commit unresolved conflicts that GitHub never flags; added lines only, `=======` also underlines Markdown.
+        run: |
+          added="$(git diff --unified=0 "origin/${BASE_REF}...HEAD")"
+          markers="$(echo "${added}" | grep -E '^\+(<<<<<<<|>>>>>>>)( |$)' || true)"
+          if [ -n "${markers}" ]; then
+            echo "::error::Conflict markers added by this pull request:"
+            echo "${markers}"
+            exit 1
+          fi
