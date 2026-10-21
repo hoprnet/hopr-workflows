@@ -49,9 +49,7 @@ def test_version_outputs(tmp_path, file_type, version_type, version, major, mino
         "github.event.pull_request.number": "42",
         "github.event.pull_request.merge_commit_sha": "",
     }
-    script = re.sub(
-        r"\$\{\{\s*(.*?)\s*\}\}", lambda match: values[match[1]], script
-    )
+    script = re.sub(r"\$\{\{\s*(.*?)\s*\}\}", lambda match: values[match[1]], script)
     output = tmp_path / "output"
     env = {
         key: value
