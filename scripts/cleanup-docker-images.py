@@ -143,9 +143,7 @@ images = [
     "hoprd-pix-test",
     "hose",
     "hose-dev",
-    "cover-traffic"
-
-
+    "cover-traffic",
 ]
 # Docker images generated without Nix and with referenced images which cannot be deleted
 # images = ["hoprd-operator", "uhttp-latency-monitor", "hopr-pluto", "network-hoprnet-org", "network-hoprnet-org-be", "webapi-hoprnet-org"]
