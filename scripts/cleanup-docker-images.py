@@ -70,6 +70,17 @@ def list_docker_images(client, parent):
         sys.exit(1)
 
 
+MANIFEST_LIST_MEDIA_TYPES = (
+    "application/vnd.oci.image.index.v1+json",
+    "application/vnd.docker.distribution.manifest.list.v2+json",
+)
+
+
+def is_manifest_list(img):
+    """Whether the image is a multi-arch manifest list (index) referencing other images."""
+    return img.media_type in MANIFEST_LIST_MEDIA_TYPES
+
+
 async def delete_docker_image(img, dry_run):
     """Deletes a Docker image by its URI."""
     image_name = img.uri.split("/")[-1].split("@")[0]
@@ -140,20 +151,24 @@ async def main():
         filtered_images = [
             img for img in old_images if img.uri.startswith(f"{registry}/{image}@")
         ]
-        tagged_filtered_images = [img for img in filtered_images if len(img.tags) > 0]
-        untagged_filtered_images = [
-            img for img in filtered_images if len(img.tags) == 0
-        ]
+        # Multi-arch manifest lists must be deleted before the per-platform images they
+        # reference, otherwise those children fail with "referenced by parent manifests"
+        index_images = [img for img in filtered_images if is_manifest_list(img)]
+        child_images = [img for img in filtered_images if not is_manifest_list(img)]
 
         print(f"Found {len(filtered_images)} old images for {image}")
-        print(f"Found {len(tagged_filtered_images)} tagged images for {image}")
-        print(f"Found {len(untagged_filtered_images)} untagged images for {image}")
-        await delete_in_batches(
-            tagged_filtered_images, lambda img: delete_docker_image(img, dry_run)
-        )
-        await delete_in_batches(
-            untagged_filtered_images, lambda img: delete_docker_image(img, dry_run)
-        )
+        print(f"Found {len(index_images)} multi-arch manifest lists for {image}")
+        print(f"Found {len(child_images)} single-platform images for {image}")
+        # Parents first, then children (tagged before untagged within each group)
+        for group in (index_images, child_images):
+            tagged = [img for img in group if len(img.tags) > 0]
+            untagged = [img for img in group if len(img.tags) == 0]
+            await delete_in_batches(
+                tagged, lambda img: delete_docker_image(img, dry_run)
+            )
+            await delete_in_batches(
+                untagged, lambda img: delete_docker_image(img, dry_run)
+            )
 
 
 asyncio.run(main())
