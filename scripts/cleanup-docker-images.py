@@ -49,8 +49,6 @@ from google.cloud import artifactregistry_v1
 import argparse
 import asyncio
 import re
-import shlex
-import subprocess
 import sys
 
 
@@ -90,16 +88,33 @@ async def delete_docker_image(img, dry_run):
     if dry_run:
         print(f"Dry-run mode: Would delete image tag(s): {image_tag}")
         return
+    # Use gcloud CLI because Docker image deletion is not supported by the Artifact Registry client
+    proc = await asyncio.create_subprocess_exec(
+        "gcloud",
+        "artifacts",
+        "docker",
+        "images",
+        "delete",
+        img.uri,
+        "--delete-tags",
+        "-q",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
     try:
-        # Use gcloud CLI because Docker image deletion is not supported by the Artifact Registry client
-        cmd = f"gcloud artifacts docker images delete {img.uri} --delete-tags -q"
-        subprocess.run(shlex.split(cmd), check=True, capture_output=True, text=True)
+        _, stderr = await proc.communicate()
+    except asyncio.CancelledError:
+        # wait_for timeout: do not leave the gcloud process running
+        proc.kill()
+        raise
+    if proc.returncode == 0:
         print(f"Deleted Docker image {image_tag}")
-    except subprocess.CalledProcessError as e:
-        if "manifest is referenced by parent manifests" in e.stderr:
-            print(f"Skipped {image_tag}: Referenced by another image", file=sys.stderr)
-        else:
-            print(f"Error deleting Docker image: {e.stderr.strip()}", file=sys.stderr)
+        return
+    stderr = stderr.decode().strip()
+    if "manifest is referenced by parent manifests" in stderr:
+        print(f"Skipped {image_tag}: Referenced by another image", file=sys.stderr)
+    else:
+        print(f"Error deleting Docker image: {stderr}", file=sys.stderr)
 
 
 # Parse command-line arguments
