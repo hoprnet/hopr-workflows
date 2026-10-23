@@ -129,14 +129,23 @@ dry_run = args.dry_run
 date = make_cutoff_date(args.days)
 registry = make_docker_registry(location, project, repository)
 images = [
-    "hoprd",
     "bloklid",
+    "bloklid-anvil",
+    "bloklid-anvil-curvy",
+    "devops-landing",
+    "gnosis-vpn-exit-os",
     "hopli",
-    "cover-traffic",
-    "discovery-platform",
-    "availability-monitor",
     "hopr-admin",
     "hopr-pluto",
+    "hoprd",
+    "hoprd-pix-curvy",
+    "hoprd-pix-secp256k1",
+    "hoprd-pix-test",
+    "hose",
+    "hose-dev",
+    "cover-traffic"
+
+
 ]
 # Docker images generated without Nix and with referenced images which cannot be deleted
 # images = ["hoprd-operator", "uhttp-latency-monitor", "hopr-pluto", "network-hoprnet-org", "network-hoprnet-org-be", "webapi-hoprnet-org"]
