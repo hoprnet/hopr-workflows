@@ -77,7 +77,9 @@ jobs:
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           nix_path: ${{ inputs.nix_path }}
       - name: Build benchmarks
-        run: ${{ inputs.build_command }}
+        run: eval "${BUILD_COMMAND}"
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
   run-benchmarks:
     name: Run Benchmarks
     needs: build-benchmarks
@@ -107,12 +109,14 @@ jobs:
         id: short_sha
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            SHA="${{ github.event.pull_request.head.sha }}"
+            SHA="${PR_HEAD_SHA}"
           else
             SHA="${GITHUB_SHA}"
           fi
           echo "value=${SHA:0:7}" >> "$GITHUB_OUTPUT"
           echo "full=${SHA}" >> "$GITHUB_OUTPUT"
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       - name: Install Bencher CLI
         uses: bencherdev/bencher@0f8f620172ccd6225d40a7590598eb7b41718af8
       - name: Execute and Upload (PR)
@@ -122,24 +126,27 @@ jobs:
         run: |
           set +e
           bencher run \
-            --project ${{ inputs.bencher_project }} \
+            --project "${BENCHER_PROJECT}" \
             --token "${{ secrets.bencher_api_token }}" \
             --adapter rust_criterion \
-            --branch "${{ inputs.source_branch }}" \
+            --branch "${SOURCE_BRANCH}" \
             --github-actions "${{ secrets.GITHUB_TOKEN }}" \
             --err \
-            "${{ inputs.run_command }}" 2>&1 | tee bencher_output.txt
+            "${RUN_COMMAND}" 2>&1 | tee bencher_output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           set -e
 
           # Extract Bencher Run URL
-          BENCHER_RUN_URL=$(grep -oE "https://bencher.dev/(console/projects/${{ inputs.bencher_project }}/runs/|perf/${{ inputs.bencher_project }}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
-          echo "bencher_run_url=${BENCHER_RUN_URL:-https://bencher.dev/console/projects/${{ inputs.bencher_project }}}" >> "$GITHUB_OUTPUT"
+          BENCHER_RUN_URL=$(grep -oE "https://bencher.dev/(console/projects/${BENCHER_PROJECT}/runs/|perf/${BENCHER_PROJECT}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
+          echo "bencher_run_url=${BENCHER_RUN_URL:-https://bencher.dev/console/projects/${BENCHER_PROJECT}}" >> "$GITHUB_OUTPUT"
 
           exit "$EXIT_CODE"
         env:
           BENCHER_API_TOKEN: ${{ secrets.bencher_api_token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BENCHER_PROJECT: ${{ inputs.bencher_project }}
+          SOURCE_BRANCH: ${{ inputs.source_branch }}
+          RUN_COMMAND: ${{ inputs.run_command }}
       - name: Notify performance drop (PR)
         uses: zulip/github-actions-zulip/send-message@f675f2b4eb2a95fae974215476dcb7ad8dfeff6b # v2.0.2
         if: failure() && github.event_name == 'pull_request' && env.ZULIP_API_KEY != '' && env.ZULIP_EMAIL != ''
@@ -165,23 +172,26 @@ jobs:
           set +e
           # Capture stdout and stderr, tee to file
           bencher run \
-            --project ${{ inputs.bencher_project }} \
+            --project "${BENCHER_PROJECT}" \
             --token "${{ secrets.bencher_api_token }}" \
             --adapter rust_criterion \
-            --branch "${{ inputs.source_branch }}" \
+            --branch "${SOURCE_BRANCH}" \
             --err \
-            "${{ inputs.run_command }}" 2>&1 | tee bencher_output.txt
+            "${RUN_COMMAND}" 2>&1 | tee bencher_output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           set -e
 
           # Extract Bencher Report URL
-          BENCHER_REPORT_URL=$(grep -oE "https://bencher.dev/(console/projects/${{ inputs.bencher_project }}/reports/|perf/${{ inputs.bencher_project }}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
-          echo "bencher_report_url=${BENCHER_REPORT_URL:-https://bencher.dev/console/projects/${{ inputs.bencher_project }}}" >> "$GITHUB_OUTPUT"
+          BENCHER_REPORT_URL=$(grep -oE "https://bencher.dev/(console/projects/${BENCHER_PROJECT}/reports/|perf/${BENCHER_PROJECT}/reports/)[^[:space:]]+" bencher_output.txt | head -n 1)
+          echo "bencher_report_url=${BENCHER_REPORT_URL:-https://bencher.dev/console/projects/${BENCHER_PROJECT}}" >> "$GITHUB_OUTPUT"
 
           exit "$EXIT_CODE"
         env:
           BENCHER_API_TOKEN: ${{ secrets.bencher_api_token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BENCHER_PROJECT: ${{ inputs.bencher_project }}
+          SOURCE_BRANCH: ${{ inputs.source_branch }}
+          RUN_COMMAND: ${{ inputs.run_command }}
       - name: Notify performance drop (Merge/Push)
         uses: zulip/github-actions-zulip/send-message@f675f2b4eb2a95fae974215476dcb7ad8dfeff6b # v2.0.2
         if: failure() && github.event_name != 'pull_request' && env.ZULIP_API_KEY != '' && env.ZULIP_EMAIL != ''
