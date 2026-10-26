@@ -96,7 +96,9 @@ jobs:
       - name: Build library ${{ inputs.architecture }}
         if: inputs.build_command != ''
         shell: bash
-        run: ${{ inputs.build_command }}
+        run: eval "${BUILD_COMMAND}"
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
       - name: Build dry-run library
         if: inputs.version_type != 'release'
         shell: bash
