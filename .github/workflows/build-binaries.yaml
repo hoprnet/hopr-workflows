@@ -133,16 +133,19 @@ jobs:
         shell: bash
         id: build
         run: |
-          ${{ inputs.build_command }}
+          eval "${BUILD_COMMAND}"
           mkdir -p ./artifacts
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp -f "$file" "${{ github.workspace }}/artifacts/${binary_name}-${{ inputs.architecture }}"
+            cp -f "$file" "${{ github.workspace }}/artifacts/${binary_name}-${ARCHITECTURE}"
           done
           enable_sign_linux=${{ (contains(inputs.architecture, 'linux') && secrets.gpg_private_key != '') }}
           enable_sign_mac=${{ (contains(inputs.architecture, 'darwin') && secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
           enable_sign=$([[ "$enable_sign_linux" == "true" || "$enable_sign_mac" == "true" ]] && echo "true" || echo "false")
           echo "enable_sign=$enable_sign" | tee -a "$GITHUB_OUTPUT"
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+          ARCHITECTURE: ${{ inputs.architecture }}
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
@@ -152,12 +155,15 @@ jobs:
         if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
         shell: bash
         run: |
-          ${{ inputs.build_debug_command }}
+          eval "${BUILD_DEBUG_COMMAND}"
           mkdir -p ./artifacts-debug
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp -f "$file" "${{ github.workspace }}/artifacts-debug/${binary_name}-${{ inputs.architecture }}"
+            cp -f "$file" "${{ github.workspace }}/artifacts-debug/${binary_name}-${ARCHITECTURE}"
           done
+        env:
+          BUILD_DEBUG_COMMAND: ${{ inputs.build_debug_command }}
+          ARCHITECTURE: ${{ inputs.architecture }}
       - name: Upload debug binary ${{ inputs.binary }}-${{ inputs.architecture }}-debug
         if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
