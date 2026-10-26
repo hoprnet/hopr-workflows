@@ -31,11 +31,11 @@ runs:
       id: artifacts
       run: |
         # Set gcloud config defaults to avoid repeating flags
-        gcloud config set artifacts/location "${{ inputs.region }}"
-        gcloud config set artifacts/repository "${{ inputs.repository }}"
+        gcloud config set artifacts/location "${REGION}"
+        gcloud config set artifacts/repository "${REPOSITORY}"
 
         # Validate source exists
-        source_path="${{ inputs.source }}"
+        source_path="${SOURCE}"
         if [ ! -e "$source_path" ]; then
           echo "Error: Source path does not exist: $source_path"
           exit 1
@@ -60,8 +60,8 @@ runs:
 
         # List existing files in the registry once
         existing_files=$(gcloud artifacts files list \
-          --package="${{ inputs.package }}" \
-          --version="${{ inputs.version }}" \
+          --package="${PACKAGE}" \
+          --version="${VERSION}" \
           --format="value(name)" 2>/dev/null || true)
 
         for artifact in "${files[@]}"; do
@@ -75,8 +75,8 @@ runs:
               }
           fi
           gcloud artifacts generic upload \
-            --package="${{ inputs.package }}" \
-            --version="${{ inputs.version }}" \
+            --package="${PACKAGE}" \
+            --version="${VERSION}" \
             --source="${source_dir}/${artifact}" || {
               echo "Error: Failed to upload ${artifact}"
               exit 1
@@ -85,3 +85,9 @@ runs:
         # Create a comma-separated list of uploaded files
         IFS=','; uploaded_files="${files[*]}"; unset IFS
         echo "uploaded_files=$uploaded_files" | tee -a $GITHUB_OUTPUT
+      env:
+        REGION: ${{ inputs.region }}
+        REPOSITORY: ${{ inputs.repository }}
+        SOURCE: ${{ inputs.source }}
+        PACKAGE: ${{ inputs.package }}
+        VERSION: ${{ inputs.version }}
