@@ -49,8 +49,6 @@ from google.cloud import artifactregistry_v1
 import argparse
 import asyncio
 import re
-import shlex
-import subprocess
 import sys
 
 
@@ -70,6 +68,17 @@ def list_docker_images(client, parent):
         sys.exit(1)
 
 
+MANIFEST_LIST_MEDIA_TYPES = (
+    "application/vnd.oci.image.index.v1+json",
+    "application/vnd.docker.distribution.manifest.list.v2+json",
+)
+
+
+def is_manifest_list(img):
+    """Whether the image is a multi-arch manifest list (index) referencing other images."""
+    return img.media_type in MANIFEST_LIST_MEDIA_TYPES
+
+
 async def delete_docker_image(img, dry_run):
     """Deletes a Docker image by its URI."""
     image_name = img.uri.split("/")[-1].split("@")[0]
@@ -79,16 +88,33 @@ async def delete_docker_image(img, dry_run):
     if dry_run:
         print(f"Dry-run mode: Would delete image tag(s): {image_tag}")
         return
+    # Use gcloud CLI because Docker image deletion is not supported by the Artifact Registry client
+    proc = await asyncio.create_subprocess_exec(
+        "gcloud",
+        "artifacts",
+        "docker",
+        "images",
+        "delete",
+        img.uri,
+        "--delete-tags",
+        "-q",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
     try:
-        # Use gcloud CLI because Docker image deletion is not supported by the Artifact Registry client
-        cmd = f"gcloud artifacts docker images delete {img.uri} --delete-tags -q"
-        subprocess.run(shlex.split(cmd), check=True, capture_output=True, text=True)
+        _, stderr = await proc.communicate()
+    except asyncio.CancelledError:
+        # wait_for timeout: do not leave the gcloud process running
+        proc.kill()
+        raise
+    if proc.returncode == 0:
         print(f"Deleted Docker image {image_tag}")
-    except subprocess.CalledProcessError as e:
-        if "manifest is referenced by parent manifests" in e.stderr:
-            print(f"Skipped {image_tag}: Referenced by another image", file=sys.stderr)
-        else:
-            print(f"Error deleting Docker image: {e.stderr.strip()}", file=sys.stderr)
+        return
+    stderr = stderr.decode().strip()
+    if "manifest is referenced by parent manifests" in stderr:
+        print(f"Skipped {image_tag}: Referenced by another image", file=sys.stderr)
+    else:
+        print(f"Error deleting Docker image: {stderr}", file=sys.stderr)
 
 
 # Parse command-line arguments
@@ -103,14 +129,21 @@ dry_run = args.dry_run
 date = make_cutoff_date(args.days)
 registry = make_docker_registry(location, project, repository)
 images = [
-    "hoprd",
     "bloklid",
+    "bloklid-anvil",
+    "bloklid-anvil-curvy",
+    "devops-landing",
+    "gnosis-vpn-exit-os",
     "hopli",
-    "cover-traffic",
-    "discovery-platform",
-    "availability-monitor",
     "hopr-admin",
     "hopr-pluto",
+    "hoprd",
+    "hoprd-pix-curvy",
+    "hoprd-pix-secp256k1",
+    "hoprd-pix-test",
+    "hose",
+    "hose-dev",
+    "cover-traffic",
 ]
 # Docker images generated without Nix and with referenced images which cannot be deleted
 # images = ["hoprd-operator", "uhttp-latency-monitor", "hopr-pluto", "network-hoprnet-org", "network-hoprnet-org-be", "webapi-hoprnet-org"]
@@ -140,20 +173,24 @@ async def main():
         filtered_images = [
             img for img in old_images if img.uri.startswith(f"{registry}/{image}@")
         ]
-        tagged_filtered_images = [img for img in filtered_images if len(img.tags) > 0]
-        untagged_filtered_images = [
-            img for img in filtered_images if len(img.tags) == 0
-        ]
+        # Multi-arch manifest lists must be deleted before the per-platform images they
+        # reference, otherwise those children fail with "referenced by parent manifests"
+        index_images = [img for img in filtered_images if is_manifest_list(img)]
+        child_images = [img for img in filtered_images if not is_manifest_list(img)]
 
         print(f"Found {len(filtered_images)} old images for {image}")
-        print(f"Found {len(tagged_filtered_images)} tagged images for {image}")
-        print(f"Found {len(untagged_filtered_images)} untagged images for {image}")
-        await delete_in_batches(
-            tagged_filtered_images, lambda img: delete_docker_image(img, dry_run)
-        )
-        await delete_in_batches(
-            untagged_filtered_images, lambda img: delete_docker_image(img, dry_run)
-        )
+        print(f"Found {len(index_images)} multi-arch manifest lists for {image}")
+        print(f"Found {len(child_images)} single-platform images for {image}")
+        # Parents first, then children (tagged before untagged within each group)
+        for group in (index_images, child_images):
+            tagged = [img for img in group if len(img.tags) > 0]
+            untagged = [img for img in group if len(img.tags) == 0]
+            await delete_in_batches(
+                tagged, lambda img: delete_docker_image(img, dry_run)
+            )
+            await delete_in_batches(
+                untagged, lambda img: delete_docker_image(img, dry_run)
+            )
 
 
 asyncio.run(main())
