@@ -25,16 +25,18 @@ runs:
     - name: Sign linux file
       if: contains(inputs.architecture, 'linux')
       shell: bash
-      run: ${{ github.action_path }}/sign-linux-file.sh "${{ inputs.path }}"
+      run: ${{ github.action_path }}/sign-linux-file.sh "${FILE_PATH}"
       env:
         GPG_PRIVATE_KEY: ${{ inputs.gpg_private_key }}
         GPG_PRIVATE_KEY_PASSWORD: ${{ inputs.gpg_private_key_password }}
+        FILE_PATH: ${{ inputs.path }}
       working-directory: ${{ github.workspace }}
     - name: Sign darwin file
       if: contains(inputs.architecture, 'darwin')
       shell: bash
-      run: ${{ github.action_path }}/sign-darwin-file.sh "${{ inputs.path }}"
+      run: ${{ github.action_path }}/sign-darwin-file.sh "${FILE_PATH}"
       env:
         APPLE_CERTIFICATE: ${{ inputs.apple_certificate }}
         APPLE_CERTIFICATE_PASSWORD: ${{ inputs.apple_certificate_password }}
+        FILE_PATH: ${{ inputs.path }}
       working-directory: ${{ github.workspace }}
