@@ -35,7 +35,10 @@ runs:
         fi
     - name: Generate release notes
       shell: bash
-      run: ${{ github.action_path }}/generate-release-notes.sh "${{ inputs.source_branch }}" "${{ inputs.format }}" "${{ inputs.release_notes_file }}"
+      run: ${{ github.action_path }}/generate-release-notes.sh "${SOURCE_BRANCH}" "${FORMAT}" "${RELEASE_NOTES_FILE}"
       env:
         GH_TOKEN: ${{ github.token }}
+        SOURCE_BRANCH: ${{ inputs.source_branch }}
+        FORMAT: ${{ inputs.format }}
+        RELEASE_NOTES_FILE: ${{ inputs.release_notes_file }}
       working-directory: ${{ github.workspace }}
