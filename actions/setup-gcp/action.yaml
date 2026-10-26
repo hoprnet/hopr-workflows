@@ -51,14 +51,13 @@ runs:
       id: auth
       shell: bash
       run: |
-        if [ -n "${{ steps.auth_credentials.outputs.access_token }}" ]; then
-          echo "access_token=${{ steps.auth_credentials.outputs.access_token }}" | tee -a "$GITHUB_OUTPUT"
-        elif [ -n "${{ steps.auth_workload_identity.outputs.access_token }}" ]; then
-          echo "access_token=${{ steps.auth_workload_identity.outputs.access_token }}" | tee -a "$GITHUB_OUTPUT"
-        else
+        if [ -z "${ACCESS_TOKEN}" ]; then
           echo "No access token found" >&2
           exit 1
         fi
+        echo "access_token=${ACCESS_TOKEN}" | tee -a "$GITHUB_OUTPUT"
+      env:
+        ACCESS_TOKEN: ${{ steps.auth_credentials.outputs.access_token || steps.auth_workload_identity.outputs.access_token }}
     - name: Set up Google Cloud SDK
       if: inputs.install_sdk == 'true'
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
