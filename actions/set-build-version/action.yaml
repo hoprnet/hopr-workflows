@@ -71,7 +71,8 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
-      run: |
+      # Label names are sanitised to [A-Z0-9_] before they become variable names
+      run: | # zizmor: ignore[github-env]
         if [[ -n "${{ github.event.pull_request.number }}" ]]; then
           labels=$(gh pr view "${{ github.event.pull_request.number }}" --json labels --jq '.labels[].name')
         else
@@ -79,29 +80,29 @@ runs:
         fi
         while IFS= read -r label; do
           [[ -z "$label" ]] && continue
-          varname="GITHUB_PR_LABEL_$(echo "$label" | tr '[:lower:]' '[:upper:]' | tr ' -' '_')"
+          varname="GITHUB_PR_LABEL_$(echo "$label" | tr '[:lower:]' '[:upper:]' | tr ' -' '_' | tr -c 'A-Z0-9_\n' '_')"
           echo "${varname}=1" >> "$GITHUB_ENV"
         done <<< "$labels"
     - name: Gather versions
       shell: bash
       id: versions
       run: |
-        echo "Gathering version from ${{ inputs.file }} and setting build version type to '${{ inputs.version_type }}'"
-        if [[ "${{ inputs.file }}" =~ ^.*\.toml$ ]]; then
-          current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
+        echo "Gathering version from ${FILE} and setting build version type to '${VERSION_TYPE}'"
+        if [[ "${FILE}" =~ ^.*\.toml$ ]]; then
+          current_version=$(grep -E '^version\s*=' ${FILE} | awk -F\" '{print $2}')
           semver_delimiter="+"
-        elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
-          current_version=$(jq -r '.version' ${{ inputs.file }})
+        elif [[ "${FILE}" =~ ^.*\.json$ ]]; then
+          current_version=$(jq -r '.version' ${FILE})
           semver_delimiter="-"
         else
-          echo "Unsupported file type: ${{ inputs.file }}"
+          echo "Unsupported file type: ${FILE}"
           exit 1
         fi
         echo "Current version: ${current_version}"
 
         echo "Resolving commit SHA (event=${{ github.event_name }}, merged=${{ github.event.pull_request.merged }})"
         if [[ "${{ github.event.pull_request.merged }}" == "true" ]]; then
-          sha="${{ github.event.pull_request.merge_commit_sha }}"
+          sha="${PR_MERGE_COMMIT_SHA}"
           commit_sha="${sha:0:7}"
           echo "Using merge commit SHA: ${commit_sha}"
         elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -122,8 +123,8 @@ runs:
         deploy_commits=false
         prerelease=false
 
-        echo "Resolving build version for version_type='${{ inputs.version_type }}'"
-        if [[ "${{ inputs.version_type }}" == "commit" ]]; then
+        echo "Resolving build version for version_type='${VERSION_TYPE}'"
+        if [[ "${VERSION_TYPE}" == "commit" ]]; then
           build_version=${commit_version}
           if [ "${GITHUB_PR_LABEL_PUBLISH_BINARIES:-0}" == '1' ]; then
             publish_artifact_registry=true
@@ -132,10 +133,10 @@ runs:
           if [[ "${GITHUB_PR_LABEL_DEPLOY_COMMITS:-0}" == '1' ]]; then
             deploy_commits=true
           fi
-        elif [[ "${{ inputs.version_type }}" == "pr" ]]; then
+        elif [[ "${VERSION_TYPE}" == "pr" ]]; then
           build_version=${pr_version}
           publish_artifact_registry=true
-        elif [[ "${{ inputs.version_type }}" == "release" ]]; then
+        elif [[ "${VERSION_TYPE}" == "release" ]]; then
           build_version=${release_version}
           publish_github_release=true
           publish_artifact_registry=true
@@ -157,12 +158,12 @@ runs:
         echo "Build version: ${build_version}"
 
         ## Debug build flavor
-        if [[ "${{ inputs.version_type }}" == "commit" ]] && [[ "${GITHUB_PR_LABEL_BUILD_FLAVOR_DEBUG:-0}" == '1' ]]; then
+        if [[ "${VERSION_TYPE}" == "commit" ]] && [[ "${GITHUB_PR_LABEL_BUILD_FLAVOR_DEBUG:-0}" == '1' ]]; then
             debug_version="${current_version}${semver_delimiter}debug.${commit_sha}"
             docker_debug_version=${debug_version/+/-}
-            if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
+            if [[ "${ARCHITECTURE}" == "aarch64-linux" ]]; then
               docker_debug_version_platform="${docker_debug_version}-linux-arm64"
-            elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
+            elif [[ "${ARCHITECTURE}" == "x86_64-linux" ]]; then
               docker_debug_version_platform="${docker_debug_version}-linux-amd64"
             fi
             echo "Debug version: ${debug_version} (docker: ${docker_debug_version_platform})"
@@ -173,17 +174,17 @@ runs:
 
         # Generate Docker compatible version
         docker_build_version=${build_version/+/-}
-        echo "Resolving docker platform for architecture='${{ inputs.architecture }}'"
-        if [[ "${{ inputs.architecture }}" == "aarch64-linux" ]]; then
+        echo "Resolving docker platform for architecture='${ARCHITECTURE}'"
+        if [[ "${ARCHITECTURE}" == "aarch64-linux" ]]; then
           docker_platform="linux-arm64"
-        elif [[ "${{ inputs.architecture }}" == "x86_64-linux" ]]; then
+        elif [[ "${ARCHITECTURE}" == "x86_64-linux" ]]; then
           docker_platform="linux-amd64"
         else
           # We are not supporting other architectures for docker images at the moment
           # But we want to allow the action to be used for other architectures for non-docker builds, so we won't fail the action here.
           # Instead, we'll set the docker_platform to the input architecture and let the docker build step fail if it's not supported.
-          docker_platform="${{ inputs.architecture }}"
-          echo "Unsupported architecture: ${{ inputs.architecture }}"
+          docker_platform="${ARCHITECTURE}"
+          echo "Unsupported architecture: ${ARCHITECTURE}"
         fi
         docker_build_version_platform="${docker_build_version}-${docker_platform}"
         echo "Docker build version: ${docker_build_version_platform}"
@@ -201,23 +202,31 @@ runs:
         echo "publish_artifact_registry=${publish_artifact_registry}" | tee -a "$GITHUB_OUTPUT"
         echo "publish_github_release=${publish_github_release}" | tee -a "$GITHUB_OUTPUT"
         echo "deploy_commits=${deploy_commits}" | tee -a "$GITHUB_OUTPUT"
+      env:
+        FILE: ${{ inputs.file }}
+        VERSION_TYPE: ${{ inputs.version_type }}
+        PR_MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        ARCHITECTURE: ${{ inputs.architecture }}
     - name: Update build version
       # Equivalent to:  inputs.version_type != 'release'
       if: steps.versions.outputs.current_version != steps.versions.outputs.build_version
       shell: bash
       run: |
-        if [[ "${{ inputs.file }}" =~ .*\.toml$ ]]; then
-          echo "Updating version in ${{ inputs.file }} to ${{ steps.versions.outputs.build_version }}"
-          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${{ steps.versions.outputs.build_version}}\5/" ${{ inputs.file }}
-          rm "${{ inputs.file }}.bak"
-          if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
+        if [[ "${FILE}" =~ .*\.toml$ ]]; then
+          echo "Updating version in ${FILE} to ${BUILD_VERSION}"
+          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${BUILD_VERSION}\5/" ${FILE}
+          rm "${FILE}.bak"
+          if [[ "${FILE}" =~ .*Cargo\.toml$ ]]; then
             echo "Regenerating lock file"
-            nix develop --command bash -c "cargo metadata --no-deps --format-version 1 --manifest-path ${{ inputs.file }} \
+            nix develop --command bash -c "cargo metadata --no-deps --format-version 1 --manifest-path ${FILE} \
               | jq -r '.packages[] | select(.source == null) | .name + \"@\" + (.version | split(\"+\")[0])' \
-              | xargs -I{} cargo update --manifest-path ${{ inputs.file }} -p {}"
+              | xargs -I{} cargo update --manifest-path ${FILE} -p {}"
           fi
-        elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
-          echo "Updating version in ${{ inputs.file }} to ${{ steps.versions.outputs.build_version }}"
-          jq --arg build_version "${{ steps.versions.outputs.build_version }}" '.version = $build_version' ${{ inputs.file }} > "${{ inputs.file }}.tmp"
-          mv "${{ inputs.file }}.tmp" ${{ inputs.file }}
+        elif [[ "${FILE}" =~ ^.*\.json$ ]]; then
+          echo "Updating version in ${FILE} to ${BUILD_VERSION}"
+          jq --arg build_version "${BUILD_VERSION}" '.version = $build_version' ${FILE} > "${FILE}.tmp"
+          mv "${FILE}.tmp" ${FILE}
         fi
+      env:
+        FILE: ${{ inputs.file }}
+        BUILD_VERSION: ${{ steps.versions.outputs.build_version }}
