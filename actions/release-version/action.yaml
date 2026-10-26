@@ -108,7 +108,9 @@ runs:
       with:
         client-id: ${{ inputs.github_app_client_id }}
         private-key: ${{ inputs.github_app_private_key }}
-    - name: Checkout hoprnet repository
+        permission-contents: write
+    # The bump-version step pushes with the credentials persisted by this checkout
+    - name: Checkout hoprnet repository # zizmor: ignore[artipacked]
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         ref: ${{ inputs.source_branch }}
@@ -157,8 +159,11 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ steps.bot-token.outputs.token }}
+        RELEASE_TAG_PREFIX: ${{ inputs.release_tag_prefix }}
+        CURRENT_VERSION: ${{ steps.version.outputs.current_version }}
+        OVERRIDE: ${{ inputs.override }}
       run: |
-        tag="${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}"
+        tag="${RELEASE_TAG_PREFIX}${CURRENT_VERSION}"
         release_exists="false"
 
         if command -v gh > /dev/null 2>&1; then
@@ -182,7 +187,7 @@ runs:
           fi
         fi
 
-        if [[ "$release_exists" == "true" && "${{ inputs.override }}" != "true" ]]; then
+        if [[ "$release_exists" == "true" && "${OVERRIDE}" != "true" ]]; then
           echo "Release '$tag' already exists. Use input parameter \"override: 'true'\" to allow override existing releases." >&2
           exit 1
         fi
@@ -209,9 +214,9 @@ runs:
       shell: bash
       if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
       run: |
-        release_notes_path="${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}"
+        release_notes_path="${RELEASE_NOTES_PATH}"
         {
-          echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${{ inputs.release_tag_prefix }}${{ steps.version.outputs.current_version }}\` has been released."
+          echo "I'm thrilled to inform a new \`${{ github.repository }}\` version \`${RELEASE_TAG_PREFIX}${CURRENT_VERSION}\` has been released."
           echo ""
           cat "$release_notes_path"
         } > notification_message.txt
@@ -222,6 +227,10 @@ runs:
           cat notification_message.txt
           echo "EOF"
         } >> $GITHUB_ENV
+      env:
+        RELEASE_TAG_PREFIX: ${{ inputs.release_tag_prefix }}
+        CURRENT_VERSION: ${{ steps.version.outputs.current_version }}
+        RELEASE_NOTES_PATH: ${{ inputs.release_notes_file != '' && inputs.release_notes_file || './release-notes.txt' }}
     - name: Notify release
       if: ${{ inputs.zulip_api_key && inputs.zulip_email && inputs.zulip_channel && inputs.zulip_topic }}
       uses: zulip/github-actions-zulip/send-message@f675f2b4eb2a95fae974215476dcb7ad8dfeff6b # v2.0.2
