@@ -48,7 +48,9 @@ runs:
         nix_path: ${{ inputs.nix_path }}
     - name: Build docs
       shell: bash
-      run: ${{ inputs.command }}
+      run: eval "${COMMAND}"
+      env:
+        COMMAND: ${{ inputs.command }}
     - name: Increase git buffer size
       shell: bash
       if: inputs.publish
