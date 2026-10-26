@@ -26,12 +26,12 @@ runs:
       shell: bash
       id: versions
       run: |
-        if [[ "${{ inputs.file }}" =~ ^.*\.toml$ ]]; then
-          current_version=$(grep -E '^version\s*=' ${{ inputs.file }} | awk -F\" '{print $2}')
-        elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
-          current_version=$(jq -r '.version' ${{ inputs.file }})
+        if [[ "${FILE}" =~ ^.*\.toml$ ]]; then
+          current_version=$(grep -E '^version\s*=' ${FILE} | awk -F\" '{print $2}')
+        elif [[ "${FILE}" =~ ^.*\.json$ ]]; then
+          current_version=$(jq -r '.version' ${FILE})
         else
-          echo "Unsupported file type: ${{ inputs.file }}"
+          echo "Unsupported file type: ${FILE}"
           exit 1
         fi
         echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
@@ -43,7 +43,7 @@ runs:
         if [ "${#current_version_splitted[*]}" = "2" ]; then
           # Get Release Candidate Number
           release_candidate_number="${current_version_splitted[1]/rc\./}"
-        elif [ "${{ inputs.release_type }}" = "rc" ]; then
+        elif [ "${RELEASE_TYPE}" = "rc" ]; then
           # Reset the release candidate for new release name
           release_candidate_number=0
         fi
@@ -52,8 +52,8 @@ runs:
         IFS='.' read -r major_version minor_version patch_version <<< "${current_version_without_rc}"
         echo "Current version ${major_version}.${minor_version}.${patch_version}"
         # Bump the appropriate part
-        echo "Bumping ${{ inputs.release_type }} version"
-        case "${{ inputs.release_type }}" in
+        echo "Bumping ${RELEASE_TYPE} version"
+        case "${RELEASE_TYPE}" in
             major)
                 major_version=$((major_version+1))
                 minor_version=0
@@ -81,7 +81,7 @@ runs:
                 release_candidate_number=$((release_candidate_number + 1))
                 ;;
             *)
-                echo "Invalid release type ${{ inputs.release_type }}"
+                echo "Invalid release type ${RELEASE_TYPE}"
                 exit 1
                 ;;
         esac
@@ -93,26 +93,29 @@ runs:
 
 
         # Update the version in the specified file
-        if [[ "${{ inputs.file }}" =~ .*\.toml$ ]]; then
-          sed -i.bak -E "s/(^version\s*=\s*\")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${bump_version}\5/" ${{ inputs.file }}
-          rm "${{ inputs.file }}.bak"
-          if [[ "${{ inputs.file }}" =~ .*Cargo\.toml$ ]]; then
+        if [[ "${FILE}" =~ .*\.toml$ ]]; then
+          sed -i.bak -E "s/(^version\s*=\s*\")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${bump_version}\5/" ${FILE}
+          rm "${FILE}.bak"
+          if [[ "${FILE}" =~ .*Cargo\.toml$ ]]; then
             echo "Regenerating Cargo.lock file"
-            nix develop --command bash -c "cargo metadata --no-deps --format-version 1 --manifest-path ${{ inputs.file }} \
+            nix develop --command bash -c "cargo metadata --no-deps --format-version 1 --manifest-path ${FILE} \
               | jq -r '.packages[] | select(.source == null) | .name' \
-              | xargs -I{} cargo update --manifest-path ${{ inputs.file }} -p {}"
+              | xargs -I{} cargo update --manifest-path ${FILE} -p {}"
           fi
-        elif [[ "${{ inputs.file }}" =~ ^.*\.json$ ]]; then
-          jq --arg bump_version "${bump_version}" '.version = $bump_version' ${{ inputs.file }} > "${{ inputs.file }}.tmp"
-          mv "${{ inputs.file }}.tmp" ${{ inputs.file }}
+        elif [[ "${FILE}" =~ ^.*\.json$ ]]; then
+          jq --arg bump_version "${bump_version}" '.version = $bump_version' ${FILE} > "${FILE}.tmp"
+          mv "${FILE}.tmp" ${FILE}
         fi
         echo "bump_version=${bump_version}" | tee -a "$GITHUB_OUTPUT"
-        lock_file=$(echo "${{ inputs.file }}" | sed -E 's/\.(toml|json)$/.lock/')
+        lock_file=$(echo "${FILE}" | sed -E 's/\.(toml|json)$/.lock/')
         if [[ -f "$lock_file" ]]; then
-          echo "commit_files=${{ inputs.file }} ${lock_file}" | tee -a "$GITHUB_OUTPUT"
+          echo "commit_files=${FILE} ${lock_file}" | tee -a "$GITHUB_OUTPUT"
         else
-          echo "commit_files=${{ inputs.file }}" | tee -a "$GITHUB_OUTPUT"
+          echo "commit_files=${FILE}" | tee -a "$GITHUB_OUTPUT"
         fi
+      env:
+        FILE: ${{ inputs.file }}
+        RELEASE_TYPE: ${{ inputs.release_type }}
     - uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321 # v10.0.0
       env:
         PRE_COMMIT_ALLOW_NO_CONFIG: "1"
