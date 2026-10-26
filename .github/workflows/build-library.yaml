@@ -87,7 +87,7 @@ jobs:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
+        uses: hoprnet/hopr-workflows/actions/setup-nix@8ce24b7561a6f7b46ed3133099b82828506f5f2d # setup-nix-v2.2.1
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
@@ -96,7 +96,9 @@ jobs:
       - name: Build library ${{ inputs.architecture }}
         if: inputs.build_command != ''
         shell: bash
-        run: ${{ inputs.build_command }}
+        run: eval "${BUILD_COMMAND}"
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
       - name: Build dry-run library
         if: inputs.version_type != 'release'
         shell: bash
