@@ -96,7 +96,7 @@ location = args.location
 repository = args.repository
 dry_run = args.dry_run
 date = make_cutoff_date(args.days)
-packages = ["bloklid", "hopli"]
+packages = ["bloklid", "hopli", "hoprd", "hoprd-localcluster"]
 
 # we are fine deleting files with a single "-commit.", "-pr.", "-build.", "-debug." or "<commit-hash>"
 # tag or with both
