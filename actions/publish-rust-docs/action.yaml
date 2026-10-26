@@ -40,7 +40,7 @@ runs:
         repository: ${{ inputs.source_repo }}
         ref: ${{ inputs.source_branch }}
     - name: Setup Nix
-      uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
+      uses: hoprnet/hopr-workflows/actions/setup-nix@8ce24b7561a6f7b46ed3133099b82828506f5f2d # setup-nix-v2.2.1
       with:
         cachix_cache_name: ${{ inputs.cachix_cache_name }}
         cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
@@ -48,7 +48,9 @@ runs:
         nix_path: ${{ inputs.nix_path }}
     - name: Build docs
       shell: bash
-      run: ${{ inputs.command }}
+      run: eval "${COMMAND}"
+      env:
+        COMMAND: ${{ inputs.command }}
     - name: Increase git buffer size
       shell: bash
       if: inputs.publish
