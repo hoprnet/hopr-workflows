@@ -54,4 +54,6 @@ runs:
         nix_path: ${{ inputs.nix_path }}
     - name: Run command
       shell: bash
-      run: ${{ inputs.command }}
+      run: eval "${COMMAND}"
+      env:
+        COMMAND: ${{ inputs.command }}
