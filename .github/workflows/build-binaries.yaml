@@ -106,12 +106,12 @@ jobs:
       enable_sign: ${{ steps.build.outputs.enable_sign }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           disable-sudo: true
           egress-policy: audit
       - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
           ref: ${{ inputs.source_branch }}
@@ -147,7 +147,7 @@ jobs:
           BUILD_COMMAND: ${{ inputs.build_command }}
           ARCHITECTURE: ${{ inputs.architecture }}
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts
@@ -166,7 +166,7 @@ jobs:
           ARCHITECTURE: ${{ inputs.architecture }}
       - name: Upload debug binary ${{ inputs.binary }}-${{ inputs.architecture }}-debug
         if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}-debug
           path: ${{ github.workspace }}/artifacts-debug
@@ -180,7 +180,7 @@ jobs:
       id-token: write
     steps:
       - name: Download binary ${{ inputs.binary }}-${{ inputs.architecture }}
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts
@@ -195,19 +195,19 @@ jobs:
           apple_certificate_password: ${{ secrets.apple_certificate_password }}
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} signed binary
         if: contains(inputs.architecture, 'darwin')
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture }}
           path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture }}
           overwrite: true
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} binary signature
         if: contains(inputs.architecture, 'linux')
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.asc
           path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture}}.asc
       - name: Upload ${{ inputs.binary }}-${{ inputs.architecture }} binary checksum
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.sha256
           path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture}}.sha256

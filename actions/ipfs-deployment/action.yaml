@@ -73,7 +73,7 @@ runs:
   steps:
     - name: Download build artifact
       if: inputs.build_artifact_name != ''
-      uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         name: ${{ inputs.build_artifact_name }}
         path: ${{ inputs.build_dir }}
@@ -189,11 +189,11 @@ runs:
         } >>"$GITHUB_OUTPUT"
         echo "✅ Providers: pinata=$PINATA filebase=$FILEBASE"
     - name: Setup pnpm
-      uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       with:
-        version: 9
+        version: 9.15.9
     - name: Setup Node.js
-      uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
       with:
         node-version: 24
     - name: Install uploader dependencies
@@ -282,7 +282,7 @@ runs:
         echo "✅ Deployment info extracted successfully"
     - name: Upload deployment artifacts
       if: ${{ always() && inputs.upload_deployment_artifact == 'true' }}
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: deployment-${{ steps.validate.outputs.environment_name }}-${{ github.sha }}
         path: |
