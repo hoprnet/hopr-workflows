@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Uploader dependencies for the IPFS deployment action (Pinata and Filebase).",
   "license": "GPL-3.0",
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@12.16.1",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.750.0",
     "@aws-sdk/lib-storage": "^3.750.0",
