@@ -418,9 +418,32 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-docker-action@77e84dbf09b47d1e29270283c22f16145aa85ca1 # v5.4.0
       - name: Install Cosign
-        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
-        with:
-          cosign-release: 'v3.0.5'
+        # Replaces sigstore/cosign-installer, whose downloads have no retries and failed intermittently
+        # on GitHub release downloads. Verifies the release checksums signature and the binary checksum.
+        env:
+          COSIGN_VERSION: v3.0.5
+          COSIGN_BOOTSTRAP_VERSION: v3.0.2
+        run: |
+          set -euo pipefail
+          install_dir="$HOME/.cosign"
+          mkdir -p "$install_dir"
+          cd "$install_dir"
+          base="https://github.com/sigstore/cosign/releases/download"
+          download() { curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 -o "$2" "$1"; }
+          download "$base/$COSIGN_BOOTSTRAP_VERSION/cosign-linux-amd64" cosign-bootstrap
+          chmod +x cosign-bootstrap
+          download "$base/$COSIGN_VERSION/cosign_checksums.txt" checksums.txt
+          download "$base/$COSIGN_VERSION/cosign_checksums.txt.sigstore.json" checksums.txt.sigstore.json
+          ./cosign-bootstrap verify-blob \
+            --certificate-identity=keyless@projectsigstore.iam.gserviceaccount.com \
+            --certificate-oidc-issuer=https://accounts.google.com \
+            --bundle checksums.txt.sigstore.json checksums.txt
+          download "$base/$COSIGN_VERSION/cosign-linux-amd64" cosign
+          expected=$(awk '$2 == "cosign-linux-amd64" {print $1}' checksums.txt)
+          echo "$expected  cosign" | sha256sum -c -
+          chmod +x cosign
+          rm -f cosign-bootstrap
+          echo "$install_dir" >> "$GITHUB_PATH"
       - name: Setup GCP
         id: gcp
         uses: hoprnet/hopr-workflows/actions/setup-gcp@2ca6e5b55819505e4e304ed3b0ff62da01cc7c0e # setup-gcp-v4.0.3
