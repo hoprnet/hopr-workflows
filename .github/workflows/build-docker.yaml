@@ -418,8 +418,7 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-docker-action@77e84dbf09b47d1e29270283c22f16145aa85ca1 # v5.4.0
       - name: Install Cosign
-        # Replaces sigstore/cosign-installer, whose downloads have no retries and failed intermittently
-        # on GitHub release downloads. Verifies the release checksums signature and the binary checksum.
+        # Verifies the release checksums signature and the binary checksum.
         env:
           COSIGN_VERSION: v3.0.5
           COSIGN_BOOTSTRAP_VERSION: v3.0.2
