@@ -8,7 +8,6 @@ env:
 permissions:
   contents: read
   pull-requests: write
-  id-token: write # Required for cosign keyless attestation and GCP Workload Identity
 on:
   workflow_call:
     inputs:
@@ -127,6 +126,10 @@ jobs:
       matrix:
         include: ${{ fromJSON(inputs.build_matrix) }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # GCP Workload Identity
     outputs:
       docker_build_version: ${{ steps.version.outputs.docker_build_version }}
       docker_debug_version: ${{ steps.version.outputs.docker_debug_version }}
@@ -296,6 +299,10 @@ jobs:
     name: Multi-Arch
     runs-on: ${{ inputs.job_runner }}
     needs: build
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # GCP Workload Identity
     steps:
       - name: Setup GCP
         id: gcp

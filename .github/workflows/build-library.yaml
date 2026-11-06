@@ -68,12 +68,14 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: read
-  id-token: write
 jobs:
   build:
     name: Build
     if: inputs.enabled
     runs-on: ${{ inputs.runner }}
+    permissions:
+      contents: read
+      id-token: write # crates.io trusted publishing
     timeout-minutes: ${{ inputs.timeout_minutes }}
     steps:
       - name: Harden Runner
