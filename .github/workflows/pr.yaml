@@ -2,13 +2,18 @@ name: PR
 on:
   pull_request:
     # "edited" re-runs the title lint when the PR title is fixed
-    types: [opened, edited, reopened, synchronize]
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+  merge_group:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.event.pull_request.number || github.ref }}-pr
+  cancel-in-progress: true
 jobs:
   # The PR title becomes the squash commit on main, which release-tags.sh
   # parses to derive per-component version bumps
   conventional-title:
+    if: github.event_name == 'pull_request'
     runs-on: depot-ubuntu-22.04
     permissions:
       pull-requests: read
@@ -66,3 +71,17 @@ jobs:
       disable_sudo: false
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
+  # Single required check for the branch ruleset (hoprnet/hopr-devops#372).
+  # Checks in other workflow files (checks-zizmor.yaml) are not covered.
+  merge-gate:
+    name: Merge gate
+    if: always()
+    needs: [conventional-title, format]
+    runs-on: depot-ubuntu-22.04
+    permissions: {}
+    steps:
+      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
+        with:
+          jobs: ${{ toJSON(needs) }}
+          # no PR title exists on merge_group runs
+          allowed-skips: conventional-title

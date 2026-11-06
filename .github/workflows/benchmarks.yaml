@@ -53,6 +53,8 @@ on:
         required: false
       ZULIP_EMAIL:
         required: false
+# Grants live on the jobs; the caller must allow at least the scopes they request
+permissions: {}
 jobs:
   build-benchmarks:
     name: Build Benchmarks
@@ -108,7 +110,7 @@ jobs:
       - name: Compute short SHA
         id: short_sha
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
             SHA="${PR_HEAD_SHA}"
           else
             SHA="${GITHUB_SHA}"
@@ -116,6 +118,7 @@ jobs:
           echo "value=${SHA:0:7}" >> "$GITHUB_OUTPUT"
           echo "full=${SHA}" >> "$GITHUB_OUTPUT"
         env:
+          EVENT_NAME: ${{ github.event_name }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       - name: Install Bencher CLI
         uses: bencherdev/bencher@0f8f620172ccd6225d40a7590598eb7b41718af8
@@ -127,10 +130,10 @@ jobs:
           set +e
           bencher run \
             --project "${BENCHER_PROJECT}" \
-            --token "${{ secrets.bencher_api_token }}" \
+            --token "${BENCHER_API_TOKEN}" \
             --adapter rust_criterion \
             --branch "${SOURCE_BRANCH}" \
-            --github-actions "${{ secrets.GITHUB_TOKEN }}" \
+            --github-actions "${GITHUB_TOKEN}" \
             --err \
             "${RUN_COMMAND}" 2>&1 | tee bencher_output.txt
           EXIT_CODE=${PIPESTATUS[0]}
@@ -173,7 +176,7 @@ jobs:
           # Capture stdout and stderr, tee to file
           bencher run \
             --project "${BENCHER_PROJECT}" \
-            --token "${{ secrets.bencher_api_token }}" \
+            --token "${BENCHER_API_TOKEN}" \
             --adapter rust_criterion \
             --branch "${SOURCE_BRANCH}" \
             --err \
