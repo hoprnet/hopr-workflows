@@ -134,14 +134,14 @@ jobs:
         id: build
         run: |
           artifacts_dir="${GITHUB_WORKSPACE}/artifacts"
+          enable_sign_linux="${ENABLE_SIGN_LINUX}"
+          enable_sign_mac="${ENABLE_SIGN_MAC}"
           eval "${BUILD_COMMAND}"
           mkdir -p "${artifacts_dir}"
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
             cp -f "$file" "${artifacts_dir}/${binary_name}-${ARCHITECTURE}"
           done
-          enable_sign_linux="${ENABLE_SIGN_LINUX}"
-          enable_sign_mac="${ENABLE_SIGN_MAC}"
           enable_sign=$([[ "$enable_sign_linux" == "true" || "$enable_sign_mac" == "true" ]] && echo "true" || echo "false")
           echo "enable_sign=$enable_sign" | tee -a "$GITHUB_OUTPUT"
         env:
