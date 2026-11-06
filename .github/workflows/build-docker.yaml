@@ -8,7 +8,6 @@ env:
 permissions:
   contents: read
   pull-requests: write
-  id-token: write # Required for cosign keyless attestation and GCP Workload Identity
 on:
   workflow_call:
     inputs:
@@ -96,6 +95,11 @@ on:
         type: string
         description: GCP Service Account JSON for Artifact Registry access
         default: github-workflows@hoprassociation.iam.gserviceaccount.com
+      enabled:
+        required: false
+        type: boolean
+        default: true
+        description: "Whether to run the build. When false every job is skipped (build is skipped, the dependent jobs follow)"
     secrets:
       cachix_auth_token:
         required: true
@@ -116,11 +120,16 @@ concurrency:
 jobs:
   build:
     name: Build (${{ matrix.architecture }})
+    if: inputs.enabled
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         include: ${{ fromJSON(inputs.build_matrix) }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # GCP Workload Identity
     outputs:
       docker_build_version: ${{ steps.version.outputs.docker_build_version }}
       docker_debug_version: ${{ steps.version.outputs.docker_debug_version }}
@@ -165,13 +174,15 @@ jobs:
       - name: Determine DockerHub publishing condition
         id: docker_hub
         run: |
-          if [ "${VERSION_TYPE}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
+          if [ "${VERSION_TYPE}" = "release" ] && [ -n "${DOCKER_HUB_USERNAME}" ] && [ -n "${DOCKER_HUB_TOKEN}" ]; then
             echo "publish_docker_hub=true" | tee -a "$GITHUB_OUTPUT"
           else
             echo "publish_docker_hub=false" | tee -a "$GITHUB_OUTPUT"
           fi
         env:
           VERSION_TYPE: ${{ inputs.version_type }}
+          DOCKER_HUB_USERNAME: ${{ secrets.docker_hub_username }}
+          DOCKER_HUB_TOKEN: ${{ secrets.docker_hub_token }}
       - name: Build docker image - ${{ inputs.docker_image_name }}:${{ steps.version.outputs.docker_build_version_platform }}
         run: eval "${BUILD_COMMAND}"
         env:
@@ -288,6 +299,10 @@ jobs:
     name: Multi-Arch
     runs-on: ${{ inputs.job_runner }}
     needs: build
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # GCP Workload Identity
     steps:
       - name: Setup GCP
         id: gcp
@@ -364,13 +379,15 @@ jobs:
       - name: Determine DockerHub publishing condition
         id: docker_hub
         run: |
-          if [ "${VERSION_TYPE}" = "release" ] && [ -n "${{ secrets.docker_hub_username }}" ] && [ -n "${{ secrets.docker_hub_token }}" ]; then
+          if [ "${VERSION_TYPE}" = "release" ] && [ -n "${DOCKER_HUB_USERNAME}" ] && [ -n "${DOCKER_HUB_TOKEN}" ]; then
             echo "publish_docker_hub=true" | tee -a "$GITHUB_OUTPUT"
           else
             echo "publish_docker_hub=false" | tee -a "$GITHUB_OUTPUT"
           fi
         env:
           VERSION_TYPE: ${{ inputs.version_type }}
+          DOCKER_HUB_USERNAME: ${{ secrets.docker_hub_username }}
+          DOCKER_HUB_TOKEN: ${{ secrets.docker_hub_token }}
       - name: Log in to Docker Hub
         if: steps.docker_hub.outputs.publish_docker_hub == 'true'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0

@@ -76,6 +76,7 @@ Each entry in the JSON array must include:
 | `fail_on_scan_vulnerabilities` | No       | `true`                                                      | Fail the build when vulnerabilities are found                                         |
 | `concurrency_group_suffix`     | No       | `""`                                                        | Extra string appended to the concurrency group key                                    |
 | `job_runner`                   | No       | `depot-ubuntu-22.04-4`                                      | Runner for non-matrix jobs (manifest, scan).                                          |
+| `enabled`                      | No       | `true`                                                      | Set to `false` to skip every job (callers use it to label-gate the build)             |
 
 ## Secrets
 
