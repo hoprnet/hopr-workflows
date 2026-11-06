@@ -133,11 +133,12 @@ jobs:
         shell: bash
         id: build
         run: |
+          artifacts_dir="${GITHUB_WORKSPACE}/artifacts"
           eval "${BUILD_COMMAND}"
-          mkdir -p ./artifacts
+          mkdir -p "${artifacts_dir}"
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp -f "$file" "${GITHUB_WORKSPACE}/artifacts/${binary_name}-${ARCHITECTURE}"
+            cp -f "$file" "${artifacts_dir}/${binary_name}-${ARCHITECTURE}"
           done
           enable_sign_linux="${ENABLE_SIGN_LINUX}"
           enable_sign_mac="${ENABLE_SIGN_MAC}"
@@ -157,11 +158,12 @@ jobs:
         if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
         shell: bash
         run: |
+          artifacts_dir="${GITHUB_WORKSPACE}/artifacts-debug"
           eval "${BUILD_DEBUG_COMMAND}"
-          mkdir -p ./artifacts-debug
+          mkdir -p "${artifacts_dir}"
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp -f "$file" "${GITHUB_WORKSPACE}/artifacts-debug/${binary_name}-${ARCHITECTURE}"
+            cp -f "$file" "${artifacts_dir}/${binary_name}-${ARCHITECTURE}"
           done
         env:
           BUILD_DEBUG_COMMAND: ${{ inputs.build_debug_command }}
