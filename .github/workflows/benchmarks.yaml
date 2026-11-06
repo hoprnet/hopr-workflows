@@ -53,7 +53,7 @@ on:
         required: false
       ZULIP_EMAIL:
         required: false
-# Grants live on the jobs; the caller must allow at least these scopes
+# Grants live on the jobs; the caller must allow at least the scopes they request
 permissions: {}
 jobs:
   build-benchmarks:
