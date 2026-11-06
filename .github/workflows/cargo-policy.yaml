@@ -1,0 +1,54 @@
+################################################################################
+# Reusable Cargo dependency policy check
+#
+# Fails when any tracked Cargo.toml declares a `[patch]` section or a git
+# dependency (dependencies, dev, build, workspace, target-specific, the
+# underscore aliases and the deprecated `[replace]` table). Each violation is
+# reported with its manifest and section or dependency.
+#
+# The policy script is not read from the caller's checkout. The job checks
+# out this repository at the exact commit of this workflow file
+# (`job.workflow_sha`), so a caller pull request cannot weaken its own gate
+# by editing a script in the tree under test.
+################################################################################
+name: Cargo policy
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: false
+        type: string
+        default: depot-ubuntu-22.04
+        description: Runner for the job
+      python_version:
+        required: false
+        type: string
+        default: "3.12"
+        description: Python version for the policy script (3.11 or newer, for tomllib)
+permissions: {}
+jobs:
+  cargo-policy:
+    name: Cargo policy
+    runs-on: ${{ inputs.runner }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Checkout policy script from this workflow's revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .cargo-policy
+          sparse-checkout: scripts/check_cargo_policy.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: Reject Cargo patches and git dependencies
+        run: python3 .cargo-policy/scripts/check_cargo_policy.py "$GITHUB_WORKSPACE"

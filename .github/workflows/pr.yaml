@@ -38,6 +38,7 @@ jobs:
             sign-file
             upload-artifact-registry
             benchmarks
+            cargo-policy
             build-binaries
             build-docker
             build-library
@@ -45,6 +46,7 @@ jobs:
             checks-zizmor
             tests
             workflow-benchmarks
+            workflow-cargo-policy
             workflow-checks
             workflow-checks-zizmor
             workflow-tests
@@ -66,3 +68,30 @@ jobs:
       disable_sudo: false
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
+  # Self-test of the reusable Cargo policy check
+  cargo-policy-tests:
+    name: Cargo policy script tests
+    runs-on: depot-ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      # Fixtures are built in throwaway git repositories: a patch and a git
+      # dependency must exit 1, a clean manifest must exit 0.
+      - name: Run policy script tests
+        run: python3 -B -m unittest discover -s scripts -p 'test_*.py' -v
+  # This repository has no Cargo.toml, so the called workflow must pass
+  # ("nothing to check"); that proves the workflow itself resolves, checks
+  # out its own script revision and runs it.
+  cargo-policy-workflow:
+    name: Cargo policy workflow
+    uses: ./.github/workflows/cargo-policy.yaml
+    permissions:
+      contents: read

@@ -25,6 +25,7 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 - [Build Binaries](./.github/workflows/build-binaries.md): Compiles binaries for a specific architecture using Nix, with optional signing and upload to Artifact Registry.
 - [Build Docker](./.github/workflows/build-docker.md): Builds platform-specific Docker images and their multi-architecture manifest, with vulnerability scanning.
 - [Build Library](./.github/workflows/build-library.md): Builds a Rust library using Nix and publishes the crate to crates.io (dry-run on non-release builds).
+- [Cargo Policy](./.github/workflows/cargo-policy.md): Fails on any Cargo `[patch]` section or git dependency in tracked `Cargo.toml` files.
 - [Checks](./.github/workflows/checks.md): Runs configurable code-quality checks (pre-commit, lint, deps, audit) via a matrix strategy.
 - [Checks Zizmor](./.github/workflows/checks-zizmor.md): Scans GitHub Actions workflow files for security issues using zizmor and uploads SARIF to the GitHub Security tab.
 - [Tests](./.github/workflows/tests.md): Runs configurable test suites (unit, integration, nightly), benchmarks, and coverage reports.
