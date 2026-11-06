@@ -96,6 +96,11 @@ on:
         type: string
         description: GCP Service Account JSON for Artifact Registry access
         default: github-workflows@hoprassociation.iam.gserviceaccount.com
+      enabled:
+        required: false
+        type: boolean
+        default: true
+        description: "Whether to run the build. When false every job is skipped (build is skipped, the dependent jobs follow)"
     secrets:
       cachix_auth_token:
         required: true
@@ -116,6 +121,7 @@ concurrency:
 jobs:
   build:
     name: Build (${{ matrix.architecture }})
+    if: inputs.enabled
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
