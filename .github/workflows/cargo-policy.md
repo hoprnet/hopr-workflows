@@ -30,10 +30,10 @@ The checked manifests come from the caller's checkout. The policy script does no
 
 ## Inputs
 
-| Name             | Required | Default              | Description                                                     |
-| ---------------- | -------- | -------------------- | --------------------------------------------------------------- |
-| `runner`         | No       | `depot-ubuntu-22.04` | Runner for the job                                              |
-| `python_version` | No       | `3.12`               | Python version for the script (3.11 or newer, for `tomllib`)    |
+| Name             | Required | Default              | Description                                                  |
+| ---------------- | -------- | -------------------- | ------------------------------------------------------------ |
+| `runner`         | No       | `depot-ubuntu-22.04` | Runner for the job                                           |
+| `python_version` | No       | `3.12`               | Python version for the script (3.11 or newer, for `tomllib`) |
 
 ## Secrets
 
