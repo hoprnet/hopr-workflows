@@ -137,15 +137,17 @@ jobs:
           mkdir -p ./artifacts
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp -f "$file" "${{ github.workspace }}/artifacts/${binary_name}-${ARCHITECTURE}"
+            cp -f "$file" "${GITHUB_WORKSPACE}/artifacts/${binary_name}-${ARCHITECTURE}"
           done
-          enable_sign_linux=${{ (contains(inputs.architecture, 'linux') && secrets.gpg_private_key != '') }}
-          enable_sign_mac=${{ (contains(inputs.architecture, 'darwin') && secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
+          enable_sign_linux="${ENABLE_SIGN_LINUX}"
+          enable_sign_mac="${ENABLE_SIGN_MAC}"
           enable_sign=$([[ "$enable_sign_linux" == "true" || "$enable_sign_mac" == "true" ]] && echo "true" || echo "false")
           echo "enable_sign=$enable_sign" | tee -a "$GITHUB_OUTPUT"
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
           ARCHITECTURE: ${{ inputs.architecture }}
+          ENABLE_SIGN_LINUX: ${{ (contains(inputs.architecture, 'linux') && secrets.gpg_private_key != '') }}
+          ENABLE_SIGN_MAC: ${{ (contains(inputs.architecture, 'darwin') && secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
@@ -159,7 +161,7 @@ jobs:
           mkdir -p ./artifacts-debug
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp -f "$file" "${{ github.workspace }}/artifacts-debug/${binary_name}-${ARCHITECTURE}"
+            cp -f "$file" "${GITHUB_WORKSPACE}/artifacts-debug/${binary_name}-${ARCHITECTURE}"
           done
         env:
           BUILD_DEBUG_COMMAND: ${{ inputs.build_debug_command }}
