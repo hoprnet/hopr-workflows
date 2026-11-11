@@ -28,6 +28,7 @@ jobs:
           # without the workflow- tag-family prefix), and repo housekeeping
           scopes: |
             bump-version
+            discover-crates
             download-artifact-registry
             generate-release-notes
             ipfs-deployment

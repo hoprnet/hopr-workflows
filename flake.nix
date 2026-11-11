@@ -139,6 +139,40 @@
                 touch $out
               '';
 
+          checks.bump-version =
+            pkgs.runCommand "bump-version-test"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.git
+                  pythonEnv
+                ];
+              }
+              ''
+                cp -r ${./actions/bump-version}/. action
+                chmod -R u+w action
+                export PYTHONDONTWRITEBYTECODE=1
+                python -m pytest -q action/test_bump_rust_packages.py
+                touch $out
+              '';
+
+          checks.discover-crates =
+            pkgs.runCommand "discover-crates-test"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.jq
+                  pythonEnv
+                ];
+              }
+              ''
+                cp -r ${./actions/discover-crates}/. action
+                chmod -R u+w action
+                export PYTHONDONTWRITEBYTECODE=1
+                python -m pytest -q action/test_discover_crates.py
+                touch $out
+              '';
+
           devShells.default = pkgs.mkShell {
             buildInputs = [
               pythonEnv

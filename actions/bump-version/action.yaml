@@ -12,6 +12,14 @@ inputs:
   github_token:
     description: GitHub Token from the Bot with permission to make direct commits into the branch
     required: true
+  packages:
+    description: Cargo workspace crates to bump with `cargo release version`, separated by whitespace or newlines. When set, `file` is ignored and the version lines are not edited by hand.
+    required: false
+    default: ''
+  branch:
+    description: Branch the bump commit is pushed to
+    required: false
+    default: ${{ github.ref_name }}
 outputs:
   current_version:
     description: Current version extracted from file
@@ -22,7 +30,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Bump Rust workspace packages
+      if: inputs.packages != ''
+      id: rust
+      shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
+        RELEASE_TYPE: ${{ inputs.release_type }}
+      run: nix develop --command bash "${{ github.action_path }}/bump-rust-packages.sh"
     - name: Bump version
+      if: inputs.packages == ''
       shell: bash
       id: versions
       run: |
@@ -120,9 +137,9 @@ runs:
       env:
         PRE_COMMIT_ALLOW_NO_CONFIG: "1"
       with:
-        add: '${{ steps.versions.outputs.commit_files }}'
-        new_branch: ${{ github.ref_name }}
-        message: "ci: Bump to version ${{ steps.versions.outputs.bump_version }}"
+        add: '${{ steps.versions.outputs.commit_files || steps.rust.outputs.commit_files }}'
+        new_branch: ${{ inputs.branch }}
+        message: "${{ inputs.packages != '' && format('ci: Bump released crates ({0})', inputs.release_type) || format('ci: Bump to version {0}', steps.versions.outputs.bump_version) }}"
         pathspec_error_handling: ignore
         default_author: github_actor
         github_token: ${{ inputs.github_token }}

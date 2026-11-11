@@ -27,8 +27,25 @@ Repository-local Git hooks still run for the automated version-bump commit when 
 - `file`: The filepath to the `Cargo.toml` file
 - `release_type`: The type of release that the project is about to bump to. Possible values are : `rc`, `patch`, `minor` and `major`.
 - `github_token`: The github token used to bump the version
+- `packages`: Optional. Cargo workspace crates to bump, separated by whitespace or newlines. When set, the action runs `cargo release version <release_type> --package <crate>...` for exactly these crates and `file` is ignored. Use it for monorepos with independent crate versions. Also updates dependents' version requirements and `Cargo.lock`.
+- `branch`: Optional. Branch the bump commit is pushed to. Default: `github.ref_name`.
 
 ## Outputs
 
 - `current_version`: Current version extracted from file
 - `bump_version`: Version bumped
+
+## Rust workspace mode
+
+```yaml
+- name: Bump released crates
+  uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v3
+  with:
+    packages: |
+      my-crate-a
+      my-crate-b
+    release_type: patch
+    github_token: ${{ steps.bot-token.outputs.token }}
+```
+
+The logic is in `bump-rust-packages.sh`. Its functions (`validate_release_type`, `parse_packages`, `changed_files`) are tested by `test_bump_rust_packages.py`, which runs in `nix flake check`.

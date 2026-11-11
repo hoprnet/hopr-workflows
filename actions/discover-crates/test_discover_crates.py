@@ -161,7 +161,7 @@ def test_tag_lookup_error_other_than_404_fails_closed(env):
 @pytest.mark.parametrize(
     "text",
     [
-        'version.workspace = true\n',
+        "version.workspace = true\n",
         'version = "1.0.0"\n\n[dependencies.foo]\nversion = "0.4.0"\n',
     ],
 )
@@ -189,7 +189,10 @@ def test_tag_prefix_for():
 def test_manifest_version_reads_every_version_line(tmp_path):
     manifest = tmp_path / "Cargo.toml"
     manifest.write_text('version = "1.2.3"\nversion = "4.5.6"\n')
-    assert source("manifest_version", str(manifest)).stdout.split() == ["1.2.3", "4.5.6"]
+    assert source("manifest_version", str(manifest)).stdout.split() == [
+        "1.2.3",
+        "4.5.6",
+    ]
     manifest.write_text("version.workspace = true\n")
     assert source("manifest_version", str(manifest)).stdout.strip() == ""
 
@@ -197,3 +200,20 @@ def test_manifest_version_reads_every_version_line(tmp_path):
 def test_crates_io_status_returns_the_http_code(env):
     result = source("crates_io_status", "demo-a", "1.0.0", CRATES="demo-a/1.0.0=200")
     assert result.stdout.strip() == "200"
+
+
+def test_unreadable_metadata_fails_instead_of_listing_nothing(env):
+    (env / "metadata.json").write_text("not json")
+    result = subprocess.run(
+        ["bash", str(SCRIPT)],
+        cwd=env,
+        env={
+            **os.environ,
+            "METADATA_FILE": str(env / "metadata.json"),
+            "REPOSITORY": "o/r",
+        },
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert not Path(os.environ["GITHUB_OUTPUT"]).exists()

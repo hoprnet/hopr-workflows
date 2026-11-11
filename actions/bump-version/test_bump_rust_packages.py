@@ -122,7 +122,9 @@ def test_rejects_unknown_release_type(repo, release_type):
     assert calls() == []
 
 
-@pytest.mark.parametrize("packages", ["", "  \n ", "ok bad;name", "$(id)", "--workspace"])
+@pytest.mark.parametrize(
+    "packages", ["", "  \n ", "ok bad;name", "$(id)", "--workspace"]
+)
 def test_rejects_empty_or_unsafe_packages(repo, packages):
     result = run(repo, PACKAGES=packages, RELEASE_TYPE="patch")
     assert result.returncode == 1
