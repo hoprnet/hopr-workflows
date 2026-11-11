@@ -34,7 +34,8 @@ parse_packages() {
 }
 
 changed_files() {
-  git diff --name-only | tr '\n' ' ' | sed 's/ $//'
+  # Only what cargo release edits; other dirty tracked files must not enter the bump commit
+  git diff --name-only -- 'Cargo.lock' '*Cargo.toml' | tr '\n' ' ' | sed 's/ $//'
 }
 
 main() {

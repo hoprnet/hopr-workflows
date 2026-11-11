@@ -43,9 +43,19 @@ tag_exists() {
 discover() {
   local metadata="${METADATA_FILE:?METADATA_FILE is required}"
   local root name version manifest status prefix manifest_ver rc
-  local releases='[]' bumps='[]'
+  local releases='[]' bumps='[]' rows
   root=$(jq -r '.workspace_root' "$metadata")
+  # A variable, not process substitution: set -e does not see a failure inside <( )
+  rows=$(jq -r --arg root "${root}/" --arg pkg "${PACKAGE_NAME:-}" '
+    .packages[]
+    | select(.publish != [] and ($pkg == "" or .name == $pkg))
+    | [.name, .version, (.manifest_path | ltrimstr($root))] | @tsv' "$metadata")
+  if [[ -n ${PACKAGE_NAME:-} && -z $rows ]]; then
+    echo "::error::No publishable workspace crate named '${PACKAGE_NAME}'" >&2
+    return 1
+  fi
   while IFS=$'\t' read -r name version manifest; do
+    [[ -n $name ]] || continue
     # crates.io is the source of truth for "released"; 404 means nothing was published
     status=$(crates_io_status "$name" "$version")
     if [[ $status == "404" ]]; then
@@ -73,10 +83,7 @@ discover() {
     fi
     releases=$(jq -c --arg name "$name" --arg version "$version" --arg manifest "$manifest" --arg prefix "$prefix" \
       '. + [{name: $name, version: $version, manifest: $manifest, tag_prefix: $prefix}]' <<<"$releases")
-  done < <(jq -r --arg root "${root}/" --arg pkg "${PACKAGE_NAME:-}" '
-    .packages[]
-    | select(.publish != [] and ($pkg == "" or .name == $pkg))
-    | [.name, .version, (.manifest_path | ltrimstr($root))] | @tsv' "$metadata")
+  done <<<"$rows"
   echo "Releases to create: ${releases}"
   echo "Crates to bump: ${bumps}"
   {

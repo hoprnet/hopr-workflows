@@ -22,6 +22,7 @@ def repo(tmp_path, monkeypatch):
     work = tmp_path / "work"
     work.mkdir()
     (work / "Cargo.lock").write_text("lock 1\n")
+    (work / "flake.lock").write_text("flake 1\n")
     (work / "a").mkdir()
     (work / "a" / "Cargo.toml").write_text('version = "1.0.0"\n')
     for cmd in (
@@ -47,6 +48,7 @@ def repo(tmp_path, monkeypatch):
             if os.environ.get("CARGO_EDIT") == "1":
                 open("a/Cargo.toml", "w").write('version = "1.0.1"\\n')
                 open("Cargo.lock", "w").write("lock 2\\n")
+                open("flake.lock", "w").write("flake 2\\n")
             """
         )
     )
@@ -106,6 +108,11 @@ def test_accepts_newline_separated_packages(repo):
 def test_outputs_the_files_cargo_changed(repo):
     run(repo, PACKAGES="crate-a", RELEASE_TYPE="patch", CARGO_EDIT="1")
     assert output().strip() == "commit_files=Cargo.lock a/Cargo.toml"
+
+
+def test_outputs_only_manifests_and_the_lock_file(repo):
+    run(repo, PACKAGES="crate-a", RELEASE_TYPE="patch", CARGO_EDIT="1")
+    assert "flake.lock" not in output()
 
 
 def test_outputs_empty_list_when_nothing_changed(repo):

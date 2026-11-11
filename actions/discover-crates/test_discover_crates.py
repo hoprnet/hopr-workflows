@@ -217,3 +217,25 @@ def test_unreadable_metadata_fails_instead_of_listing_nothing(env):
     )
     assert result.returncode != 0
     assert not Path(os.environ["GITHUB_OUTPUT"]).exists()
+
+
+def test_unknown_package_name_fails_instead_of_listing_nothing(env):
+    pkg = crate(env, "demo-a", "1.0.0", "a/Cargo.toml")
+    result = run(env, [pkg], CRATES="demo-a/1.0.0=200", PACKAGE_NAME="demo_a")
+    assert result.returncode == 1
+    assert "demo_a" in result.stdout + result.stderr
+    assert not Path(os.environ["GITHUB_OUTPUT"]).exists()
+
+
+def test_metadata_without_packages_fails(env):
+    metadata = env / "metadata.json"
+    metadata.write_text(json.dumps({"workspace_root": str(env)}))
+    result = subprocess.run(
+        ["bash", str(SCRIPT)],
+        cwd=env,
+        env={**os.environ, "METADATA_FILE": str(metadata), "REPOSITORY": "o/r"},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert not Path(os.environ["GITHUB_OUTPUT"]).exists()

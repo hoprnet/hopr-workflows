@@ -12,8 +12,12 @@ inputs:
   github_token:
     description: GitHub Token from the Bot with permission to make direct commits into the branch
     required: true
+  workspace:
+    description: Bump Cargo workspace crates with `cargo release version` instead of editing `file`. Uses `packages`. An empty `packages` bumps nothing and pushes no commit; it never falls back to `file`.
+    required: false
+    default: 'false'
   packages:
-    description: Cargo workspace crates to bump with `cargo release version`, separated by whitespace or newlines. When set, `file` is ignored and the version lines are not edited by hand.
+    description: Workspace mode only. Crates to bump, separated by whitespace or newlines.
     required: false
     default: ''
   branch:
@@ -31,7 +35,7 @@ runs:
   using: composite
   steps:
     - name: Bump Rust workspace packages
-      if: inputs.packages != ''
+      if: inputs.workspace == 'true' && inputs.packages != ''
       id: rust
       shell: bash
       env:
@@ -39,7 +43,7 @@ runs:
         RELEASE_TYPE: ${{ inputs.release_type }}
       run: nix develop --command bash "${{ github.action_path }}/bump-rust-packages.sh"
     - name: Bump version
-      if: inputs.packages == ''
+      if: inputs.workspace != 'true'
       shell: bash
       id: versions
       run: |
@@ -134,12 +138,13 @@ runs:
         FILE: ${{ inputs.file }}
         RELEASE_TYPE: ${{ inputs.release_type }}
     - uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321 # v10.0.0
+      if: inputs.workspace != 'true' || inputs.packages != ''
       env:
         PRE_COMMIT_ALLOW_NO_CONFIG: "1"
       with:
         add: '${{ steps.versions.outputs.commit_files || steps.rust.outputs.commit_files }}'
         new_branch: ${{ inputs.branch }}
-        message: "${{ inputs.packages != '' && format('ci: Bump released crates ({0})', inputs.release_type) || format('ci: Bump to version {0}', steps.versions.outputs.bump_version) }}"
+        message: "${{ inputs.workspace == 'true' && format('ci: Bump released crates ({0})', inputs.release_type) || format('ci: Bump to version {0}', steps.versions.outputs.bump_version) }}"
         pathspec_error_handling: ignore
         default_author: github_actor
         github_token: ${{ inputs.github_token }}
