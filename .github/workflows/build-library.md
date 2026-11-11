@@ -55,12 +55,11 @@ with:
 | `runner`                  | Yes      | —                             | Runner label for the job                                                                                                                                                                            |
 | `enabled`                 | No       | `true`                        | Whether to run this job                                                                                                                                                                             |
 | `targets`                 | No       | `""`                          | Rust target triples passed as repeated `--target` flags to `cargo release publish`. Accepts a space-separated string or a YAML block scalar. Empty (default) verifies against the host triple only. |
-
-| `github_release` | No | `false` | On release builds, create a GitHub release per crate this run published and bump those crates afterwards. Needs the `github_app_private_key` secret. See [Releasing crates](#releasing-crates). |
-| `release_type` | No | `patch` | `cargo release version` level for the bump: `major`, `minor`, `patch` or `rc`. `patch` on an `-rc.N` version drops the suffix. |
-| `bump_version` | No | `true` | Commit the version bump of the released crates after the releases exist |
-| `zulip_channel` | No | — | Zulip channel for release notifications |
-| `zulip_topic` | No | — | Zulip topic for release notifications |
+| `github_release`          | No       | `false`                       | On release builds, create a GitHub release per crate this run published and bump those crates afterwards. Needs the `github_app_private_key` secret. See [Releasing crates](#releasing-crates).     |
+| `release_type`            | No       | `patch`                       | `cargo release version` level for the bump: `major`, `minor`, `patch` or `rc`. `patch` on an `-rc.N` version drops the suffix.                                                                      |
+| `bump_version`            | No       | `true`                        | Commit the version bump of the released crates after the releases exist                                                                                                                             |
+| `zulip_channel`           | No       | —                             | Zulip channel for release notifications                                                                                                                                                             |
+| `zulip_topic`             | No       | —                             | Zulip topic for release notifications                                                                                                                                                               |
 
 ## Secrets
 
