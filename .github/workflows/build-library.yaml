@@ -161,6 +161,7 @@ jobs:
           CONTEXT: ${{ inputs.package_name != '' && format('--package {0}', inputs.package_name) || '--workspace' }}
           TARGETS: ${{ inputs.targets }}
           NO_VERIFY: ${{ inputs.build_command != '' && '--no-verify' || '' }}
+          ALLOW_EMPTY: ${{ inputs.github_release }}
         run: |-
           target_args=""
           for t in $TARGETS; do
@@ -168,7 +169,9 @@ jobs:
             target_args="${target_args:+$target_args }--target $t"
           done
           # shellcheck disable=SC2086 # CONTEXT, target_args, and NO_VERIFY are intentionally word-split flag lists
-          nix develop -c cargo release publish $CONTEXT $target_args --execute --all-features --no-confirm $NO_VERIFY
+          # A rerun after a failed release job finds everything published; exit 2 must not stop it
+          nix develop -c cargo release publish $CONTEXT $target_args --execute --all-features --no-confirm $NO_VERIFY \
+            || { rc=$?; [ $rc -eq 2 ] && [ "$ALLOW_EMPTY" == "true" ] && echo "Nothing to publish: all packages already published at current version" || exit $rc; }
       # Runs after publish: crates.io then lists exactly the crates released by this run (or a
       # rerun after a failed release job). Works for virtual workspaces, which have no root version.
       - name: Discover released crates
@@ -179,7 +182,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           PACKAGE_NAME: ${{ inputs.package_name }}
+          APP_KEY: ${{ secrets.github_app_private_key }}
         run: |-
+          # Fail before releasing anything when the release and bump jobs could not authenticate
+          [[ -n "$APP_KEY" ]] || { echo "::error::github_release requires the github_app_private_key secret"; exit 1; }
           # shellcheck disable=SC2016 # $RUNNER_TEMP must expand inside the dev shell, not here
           nix develop -c bash -c 'cargo metadata --no-deps --format-version 1 > "$RUNNER_TEMP/metadata.json"'
           workspace_root=$(jq -r '.workspace_root' "$RUNNER_TEMP/metadata.json")
@@ -197,9 +203,17 @@ jobs:
             fi
             # A root package keeps the legacy 'v' tag, workspace members are tagged per crate
             if [[ "$manifest" == "Cargo.toml" ]]; then prefix="v"; else prefix="${name}-v"; fi
-            if gh api "repos/${REPOSITORY}/git/ref/tags/${prefix}${version}" > /dev/null 2>&1; then
+            # release-version reads the version from the manifest, so it must be a literal
+            if ! grep -qE '^version\s*=' "${manifest}"; then
+              echo "::error::${manifest} has no literal version line (version.workspace is not supported)"
+              exit 1
+            fi
+            if tag_out=$(gh api "repos/${REPOSITORY}/git/ref/tags/${prefix}${version}" 2>&1); then
               echo "Skipping ${name} ${version}: tag ${prefix}${version} exists"
               continue
+            elif [[ "$tag_out" != *"HTTP 404"* ]]; then
+              echo "::error::tag lookup for ${prefix}${version} failed: ${tag_out}"
+              exit 1
             fi
             releases=$(jq -c --arg name "$name" --arg version "$version" --arg manifest "$manifest" --arg prefix "$prefix" \
               '. + [{name: $name, version: $version, manifest: $manifest, tag_prefix: $prefix}]' <<< "$releases")
@@ -217,6 +231,7 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
+      pull-requests: read
     strategy:
       fail-fast: false
       matrix:
@@ -268,11 +283,12 @@ jobs:
           ref: ${{ inputs.source_branch }}
           token: ${{ steps.bot-token.outputs.token }}
       - name: Setup Nix
-        uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
+        uses: hoprnet/hopr-workflows/actions/setup-nix@8ce24b7561a6f7b46ed3133099b82828506f5f2d # setup-nix-v2.2.1
         with:
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_auth_token: "${{ secrets.cachix_auth_token }}"
           nix_path: ${{ inputs.nix_path }}
+          cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
       - name: Bump released crates
         id: bump
         shell: bash
