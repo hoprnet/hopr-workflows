@@ -2,7 +2,7 @@
 
 Fake `curl` and `gh` are placed on PATH. `curl` answers crates.io lookups from
 the CRATES env var ("name/version=status", unlisted means 404). `gh` answers tag
-lookups from TAGS (existing tags) and fails with an HTTP 500 when GH_FAIL=1.
+release lookups from RELEASES (tags that have a GitHub release) and fails with an HTTP 500 when GH_FAIL=1.
 The `cargo metadata` document is written by the tests.
 """
 
@@ -42,8 +42,9 @@ def env(tmp_path, monkeypatch):
             if os.environ.get("GH_FAIL") == "1":
                 print("gh: Server Error (HTTP 500)", file=sys.stderr)
                 sys.exit(1)
-            tag = sys.argv[-1].rsplit("/", 1)[-1]
-            if tag in os.environ.get("TAGS", "").split():
+            endpoint = sys.argv[-1]
+            tag = endpoint.rsplit("/", 1)[-1]
+            if "/releases/tags/" in endpoint and tag in os.environ.get("RELEASES", "").split():
                 print("{{}}")
                 sys.exit(0)
             print("gh: Not Found (HTTP 404)", file=sys.stderr)
@@ -115,8 +116,24 @@ def test_published_untagged_crate_is_released_and_bumped(env):
 
 def test_tagged_crate_is_only_bumped(env):
     pkg = crate(env, "demo-a", "1.0.0", "a/Cargo.toml")
-    run(env, [pkg], CRATES="demo-a/1.0.0=200", TAGS="demo-a-v1.0.0")
+    run(env, [pkg], CRATES="demo-a/1.0.0=200", RELEASES="demo-a-v1.0.0")
     assert outputs() == {"releases": [], "bumps": ["demo-a"]}
+
+
+def test_tag_without_a_github_release_is_still_released(env):
+    pkg = crate(env, "demo-a", "1.0.0", "a/Cargo.toml")
+    run(env, [pkg], CRATES="demo-a/1.0.0=200")
+    assert [r["name"] for r in outputs()["releases"]] == ["demo-a"]
+
+
+@pytest.mark.parametrize(
+    "publish, listed",
+    [(["crates-io"], True), (["crates-io", "other"], True), (["other"], False)],
+)
+def test_publish_allowlist_must_include_crates_io(env, publish, listed):
+    pkg = crate(env, "demo-a", "1.0.0", "a/Cargo.toml", publish=publish)
+    run(env, [pkg], CRATES="demo-a/1.0.0=200")
+    assert (outputs()["bumps"] == ["demo-a"]) is listed
 
 
 def test_crate_not_on_crates_io_is_skipped(env):
@@ -155,7 +172,7 @@ def test_tag_lookup_error_other_than_404_fails_closed(env):
     pkg = crate(env, "demo-a", "1.0.0", "a/Cargo.toml")
     result = run(env, [pkg], CRATES="demo-a/1.0.0=200", GH_FAIL="1")
     assert result.returncode == 1
-    assert "tag lookup" in result.stdout + result.stderr
+    assert "release lookup" in result.stdout + result.stderr
 
 
 @pytest.mark.parametrize(

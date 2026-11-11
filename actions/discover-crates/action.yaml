@@ -11,7 +11,7 @@ inputs:
     default: ${{ github.token }}
 outputs:
   releases:
-    description: JSON list of {name, version, manifest, tag_prefix} for published crates without a tag
+    description: JSON list of {name, version, manifest, tag_prefix} for published crates without a GitHub release
     value: ${{ steps.discover.outputs.releases }}
   bumps:
     description: JSON list of crate names that are published and still at their published version

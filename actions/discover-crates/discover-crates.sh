@@ -6,7 +6,7 @@
 # REPOSITORY (owner/name), GH_TOKEN, and optionally PACKAGE_NAME to limit the
 # result to one crate.
 #
-# releases: published crates without a tag, as {name, version, manifest, tag_prefix}.
+# releases: published crates without a GitHub release, as {name, version, manifest, tag_prefix}.
 # bumps:    names of all published crates still at their published version, so a
 #           rerun after a failed release or bump job still bumps them.
 # Both are written as compact JSON to $GITHUB_OUTPUT.
@@ -28,15 +28,16 @@ manifest_version() {
   grep -E '^version\s*=' "$1" | awk -F\" '{print $2}' || true
 }
 
-# Succeeds when the tag exists, fails with 1 when it does not, 2 on any other error.
-tag_exists() {
+# Same condition as release-version's "Check release existence": a GitHub release for the tag.
+# Succeeds when it exists, fails with 1 when it does not, 2 on any other error.
+release_exists() {
   local out
-  if out=$(gh api "repos/${REPOSITORY}/git/ref/tags/$1" 2>&1); then
+  if out=$(gh api "repos/${REPOSITORY}/releases/tags/$1" 2>&1); then
     return 0
   elif [[ $out == *"HTTP 404"* ]]; then
     return 1
   fi
-  echo "::error::tag lookup for $1 failed: ${out}" >&2
+  echo "::error::release lookup for $1 failed: ${out}" >&2
   return 2
 }
 
@@ -48,7 +49,7 @@ discover() {
   # A variable, not process substitution: set -e does not see a failure inside <( )
   rows=$(jq -r --arg root "${root}/" --arg pkg "${PACKAGE_NAME:-}" '
     .packages[]
-    | select(.publish != [] and ($pkg == "" or .name == $pkg))
+    | select((.publish == null or (.publish | index("crates-io"))) and ($pkg == "" or .name == $pkg))
     | [.name, .version, (.manifest_path | ltrimstr($root))] | @tsv' "$metadata")
   if [[ -n ${PACKAGE_NAME:-} && -z $rows ]]; then
     echo "::error::No publishable workspace crate named '${PACKAGE_NAME}'" >&2
@@ -74,9 +75,9 @@ discover() {
     bumps=$(jq -c --arg name "$name" '. + [$name]' <<<"$bumps")
     prefix=$(tag_prefix_for "$manifest" "$name")
     rc=0
-    tag_exists "${prefix}${version}" || rc=$?
+    release_exists "${prefix}${version}" || rc=$?
     if [[ $rc -eq 0 ]]; then
-      echo "Skipping ${name} ${version}: tag ${prefix}${version} exists"
+      echo "Skipping ${name} ${version}: release ${prefix}${version} exists"
       continue
     elif [[ $rc -ne 1 ]]; then
       return 1
