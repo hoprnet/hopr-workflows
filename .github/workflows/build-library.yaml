@@ -275,9 +275,7 @@ jobs:
       - release
     # release is skipped when every crate is already tagged; a failed release leg still blocks the bump
     if: >-
-      always() && inputs.version_type == 'release' && inputs.github_release && inputs.bump_version
-      && needs.build.result == 'success' && needs.release.result != 'failure' && needs.release.result != 'cancelled'
-      && needs.build.outputs.bumps != '[]'
+      always() && inputs.version_type == 'release' && inputs.github_release && inputs.bump_version && needs.build.result == 'success' && needs.release.result != 'failure' && needs.release.result != 'cancelled' && needs.build.outputs.bumps != '[]'
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
