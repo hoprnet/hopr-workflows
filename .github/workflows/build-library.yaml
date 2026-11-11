@@ -109,6 +109,7 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     outputs:
       releases: ${{ steps.discover.outputs.releases || '[]' }}
+      bumps: ${{ steps.discover.outputs.bumps || '[]' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
@@ -149,6 +150,14 @@ jobs:
           # shellcheck disable=SC2086 # CONTEXT, target_args, and NO_VERIFY are intentionally word-split flag lists
           nix develop -c cargo release publish $CONTEXT $target_args --all-features $NO_VERIFY \
             || { rc=$?; [ $rc -eq 2 ] && echo "Nothing to publish — all packages already published at current version" || exit $rc; }
+      # Before publishing: a missing key would otherwise leave published crates with no release or bump
+      - name: Check release credentials
+        if: inputs.version_type == 'release' && inputs.github_release
+        shell: bash
+        env:
+          APP_KEY: ${{ secrets.github_app_private_key }}
+        run: |-
+          [[ -n "$APP_KEY" ]] || { echo "::error::github_release requires the github_app_private_key secret"; exit 1; }
       - name: Authenticate with crates.io
         if: inputs.version_type == 'release'
         id: auth
@@ -182,14 +191,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           PACKAGE_NAME: ${{ inputs.package_name }}
-          APP_KEY: ${{ secrets.github_app_private_key }}
         run: |-
-          # Fail before releasing anything when the release and bump jobs could not authenticate
-          [[ -n "$APP_KEY" ]] || { echo "::error::github_release requires the github_app_private_key secret"; exit 1; }
           # shellcheck disable=SC2016 # $RUNNER_TEMP must expand inside the dev shell, not here
           nix develop -c bash -c 'cargo metadata --no-deps --format-version 1 > "$RUNNER_TEMP/metadata.json"'
           workspace_root=$(jq -r '.workspace_root' "$RUNNER_TEMP/metadata.json")
+          # releases: published crates without a tag. bumps: every published crate still at its
+          # published version, so a rerun after a failed release or bump job still bumps them.
           releases='[]'
+          bumps='[]'
           while IFS=$'\t' read -r name version manifest; do
             # crates.io is the source of truth for "released"; 404 means nothing was published
             status=$(curl -sS -o /dev/null -w '%{http_code}' --proto '=https' --tlsv1.2 \
@@ -203,11 +212,14 @@ jobs:
             fi
             # A root package keeps the legacy 'v' tag, workspace members are tagged per crate
             if [[ "$manifest" == "Cargo.toml" ]]; then prefix="v"; else prefix="${name}-v"; fi
-            # release-version reads the version from the manifest, so it must be a literal
-            if ! grep -qE '^version\s*=' "${manifest}"; then
-              echo "::error::${manifest} has no literal version line (version.workspace is not supported)"
+            # release-version reads every '^version =' line of the manifest, so exactly the
+            # package version must come out (no inherited version, no dotted dependency tables)
+            manifest_version=$(grep -E '^version\s*=' "${manifest}" | awk -F\" '{print $2}' || true)
+            if [[ "$manifest_version" != "$version" ]]; then
+              echo "::error::${manifest} version lines read '${manifest_version}', expected '${version}' (version.workspace is not supported)"
               exit 1
             fi
+            bumps=$(jq -c --arg name "$name" '. + [$name]' <<< "$bumps")
             if tag_out=$(gh api "repos/${REPOSITORY}/git/ref/tags/${prefix}${version}" 2>&1); then
               echo "Skipping ${name} ${version}: tag ${prefix}${version} exists"
               continue
@@ -222,7 +234,9 @@ jobs:
             | select(.publish != [] and ($pkg == "" or .name == $pkg))
             | [.name, .version, (.manifest_path | ltrimstr($root))] | @tsv' "$RUNNER_TEMP/metadata.json")
           echo "Releases to create: ${releases}"
+          echo "Crates to bump: ${bumps}"
           echo "releases=${releases}" >> "$GITHUB_OUTPUT"
+          echo "bumps=${bumps}" >> "$GITHUB_OUTPUT"
   release:
     name: Release ${{ matrix.name }}
     needs: build
@@ -230,7 +244,8 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
-      contents: read
+      # Create Release in release-version uses the job token
+      contents: write
       pull-requests: read
     strategy:
       fail-fast: false
@@ -258,7 +273,11 @@ jobs:
     needs:
       - build
       - release
-    if: inputs.version_type == 'release' && inputs.github_release && inputs.bump_version
+    # release is skipped when every crate is already tagged; a failed release leg still blocks the bump
+    if: >-
+      always() && inputs.version_type == 'release' && inputs.github_release && inputs.bump_version
+      && needs.build.result == 'success' && needs.release.result != 'failure' && needs.release.result != 'cancelled'
+      && needs.build.outputs.bumps != '[]'
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
@@ -293,11 +312,11 @@ jobs:
         id: bump
         shell: bash
         env:
-          RELEASES: ${{ needs.build.outputs.releases }}
+          BUMPS: ${{ needs.build.outputs.bumps }}
           RELEASE_TYPE: ${{ inputs.release_type }}
         run: |-
           [[ "$RELEASE_TYPE" =~ ^(major|minor|patch|rc)$ ]] || { echo "::error::Invalid release_type: $RELEASE_TYPE"; exit 1; }
-          mapfile -t crates < <(jq -r '.[].name' <<< "$RELEASES")
+          mapfile -t crates < <(jq -r '.[]' <<< "$BUMPS")
           package_args=()
           for crate in "${crates[@]}"; do package_args+=(--package "$crate"); done
           export RELEASE_TYPE
