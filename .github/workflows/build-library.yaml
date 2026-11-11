@@ -60,9 +60,39 @@ on:
         type: string
         default: ""
         description: "Space-separated Rust target triples passed as repeated --target flags to cargo release publish. Empty (default) verifies against the host triple only."
+      github_release:
+        required: false
+        type: boolean
+        default: false
+        description: "On release builds, create a GitHub release for every crate this run published and bump those crates afterwards. Requires the github_app_private_key secret."
+      release_type:
+        required: false
+        type: string
+        default: patch
+        description: "cargo release version level used to bump the released crates (major, minor, patch, rc)"
+      bump_version:
+        required: false
+        type: boolean
+        default: true
+        description: "Whether to commit a version bump of the released crates after the releases are created"
+      zulip_channel:
+        required: false
+        type: string
+        description: "Zulip channel for release notifications"
+      zulip_topic:
+        required: false
+        type: string
+        description: "Zulip topic for release notifications"
     secrets:
       cachix_auth_token:
         required: true
+      github_app_private_key:
+        required: false
+        description: "Private key of the GitHub App allowed to create releases and push the bump commit"
+      zulip_api_key:
+        required: false
+      zulip_email:
+        required: false
 concurrency:
   group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.package_name }}-library
   cancel-in-progress: true
@@ -77,6 +107,8 @@ jobs:
       contents: read
       id-token: write # crates.io trusted publishing
     timeout-minutes: ${{ inputs.timeout_minutes }}
+    outputs:
+      releases: ${{ steps.discover.outputs.releases || '[]' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
@@ -137,3 +169,131 @@ jobs:
           done
           # shellcheck disable=SC2086 # CONTEXT, target_args, and NO_VERIFY are intentionally word-split flag lists
           nix develop -c cargo release publish $CONTEXT $target_args --execute --all-features --no-confirm $NO_VERIFY
+      # Runs after publish: crates.io then lists exactly the crates released by this run (or a
+      # rerun after a failed release job). Works for virtual workspaces, which have no root version.
+      - name: Discover released crates
+        if: inputs.version_type == 'release' && inputs.github_release
+        id: discover
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PACKAGE_NAME: ${{ inputs.package_name }}
+        run: |-
+          # shellcheck disable=SC2016 # $RUNNER_TEMP must expand inside the dev shell, not here
+          nix develop -c bash -c 'cargo metadata --no-deps --format-version 1 > "$RUNNER_TEMP/metadata.json"'
+          workspace_root=$(jq -r '.workspace_root' "$RUNNER_TEMP/metadata.json")
+          releases='[]'
+          while IFS=$'\t' read -r name version manifest; do
+            # crates.io is the source of truth for "released"; 404 means nothing was published
+            status=$(curl -sS -o /dev/null -w '%{http_code}' --proto '=https' --tlsv1.2 \
+              -A 'hoprnet-workflows (tech@hoprnet.org)' "https://crates.io/api/v1/crates/${name}/${version}")
+            if [[ "$status" == "404" ]]; then
+              echo "Skipping ${name} ${version}: not on crates.io"
+              continue
+            elif [[ "$status" != "200" ]]; then
+              echo "::error::crates.io lookup for ${name} ${version} returned HTTP ${status}"
+              exit 1
+            fi
+            # A root package keeps the legacy 'v' tag, workspace members are tagged per crate
+            if [[ "$manifest" == "Cargo.toml" ]]; then prefix="v"; else prefix="${name}-v"; fi
+            if gh api "repos/${REPOSITORY}/git/ref/tags/${prefix}${version}" > /dev/null 2>&1; then
+              echo "Skipping ${name} ${version}: tag ${prefix}${version} exists"
+              continue
+            fi
+            releases=$(jq -c --arg name "$name" --arg version "$version" --arg manifest "$manifest" --arg prefix "$prefix" \
+              '. + [{name: $name, version: $version, manifest: $manifest, tag_prefix: $prefix}]' <<< "$releases")
+          done < <(jq -r --arg root "${workspace_root}/" --arg pkg "$PACKAGE_NAME" '
+            .packages[]
+            | select(.publish != [] and ($pkg == "" or .name == $pkg))
+            | [.name, .version, (.manifest_path | ltrimstr($root))] | @tsv' "$RUNNER_TEMP/metadata.json")
+          echo "Releases to create: ${releases}"
+          echo "releases=${releases}" >> "$GITHUB_OUTPUT"
+  release:
+    name: Release ${{ matrix.name }}
+    needs: build
+    if: inputs.version_type == 'release' && inputs.github_release && needs.build.outputs.releases != '[]'
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.build.outputs.releases) }}
+    steps:
+      - name: Release version
+        uses: hoprnet/hopr-workflows/actions/release-version@5a0ab31494b624f9ad1b713d0475d73e10da02e9 # release-version-v5.5.1
+        with:
+          source_branch: ${{ inputs.source_branch }}
+          file: ${{ matrix.manifest }}
+          release_tag_prefix: ${{ matrix.tag_prefix }}
+          # The bump job below bumps all released crates in one commit
+          bump_version: 'false'
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: ${{ secrets.cachix_auth_token }}
+          nix_path: ${{ inputs.nix_path }}
+          github_app_private_key: ${{ secrets.github_app_private_key }}
+          zulip_api_key: ${{ secrets.zulip_api_key }}
+          zulip_email: ${{ secrets.zulip_email }}
+          zulip_channel: ${{ inputs.zulip_channel }}
+          zulip_topic: ${{ inputs.zulip_topic }}
+  bump:
+    name: Bump released crates
+    needs:
+      - build
+      - release
+    if: inputs.version_type == 'release' && inputs.github_release && inputs.bump_version
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          disable-sudo: true
+          egress-policy: audit
+      # The default ruleset bypass belongs to the GitHub App, so the push must use its token
+      - name: Generate short-lived github token from GitHub App Hoprnet
+        id: bot-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: Iv23liV1vEl5aA1L93To
+          private-key: ${{ secrets.github_app_private_key }}
+          permission-contents: write
+      - name: Checkout repository # zizmor: ignore[artipacked]
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.source_branch }}
+          token: ${{ steps.bot-token.outputs.token }}
+      - name: Setup Nix
+        uses: hoprnet/hopr-workflows/actions/setup-nix@21a781128e2796400ae2f17c955dc602c8bc1400 # setup-nix-v2.1.0
+        with:
+          cachix_cache_name: ${{ inputs.cachix_cache_name }}
+          cachix_auth_token: "${{ secrets.cachix_auth_token }}"
+          nix_path: ${{ inputs.nix_path }}
+      - name: Bump released crates
+        id: bump
+        shell: bash
+        env:
+          RELEASES: ${{ needs.build.outputs.releases }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: |-
+          [[ "$RELEASE_TYPE" =~ ^(major|minor|patch|rc)$ ]] || { echo "::error::Invalid release_type: $RELEASE_TYPE"; exit 1; }
+          mapfile -t crates < <(jq -r '.[].name' <<< "$RELEASES")
+          package_args=()
+          for crate in "${crates[@]}"; do package_args+=(--package "$crate"); done
+          export RELEASE_TYPE
+          nix develop -c cargo release version "$RELEASE_TYPE" "${package_args[@]}" --execute --no-confirm
+          echo "commit_files=$(git diff --name-only | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+      - uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321 # v10.0.0
+        env:
+          PRE_COMMIT_ALLOW_NO_CONFIG: "1"
+        with:
+          add: ${{ steps.bump.outputs.commit_files }}
+          new_branch: ${{ inputs.source_branch }}
+          message: "ci: Bump released crates (${{ inputs.release_type }})"
+          pathspec_error_handling: ignore
+          default_author: github_actor
+          github_token: ${{ steps.bot-token.outputs.token }}

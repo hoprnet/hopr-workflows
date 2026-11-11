@@ -56,11 +56,19 @@ with:
 | `enabled`                 | No       | `true`                        | Whether to run this job                                                                                                                                                                             |
 | `targets`                 | No       | `""`                          | Rust target triples passed as repeated `--target` flags to `cargo release publish`. Accepts a space-separated string or a YAML block scalar. Empty (default) verifies against the host triple only. |
 
+| `github_release` | No | `false` | On release builds, create a GitHub release per crate this run published and bump those crates afterwards. Needs the `github_app_private_key` secret. See [Releasing crates](#releasing-crates). |
+| `release_type` | No | `patch` | `cargo release version` level for the bump: `major`, `minor`, `patch` or `rc`. `patch` on an `-rc.N` version drops the suffix. |
+| `bump_version` | No | `true` | Commit the version bump of the released crates after the releases exist |
+| `zulip_channel` | No | — | Zulip channel for release notifications |
+| `zulip_topic` | No | — | Zulip topic for release notifications |
+
 ## Secrets
 
-| Name                | Required | Description                 |
-| ------------------- | -------- | --------------------------- |
-| `cachix_auth_token` | Yes      | Auth token for Cachix cache |
+| Name                           | Required              | Description                                                                                    |
+| ------------------------------ | --------------------- | ---------------------------------------------------------------------------------------------- |
+| `cachix_auth_token`            | Yes                   | Auth token for Cachix cache                                                                    |
+| `github_app_private_key`       | With `github_release` | Private key of the `hoprnet-ci` GitHub App. It creates the releases and pushes the bump commit |
+| `zulip_api_key`, `zulip_email` | No                    | Zulip credentials for release notifications                                                    |
 
 ## Steps
 
@@ -70,3 +78,11 @@ with:
 4. **Build library** _(when `build_command` is set)_ — runs the caller's cacheable build command
 5. **Build dry-run library** _(non-release only)_ — validates the package through the caller's default dev shell; adds `--no-verify` when the cacheable build already ran
 6. **Publish library** _(release only)_ — publishes through the caller's default dev shell; adds `--no-verify` when the cacheable build already ran
+
+## Releasing crates
+
+With `version_type: release` and `github_release: true` the workflow replaces a separate `release-version` job. It works for single crates and for monorepos whose workspace root has no `version`.
+
+1. **Discover released crates** — after publishing, lists the publishable workspace crates (`publish != false`) that are on crates.io and have no tag yet. The tag is `<crate>-v<version>`, or `v<version>` for a root package.
+2. **Release** _(one job per crate)_ — runs [release-version](../../actions/release-version/README.md) with `file: <crate manifest>` and `bump_version: false`. The first run in a repository creates a release for every crate that has no tag.
+3. **Bump released crates** — runs `cargo release version <release_type>` for the released crates only and pushes one commit to `source_branch`, so the next pull request sees unpublished versions. The commit uses the GitHub App token, which bypasses the default branch ruleset. If a release job fails, no bump happens. Rerun the workflow: publishing skips crates already on crates.io and discovery finds the untagged ones.
