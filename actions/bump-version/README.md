@@ -43,6 +43,7 @@ Repository-local Git hooks still run for the automated version-bump commit when 
 - name: Bump released crates
   uses: hoprnet/hopr-workflows/actions/bump-version@bump-version-v2
   with:
+    workspace: "true"
     packages: |
       my-crate-a
       my-crate-b
