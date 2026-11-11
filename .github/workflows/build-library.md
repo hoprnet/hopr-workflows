@@ -78,11 +78,12 @@ with:
 4. **Build library** _(when `build_command` is set)_ — runs the caller's cacheable build command
 5. **Build dry-run library** _(non-release only)_ — validates the package through the caller's default dev shell; adds `--no-verify` when the cacheable build already ran
 6. **Publish library** _(release only)_ — publishes through the caller's default dev shell; adds `--no-verify` when the cacheable build already ran
+7. **Discover released crates** _(release + `github_release` only)_ — lists crates that still need a GitHub release; see [Releasing crates](#releasing-crates)
 
 ## Releasing crates
 
 With `version_type: release` and `github_release: true` the workflow replaces a separate `release-version` job. It works for single crates and for monorepos whose workspace root has no `version`.
 
-1. **Discover released crates** — after publishing, lists the publishable workspace crates (`publish != false`) that are on crates.io and have no tag yet. The tag is `<crate>-v<version>`, or `v<version>` for a root package.
+1. **Discover released crates** — after publishing, lists the publishable workspace crates (`publish != []` in `cargo metadata`) that are on crates.io and have no tag yet. The tag is `<crate>-v<version>`, or `v<version>` for a root package.
 2. **Release** _(one job per crate)_ — runs [release-version](../../actions/release-version/README.md) with `file: <crate manifest>` and `bump_version: false`. The first run in a repository creates a release for every crate that has no tag. Crates with `version.workspace = true` are not supported: discovery fails because `release-version` needs a literal `version` line in the manifest.
 3. **Bump released crates** — runs `cargo release version <release_type>` for the released crates only and pushes one commit to `source_branch`, so the next pull request sees unpublished versions. The commit uses the GitHub App token, which bypasses the default branch ruleset. If a release job fails, no bump happens. Rerun the workflow: publishing skips crates already on crates.io and discovery finds the untagged ones.
