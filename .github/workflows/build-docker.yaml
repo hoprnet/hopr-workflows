@@ -127,6 +127,7 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
+      pull-requests: read # set-build-version reads the PR labels
       id-token: write # GCP Workload Identity
     outputs:
       docker_build_version: ${{ steps.version.outputs.docker_build_version }}
