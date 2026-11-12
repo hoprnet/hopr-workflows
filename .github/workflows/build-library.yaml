@@ -5,7 +5,7 @@ name: Build library
 on:
   workflow_call:
     inputs:
-      source_branch:
+      repo_sha:
         required: true
         type: string
       version_type:
@@ -62,18 +62,20 @@ on:
         description: "Space-separated Rust target triples passed as repeated --target flags to cargo release publish. Empty (default) verifies against the host triple only."
     secrets:
       cachix_auth_token:
-        required: true
+        required: false
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.package_name }}-library
+  group: ${{ github.repository }}-${{ github.head_ref || github.ref_name }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.package_name }}-library
   cancel-in-progress: true
 permissions:
   contents: read
-  id-token: write
 jobs:
   build:
     name: Build
     if: inputs.enabled
     runs-on: ${{ inputs.runner }}
+    permissions:
+      contents: read
+      id-token: write # crates.io trusted publishing
     timeout-minutes: ${{ inputs.timeout_minutes }}
     steps:
       - name: Harden Runner
@@ -85,7 +87,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-          ref: ${{ inputs.source_branch }}
+          ref: ${{ inputs.repo_sha }}
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@8ce24b7561a6f7b46ed3133099b82828506f5f2d # setup-nix-v2.2.1
         with:
@@ -112,8 +114,9 @@ jobs:
             [[ "$t" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo "::error::Invalid target triple: $t"; exit 1; }
             target_args="${target_args:+$target_args }--target $t"
           done
+          # The checkout is a detached HEAD (repo_sha); cargo-release rejects it by default (allow-branch = ["*", "!HEAD"])
           # shellcheck disable=SC2086 # CONTEXT, target_args, and NO_VERIFY are intentionally word-split flag lists
-          nix develop -c cargo release publish $CONTEXT $target_args --all-features $NO_VERIFY \
+          nix develop -c cargo release publish $CONTEXT $target_args --all-features --allow-branch '*' $NO_VERIFY \
             || { rc=$?; [ $rc -eq 2 ] && echo "Nothing to publish — all packages already published at current version" || exit $rc; }
       - name: Authenticate with crates.io
         if: inputs.version_type == 'release'
@@ -133,5 +136,6 @@ jobs:
             [[ "$t" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo "::error::Invalid target triple: $t"; exit 1; }
             target_args="${target_args:+$target_args }--target $t"
           done
+          # The checkout is a detached HEAD (repo_sha); cargo-release rejects it by default (allow-branch = ["*", "!HEAD"])
           # shellcheck disable=SC2086 # CONTEXT, target_args, and NO_VERIFY are intentionally word-split flag lists
-          nix develop -c cargo release publish $CONTEXT $target_args --execute --all-features --no-confirm $NO_VERIFY
+          nix develop -c cargo release publish $CONTEXT $target_args --execute --all-features --no-confirm --allow-branch '*' $NO_VERIFY

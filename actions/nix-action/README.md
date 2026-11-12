@@ -9,7 +9,7 @@ steps:
   - name: Run tests
     uses: hoprnet/hopr-workflows/actions/nix-action@fa71078959cf9f892185e8df16551720693a2cd1 # nix-action-v1
     with:
-      source_branch: ${{ inputs.source_branch }}
+      repo_sha: ${{ inputs.repo_sha }}
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       command: nix build -L .#my-tests
 ```
@@ -19,7 +19,7 @@ steps:
 | Input                     | Required | Default                       | Description                                                                           |
 | ------------------------- | -------- | ----------------------------- | ------------------------------------------------------------------------------------- |
 | `command`                 | Yes      | —                             | Shell command(s) to execute (supports multi-line)                                     |
-| `source_branch`           | No       | `main`                        | Git branch to checkout                                                                |
+| `repo_sha`                | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`)    |
 | `cachix_cache_name`       | No       | `<repository name>`           | Cachix cache name. Defaults to the caller repository name                             |
 | `cachix_extra_pull_names` | No       | —                             | Comma-separated list of additional Cachix caches to pull (substitute) from, read-only |
 | `cachix_auth_token`       | No       | `""`                          | Cachix authentication token (passed to setup-nix)                                     |

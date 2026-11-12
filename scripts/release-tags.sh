@@ -29,12 +29,14 @@ fi
 
 # Each releasable component and the path that triggers its release.
 # Actions are discovered from their directories; reusable workflows keep
-# their historical tag family names, hence the explicit mapping.
+# their historical tag family names, hence the explicit mapping. A value
+# may list several space-separated paths (no spaces inside a path).
 declare -A COMPONENT_PATHS=(
   ["build-binaries"]=".github/workflows/build-binaries.yaml"
   ["build-docker"]=".github/workflows/build-docker.yaml"
   ["build-library"]=".github/workflows/build-library.yaml"
   ["workflow-benchmarks"]=".github/workflows/benchmarks.yaml"
+  ["workflow-cargo-policy"]=".github/workflows/cargo-policy.yaml scripts/check_cargo_policy.py"
   ["workflow-checks"]=".github/workflows/checks.yaml"
   ["workflow-checks-zizmor"]=".github/workflows/checks-zizmor.yaml"
   ["workflow-tests"]=".github/workflows/tests.yaml"
@@ -56,6 +58,7 @@ bump_for_component() {
   local component="$1" path="$2"
   local bump="patch"
   local sha subject body type scope bang
+  # shellcheck disable=SC2086 # path list is intentionally word-split
   while read -r sha; do
     subject="$(git log -1 --format=%s "$sha")"
     body="$(git log -1 --format=%b "$sha")"
@@ -74,7 +77,7 @@ bump_for_component() {
     elif [[ $type == "feat" && $bump != "major" ]]; then
       bump="minor"
     fi
-  done < <(git log --format=%H "${BASE_SHA}..${HEAD_SHA}" -- "$path")
+  done < <(git log --format=%H "${BASE_SHA}..${HEAD_SHA}" -- $path)
   echo "$bump"
 }
 
@@ -123,7 +126,8 @@ release_component() {
 
 for component in $(printf '%s\n' "${!COMPONENT_PATHS[@]}" | sort); do
   path="${COMPONENT_PATHS[$component]}"
-  if git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- "$path"; then
+  # shellcheck disable=SC2086 # path list is intentionally word-split
+  if git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- $path; then
     continue
   fi
   # A workflow re-run for an already-released merge must not mint a

@@ -5,9 +5,10 @@ name: Build binary
 on:
   workflow_call:
     inputs:
-      source_branch:
+      repo_sha:
         required: true
         type: string
+        description: "Commit SHA to build from"
       version_type:
         required: true
         type: string
@@ -80,7 +81,7 @@ on:
         description: "Whether to run this job"
     secrets:
       cachix_auth_token:
-        required: true
+        required: false
       gpg_private_key:
         required: false
       gpg_private_key_password:
@@ -90,7 +91,7 @@ on:
       apple_certificate_password:
         required: false
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.binary }}-build-binary
+  group: ${{ github.repository }}-${{ github.head_ref || github.ref_name }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.binary }}-build-binary
   cancel-in-progress: true
 permissions:
   contents: read
@@ -100,6 +101,9 @@ jobs:
     if: inputs.enabled
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+      pull-requests: read # set-build-version reads the PR labels
     outputs:
       publish_artifact_registry: ${{ steps.version.outputs.publish_artifact_registry }}
       build_version: ${{ steps.version.outputs.build_version }}
@@ -114,7 +118,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-          ref: ${{ inputs.source_branch }}
+          ref: ${{ inputs.repo_sha }}
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@8ce24b7561a6f7b46ed3133099b82828506f5f2d # setup-nix-v2.2.1
         with:
@@ -124,7 +128,7 @@ jobs:
           nix_path: ${{ inputs.nix_path }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@d404630b2361062c3869d833288e1890ee2a2999 # set-build-version-v2.1.3
+        uses: hoprnet/hopr-workflows/actions/set-build-version@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # set-build-version (feat/fork-pr-ci-support)
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
@@ -133,19 +137,22 @@ jobs:
         shell: bash
         id: build
         run: |
+          artifacts_dir="${GITHUB_WORKSPACE}/artifacts"
+          enable_sign_linux="${ENABLE_SIGN_LINUX}"
+          enable_sign_mac="${ENABLE_SIGN_MAC}"
           eval "${BUILD_COMMAND}"
-          mkdir -p ./artifacts
+          mkdir -p "${artifacts_dir}"
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp -f "$file" "${{ github.workspace }}/artifacts/${binary_name}-${ARCHITECTURE}"
+            cp -f "$file" "${artifacts_dir}/${binary_name}-${ARCHITECTURE}"
           done
-          enable_sign_linux=${{ (contains(inputs.architecture, 'linux') && secrets.gpg_private_key != '') }}
-          enable_sign_mac=${{ (contains(inputs.architecture, 'darwin') && secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
           enable_sign=$([[ "$enable_sign_linux" == "true" || "$enable_sign_mac" == "true" ]] && echo "true" || echo "false")
           echo "enable_sign=$enable_sign" | tee -a "$GITHUB_OUTPUT"
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
           ARCHITECTURE: ${{ inputs.architecture }}
+          ENABLE_SIGN_LINUX: ${{ (contains(inputs.architecture, 'linux') && secrets.gpg_private_key != '') }}
+          ENABLE_SIGN_MAC: ${{ (contains(inputs.architecture, 'darwin') && secrets.apple_certificate != '' && secrets.apple_certificate_password != '') }}
       - name: Upload binary ${{ inputs.binary }}-${{ inputs.architecture }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
@@ -155,11 +162,12 @@ jobs:
         if: steps.version.outputs.debug_version != '' && inputs.build_debug_command != ''
         shell: bash
         run: |
+          artifacts_dir="${GITHUB_WORKSPACE}/artifacts-debug"
           eval "${BUILD_DEBUG_COMMAND}"
-          mkdir -p ./artifacts-debug
+          mkdir -p "${artifacts_dir}"
           for file in ./result/bin/*; do
             binary_name=$(basename "$file")
-            cp -f "$file" "${{ github.workspace }}/artifacts-debug/${binary_name}-${ARCHITECTURE}"
+            cp -f "$file" "${artifacts_dir}/${binary_name}-${ARCHITECTURE}"
           done
         env:
           BUILD_DEBUG_COMMAND: ${{ inputs.build_debug_command }}
@@ -212,14 +220,14 @@ jobs:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.sha256
           path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture}}.sha256
       - name: Setup GCP
-        if: needs.build.outputs.publish_artifact_registry == 'true'
+        if: needs.build.outputs.publish_artifact_registry == 'true' && !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
         uses: hoprnet/hopr-workflows/actions/setup-gcp@2ca6e5b55819505e4e304ed3b0ff62da01cc7c0e # setup-gcp-v4.0.3
         with:
           workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
           service_account: ${{ inputs.gcp_service_account }}
           install_sdk: "true"
       - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
-        if: needs.build.outputs.publish_artifact_registry == 'true'
+        if: needs.build.outputs.publish_artifact_registry == 'true' && !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
         uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@d6e014a4cfa23290de4980d530ba24329f6bcc66 # upload-artifact-registry-v2.0.1
         with:
           source: ${{ github.workspace }}/artifacts

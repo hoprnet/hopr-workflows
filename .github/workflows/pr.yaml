@@ -2,13 +2,18 @@ name: PR
 on:
   pull_request:
     # "edited" re-runs the title lint when the PR title is fixed
-    types: [opened, edited, reopened, synchronize]
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+  merge_group:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.event.pull_request.number || github.ref }}-pr
+  cancel-in-progress: true
 jobs:
   # The PR title becomes the squash commit on main, which release-tags.sh
   # parses to derive per-component version bumps
   conventional-title:
+    if: github.event_name == 'pull_request'
     runs-on: depot-ubuntu-22.04
     permissions:
       pull-requests: read
@@ -38,6 +43,7 @@ jobs:
             sign-file
             upload-artifact-registry
             benchmarks
+            cargo-policy
             build-binaries
             build-docker
             build-library
@@ -45,6 +51,7 @@ jobs:
             checks-zizmor
             tests
             workflow-benchmarks
+            workflow-cargo-policy
             workflow-checks
             workflow-checks-zizmor
             workflow-tests
@@ -56,7 +63,7 @@ jobs:
   format:
     uses: ./.github/workflows/checks.yaml
     with:
-      source_branch: ${{ github.event.pull_request.head.sha }}
+      repo_sha: ${{ github.event.pull_request.head.sha }}
       pre_commit: true
       pre_commit_command: "nix develop .#pre-commit --command pre-commit run --all-files"
       deps: false
@@ -66,3 +73,44 @@ jobs:
       disable_sudo: false
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
+  # Self-test of the reusable Cargo policy check
+  cargo-policy-tests:
+    name: Cargo policy script tests
+    runs-on: depot-ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      # Fixtures are built in throwaway git repositories: a patch and a git
+      # dependency must exit 1, a clean manifest must exit 0.
+      - name: Run policy script tests
+        run: python3 -B -m unittest discover -s scripts -p 'test_*.py' -v
+  # This repository has no Cargo.toml, so the called workflow must pass
+  # ("nothing to check"); that proves the workflow itself resolves, checks
+  # out its own script revision and runs it.
+  cargo-policy-workflow:
+    name: Cargo policy workflow
+    uses: ./.github/workflows/cargo-policy.yaml
+    permissions:
+      contents: read
+  # Single required check for the branch ruleset (hoprnet/hopr-devops#372).
+  # Checks in other workflow files (checks-zizmor.yaml) are not covered.
+  merge-gate:
+    name: Merge gate
+    if: always()
+    needs: [conventional-title, format, cargo-policy-tests, cargo-policy-workflow]
+    runs-on: depot-ubuntu-22.04
+    permissions: {}
+    steps:
+      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
+        with:
+          jobs: ${{ toJSON(needs) }}
+          # no PR title exists on merge_group runs
+          allowed-skips: conventional-title

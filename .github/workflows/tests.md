@@ -10,7 +10,7 @@ jobs:
     name: Test
     uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v4
     with:
-      source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+      repo_sha: ${{ github.event.pull_request.head.sha || github.sha }}
       enable_unit_tests: true
       enable_integration_tests: true
       enable_unit_coverage: true
@@ -30,7 +30,7 @@ jobs:
     name: Coverage
     uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@workflow-tests-v4
     with:
-      source_branch: ${{ github.ref_name }}
+      repo_sha: ${{ github.sha }}
       enable_unit_tests: false
       enable_integration_tests: false
       enable_unit_coverage: true
@@ -46,7 +46,7 @@ jobs:
 
 | Name                           | Required | Default                           | Description                                                                           |
 | ------------------------------ | -------- | --------------------------------- | ------------------------------------------------------------------------------------- |
-| `source_branch`                | Yes      | —                                 | Source branch to check out                                                            |
+| `repo_sha`                     | Yes      | —                                 | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`)    |
 | `cachix_cache_name`            | No       | `<repository name>`               | Cachix cache name                                                                     |
 | `cachix_extra_pull_names`      | No       | —                                 | Comma-separated list of additional Cachix caches to pull (substitute) from, read-only |
 | `enable_unit_tests`            | No       | `true`                            | Enable unit tests                                                                     |
@@ -72,5 +72,9 @@ jobs:
 
 | Name                | Required | Description                                                                                     |
 | ------------------- | -------- | ----------------------------------------------------------------------------------------------- |
-| `cachix_auth_token` | Yes      | Auth token for Cachix cache                                                                     |
+| `cachix_auth_token` | No       | Auth token for Cachix cache                                                                     |
 | `codecov_token`     | No       | Codecov token. Required when `enable_unit_coverage` or `enable_integration_coverage` is enabled |
+
+## Pull requests from forks
+
+Unit, integration and nightly tests run normally. The coverage jobs are skipped on fork PRs (no OIDC token for the Codecov upload).

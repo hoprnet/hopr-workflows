@@ -21,7 +21,7 @@ jobs:
       pull-requests: write
     uses: hoprnet/hopr-workflows/.github/workflows/benchmarks.yaml@workflow-benchmarks-v2
     with:
-      source_branch: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      repo_sha: ${{ github.event.pull_request.head.sha || github.sha }}
       runner: depot-ubuntu-22.04-4
       bencher_project: ${{ github.event.repository.name }}
       should_build: true
@@ -37,24 +37,24 @@ jobs:
 
 ## Inputs
 
-| Name              | Required | Default                       | Description                              |
-| ----------------- | -------- | ----------------------------- | ---------------------------------------- |
-| `source_branch`   | Yes      | —                             | Source branch to check out               |
-| `runner`          | Yes      | —                             | Runner label for both jobs               |
-| `bencher_project` | Yes      | —                             | Bencher.dev project name                 |
-| `should_build`    | Yes      | —                             | Whether to build the benchmarks          |
-| `should_run`      | Yes      | —                             | Whether to run benchmarks after building |
-| `build_command`   | Yes      | —                             | Command to build the benchmarks          |
-| `run_command`     | Yes      | —                             | Command to run the benchmarks            |
-| `nix_path`        | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use                          |
-| `zulip_stream`    | No       | `HOPRd`                       | Zulip stream for notifications           |
-| `zulip_topic`     | No       | `Benchmark regressions`       | Zulip topic for notifications            |
+| Name              | Required | Default                       | Description                                                                        |
+| ----------------- | -------- | ----------------------------- | ---------------------------------------------------------------------------------- |
+| `repo_sha`        | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
+| `runner`          | Yes      | —                             | Runner label for both jobs                                                         |
+| `bencher_project` | Yes      | —                             | Bencher.dev project name                                                           |
+| `should_build`    | Yes      | —                             | Whether to build the benchmarks                                                    |
+| `should_run`      | Yes      | —                             | Whether to run benchmarks after building                                           |
+| `build_command`   | Yes      | —                             | Command to build the benchmarks                                                    |
+| `run_command`     | Yes      | —                             | Command to run the benchmarks                                                      |
+| `nix_path`        | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use                                                                    |
+| `zulip_stream`    | No       | `HOPRd`                       | Zulip stream for notifications                                                     |
+| `zulip_topic`     | No       | `Benchmark regressions`       | Zulip topic for notifications                                                      |
 
 ## Secrets
 
 | Name                | Required | Description                             |
 | ------------------- | -------- | --------------------------------------- |
-| `cachix_auth_token` | Yes      | Auth token for Cachix cache             |
+| `cachix_auth_token` | No       | Auth token for Cachix cache             |
 | `bencher_api_token` | No       | Bencher.dev API token                   |
 | `ZULIP_API_KEY`     | No       | Zulip API key for failure notifications |
 | `ZULIP_EMAIL`       | No       | Zulip email for failure notifications   |
@@ -62,3 +62,7 @@ jobs:
 ## Notifications
 
 On failure, a Zulip message is sent to `zulip_stream` / `zulip_topic` with a link to the Bencher run (PR context) or Bencher report (merge/push context). Notifications are skipped when `ZULIP_API_KEY` or `ZULIP_EMAIL` are not set.
+
+## Pull requests from forks
+
+All jobs are skipped on PRs from forks (no secrets, Bencher cannot be called). Call the workflow from `merge_group` and push so benchmarks run after review. The Bencher `--branch` name is `github.head_ref || github.ref_name`.

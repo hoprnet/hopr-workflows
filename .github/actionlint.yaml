@@ -5,3 +5,9 @@ self-hosted-runner:
     - depot-ubuntu-22.04-4
     - depot-ubuntu-24.04-8
     - depot-ubuntu-24.04-16
+paths:
+  # actionlint's job context type predates job.workflow_repository and
+  # job.workflow_sha (documented GitHub contexts).
+  .github/workflows/cargo-policy.yaml:
+    ignore:
+      - 'property "workflow_(repository|sha)" is not defined in object type'

@@ -7,7 +7,6 @@ env:
   CARGO_TERM_COLOR: always
 permissions:
   contents: read
-  id-token: write
 on:
   workflow_dispatch:
   schedule:
@@ -16,6 +15,9 @@ jobs:
   cleanup-registry:
     name: Cleanup Registry
     runs-on: depot-ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write # GCP Workload Identity
     timeout-minutes: 120
     steps:
       - name: Harden Runner
