@@ -21,6 +21,7 @@ jobs:
     needs: build-binaries
     permissions:
       contents: read
+      pull-requests: read
       id-token: write
     with:
       repo_sha: ${{ github.event.pull_request.head.sha || github.sha }}
