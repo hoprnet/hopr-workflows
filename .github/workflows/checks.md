@@ -10,7 +10,7 @@ jobs:
     name: Check
     uses: hoprnet/hopr-workflows/.github/workflows/checks.yaml@workflow-checks-v1
     with:
-      source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+      repo_sha: ${{ github.event.pull_request.head.sha || github.sha }}
       runner_small: depot-ubuntu-22.04
       runner_large: depot-ubuntu-22.04-4
     secrets:
@@ -21,7 +21,7 @@ jobs:
 
 | Name                      | Required | Default                                                      | Description                                                                           |
 | ------------------------- | -------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| `source_branch`           | Yes      | —                                                            | Source branch to check out                                                            |
+| `repo_sha`                | Yes      | —                                                            | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`)    |
 | `cachix_cache_name`       | No       | `<repository name>`                                          | Cachix cache name.                                                                    |
 | `cachix_extra_pull_names` | No       | —                                                            | Comma-separated list of additional Cachix caches to pull (substitute) from, read-only |
 | `pre_commit`              | No       | `true`                                                       | Enable pre-commit check                                                               |
@@ -41,7 +41,7 @@ jobs:
 
 | Name                | Required | Description                 |
 | ------------------- | -------- | --------------------------- |
-| `cachix_auth_token` | Yes      | Auth token for Cachix cache |
+| `cachix_auth_token` | No       | Auth token for Cachix cache |
 
 ## Job matrix
 

@@ -6,13 +6,14 @@
 #
 # This workflow declares its own `security-events: write` permission at
 # the job level for the SARIF upload. No additional permissions are
-# required from the caller.
+# required from the caller. On fork PRs the token is read-only, so the
+# analysis still runs (and fails on findings) but the SARIF upload is skipped.
 ################################################################################
 name: Zizmor
 on:
   workflow_call:
     inputs:
-      source_branch:
+      repo_sha:
         required: true
         type: string
       cachix_cache_name:
@@ -38,7 +39,7 @@ on:
         description: "Nix path to use"
     secrets:
       cachix_auth_token:
-        required: true
+        required: false
 permissions: {}
 jobs:
   zizmor:
@@ -49,19 +50,41 @@ jobs:
       security-events: write
     steps:
       - name: Run zizmor
-        uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
+        uses: hoprnet/hopr-workflows/actions/nix-action@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # nix-action (feat/fork-pr-ci-support)
         env:
           GH_TOKEN: ${{ github.token }}
           NIX_CONFIG: "access-tokens = github.com=${{ github.token }}"
         with:
-          source_branch: ${{ inputs.source_branch }}
+          repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           command: ${{ inputs.zizmor_command }}
           nix_path: ${{ inputs.nix_path }}
       - name: Upload SARIF file
+        # Fork PRs cannot upload to the Security tab. Keep the findings visible without blocking:
+        # pre-existing findings must not fail the PR, the Security tab check runs on merge queue and push.
+
+        if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
         uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
         with:
           sarif_file: results.sarif
           category: zizmor
+      - name: Upload SARIF as run artifact (fork PR)
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: zizmor-sarif
+          path: results.sarif
+          if-no-files-found: ignore
+      - name: Summarize zizmor findings (fork PR)
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          if [ -f results.sarif ]; then
+            count=$(jq '[.runs[].results[]?] | length' results.sarif)
+            echo "zizmor findings: ${count} (not blocking)" | tee -a "${GITHUB_STEP_SUMMARY}"
+            if [ "${count}" -gt 0 ]; then
+              echo "There are zizmor findings." | tee -a "${GITHUB_STEP_SUMMARY}"
+              exit 1
+            fi
+          fi

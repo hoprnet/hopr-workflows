@@ -22,12 +22,12 @@ This repository contains a collection of custom GitHub Actions and Reusable Work
 ## Reusable Workflows
 
 - [Benchmarks](./.github/workflows/benchmarks.md): Builds, runs, and publishes benchmarks to Bencher.dev with Zulip notifications on regressions.
-- [Build Binaries](./.github/workflows/build-binaries.md): Compiles binaries for a specific architecture using Nix, with optional signing and upload to Artifact Registry.
+- [Build Binaries](./.github/workflows/build-binaries.md): Compiles binaries for a specific architecture using Nix, with optional signing and upload to Artifact Registry (skipped on fork PRs).
 - [Build Docker](./.github/workflows/build-docker.md): Builds platform-specific Docker images and their multi-architecture manifest, with vulnerability scanning.
 - [Build Library](./.github/workflows/build-library.md): Builds a Rust library using Nix and publishes the crate to crates.io (dry-run on non-release builds).
 - [Cargo Policy](./.github/workflows/cargo-policy.md): Fails on any Cargo `[patch]` section or git dependency in tracked `Cargo.toml` files.
 - [Checks](./.github/workflows/checks.md): Runs configurable code-quality checks (pre-commit, lint, deps, audit) via a matrix strategy.
-- [Checks Zizmor](./.github/workflows/checks-zizmor.md): Scans GitHub Actions workflow files for security issues using zizmor and uploads SARIF to the GitHub Security tab.
+- [Checks Zizmor](./.github/workflows/checks-zizmor.md): Scans GitHub Actions workflow files for security issues using zizmor and uploads SARIF to the GitHub Security tab (upload skipped on fork PRs).
 - [Tests](./.github/workflows/tests.md): Runs configurable test suites (unit, integration, nightly), benchmarks, and coverage reports.
 
 ## Tags
@@ -57,3 +57,7 @@ Consumers should pin to a commit SHA with the release tag in a trailing comment
 (`uses: hoprnet/hopr-workflows/actions/setup-nix@<sha> # setup-nix-v2.1.0`), or
 reference the major alias to follow non-breaking updates automatically. Alias
 tags are never attached to GitHub releases so they stay movable.
+
+## Pull requests from forks
+
+Reusable workflows are safe to call for PRs from forks. Those runs use the plain `pull_request` event, so secrets are empty, the `GITHUB_TOKEN` is read-only and there is no OIDC token. Steps that need secrets or GCP (registry publishing, signing, SBOM attestation, Bencher, SARIF upload, Codecov) are skipped for fork PRs and keep running for internal PRs, the merge queue (`merge_group`), push and release runs. The `cachix_auth_token` secret is optional in every workflow. Approval of fork runs is controlled by the GitHub setting "Require approval for all external contributors".
