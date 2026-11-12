@@ -120,7 +120,7 @@ jobs:
       CI: "true"
     steps:
       - name: Run Unit
-        uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
+        uses: hoprnet/hopr-workflows/actions/nix-action@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # nix-action (feat/fork-pr-ci-support)
         with:
           repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
@@ -139,7 +139,7 @@ jobs:
       CI: "true"
     steps:
       - name: Run Integration
-        uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
+        uses: hoprnet/hopr-workflows/actions/nix-action@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # nix-action (feat/fork-pr-ci-support)
         with:
           repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
@@ -158,7 +158,7 @@ jobs:
       CI: "true"
     steps:
       - name: Run Unit Nightly
-        uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
+        uses: hoprnet/hopr-workflows/actions/nix-action@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # nix-action (feat/fork-pr-ci-support)
         with:
           repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
@@ -176,7 +176,7 @@ jobs:
       contents: read
     steps:
       - name: Run Benchmark
-        uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
+        uses: hoprnet/hopr-workflows/actions/nix-action@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # nix-action (feat/fork-pr-ci-support)
         with:
           repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
@@ -199,7 +199,7 @@ jobs:
       CI: "true"
     steps:
       - name: Generate Unit report
-        uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
+        uses: hoprnet/hopr-workflows/actions/nix-action@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # nix-action (feat/fork-pr-ci-support)
         with:
           repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
@@ -231,7 +231,7 @@ jobs:
       CI: "true"
     steps:
       - name: Generate Integration report
-        uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
+        uses: hoprnet/hopr-workflows/actions/nix-action@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # nix-action (feat/fork-pr-ci-support)
         with:
           repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
