@@ -18,7 +18,7 @@ jobs:
   build:
     uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v3
     with:
-      source_branch: ${{ github.ref_name }}
+      repo_sha: ${{ github.sha }}
       version_type: commit
       architecture: x86_64-linux
       cachix_cache_name: hopr
@@ -34,7 +34,7 @@ jobs:
 
 | Name                      | Required | Default                       | Description                                                                           |
 | ------------------------- | -------- | ----------------------------- | ------------------------------------------------------------------------------------- |
-| `source_branch`           | Yes      | —                             | Source branch to build from                                                           |
+| `repo_sha`           | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
 | `version_type`            | Yes      | —                             | Versioning strategy: `commit`, `pr`, or `release`                                     |
 | `architecture`            | Yes      | —                             | Target architecture (e.g. `x86_64-linux`, `aarch64-darwin`)                           |
 | `cachix_cache_name`       | No       | —                             | Cachix cache name                                                                     |
@@ -54,7 +54,7 @@ jobs:
 
 | Name                                    | Required | Description                                                       |
 | --------------------------------------- | -------- | ----------------------------------------------------------------- |
-| `cachix_auth_token`                     | Yes      | Auth token for Cachix cache                                       |
+| `cachix_auth_token`                     | No       | Auth token for Cachix cache                                       |
 | `gcp_service_account`                   | No       | GCP service account JSON with Artifact Registry write permissions |
 | `gcp_workload_identity_provider`        | No       | Workload Identity provider for GCP authentication                 |
 | `gcp_workload_identity_service_account` | No       | Service account for Workload Identity                             |
@@ -70,3 +70,7 @@ jobs:
 | `publish_artifact_registry` | Whether the binary was published to Artifact Registry |
 | `build_version`             | Version string used in the build                      |
 | `enable_sign`               | Whether signing was performed                         |
+
+## Pull requests from forks
+
+Fork PRs have no secrets and no OIDC token. The binary is built and uploaded as a run artifact, but `Setup GCP` and the Artifact Registry publish step never run, even when the PR has the `publish-binaries` label (`set-build-version` forces `publish_artifact_registry` to `false`). Signing is skipped because the signing secrets are empty. Internal PRs, `merge_group`, push and release runs are unchanged.

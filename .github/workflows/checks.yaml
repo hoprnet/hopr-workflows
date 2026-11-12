@@ -9,7 +9,7 @@ name: Checks
 on:
   workflow_call:
     inputs:
-      source_branch:
+      repo_sha:
         required: true
         type: string
       cachix_cache_name:
@@ -84,7 +84,7 @@ on:
         description: "Nix path to use"
     secrets:
       cachix_auth_token:
-        required: true
+        required: false
 permissions: {}
 jobs:
   check:
@@ -130,7 +130,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
         with:
-          source_branch: ${{ inputs.source_branch }}
+          repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -149,7 +149,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          ref: ${{ inputs.source_branch }}
+          ref: ${{ inputs.repo_sha }}
           fetch-depth: 0
           persist-credentials: false
       - name: Fail on added conflict markers

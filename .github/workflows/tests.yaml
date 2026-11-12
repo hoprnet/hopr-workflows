@@ -4,13 +4,13 @@
 # Each job is individually conditional via `enable_*` inputs.
 # Coverage runs after the corresponding test passes, or if the test was
 # disabled (skipped). Coverage is gated to non-draft PRs, push, and
-# merge_group events.
+# merge_group events, never for fork PRs (no OIDC token for Codecov).
 ################################################################################
 name: Tests
 on:
   workflow_call:
     inputs:
-      source_branch:
+      repo_sha:
         required: true
         type: string
       cachix_cache_name:
@@ -102,7 +102,7 @@ on:
         description: "Nix path to use"
     secrets:
       cachix_auth_token:
-        required: true
+        required: false
 permissions: {}
 env:
   RUST_BACKTRACE: "1"
@@ -122,7 +122,7 @@ jobs:
       - name: Run Unit
         uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
         with:
-          source_branch: ${{ inputs.source_branch }}
+          repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -141,7 +141,7 @@ jobs:
       - name: Run Integration
         uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
         with:
-          source_branch: ${{ inputs.source_branch }}
+          repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -160,7 +160,7 @@ jobs:
       - name: Run Unit Nightly
         uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
         with:
-          source_branch: ${{ inputs.source_branch }}
+          repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -178,7 +178,7 @@ jobs:
       - name: Run Benchmark
         uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
         with:
-          source_branch: ${{ inputs.source_branch }}
+          repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -189,7 +189,7 @@ jobs:
     name: Coverage / Unit
     needs: [unit-test]
     if: >-
-      !cancelled() && inputs.enable_unit_coverage && (needs['unit-test'].result == 'success' || needs['unit-test'].result == 'skipped') && (github.event_name == 'push' || github.event_name == 'merge_group' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false))
+      !cancelled() && inputs.enable_unit_coverage && (needs['unit-test'].result == 'success' || needs['unit-test'].result == 'skipped') && (github.event_name == 'push' || github.event_name == 'merge_group' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository))
     runs-on: ${{ inputs.runner_unit }}
     timeout-minutes: ${{ inputs.coverage_timeout }}
     permissions:
@@ -201,7 +201,7 @@ jobs:
       - name: Generate Unit report
         uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
         with:
-          source_branch: ${{ inputs.source_branch }}
+          repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
@@ -221,7 +221,7 @@ jobs:
     name: Coverage / Integration
     needs: [integration-test]
     if: >-
-      !cancelled() && inputs.enable_integration_coverage && (needs['integration-test'].result == 'success' || needs['integration-test'].result == 'skipped') && (github.event_name == 'push' || github.event_name == 'merge_group' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false))
+      !cancelled() && inputs.enable_integration_coverage && (needs['integration-test'].result == 'success' || needs['integration-test'].result == 'skipped') && (github.event_name == 'push' || github.event_name == 'merge_group' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository))
     runs-on: ${{ inputs.runner_integration || inputs.runner_unit }}
     timeout-minutes: ${{ inputs.coverage_timeout }}
     permissions:
@@ -233,7 +233,7 @@ jobs:
       - name: Generate Integration report
         uses: hoprnet/hopr-workflows/actions/nix-action@ff4c0b7afc400ee6cf217841dc576f8a1289bcc0 # nix-action-v1.2.1
         with:
-          source_branch: ${{ inputs.source_branch }}
+          repo_sha: ${{ inputs.repo_sha }}
           cachix_cache_name: ${{ inputs.cachix_cache_name }}
           cachix_extra_pull_names: ${{ inputs.cachix_extra_pull_names }}
           cachix_auth_token: ${{ secrets.cachix_auth_token }}

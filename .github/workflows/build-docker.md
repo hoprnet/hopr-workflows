@@ -8,8 +8,8 @@ Builds platform-specific Docker images using Nix and creates a multi-architectur
 | ------------ | ------------------------------------------------------------------------------------ |
 | `build`      | Matrix build: one job per entry in `build_matrix`                                    |
 | `smoke-test` | Runs a smoke-test command against the built image (optional)                         |
-| `manifest`   | Creates and pushes the multi-arch manifest (incl. floating release tags, see below)  |
-| `scan`       | Scans the image for vulnerabilities with Trivy, uploads SARIF to GitHub Security tab |
+| `manifest`   | Creates and pushes the multi-arch manifest (incl. floating release tags, see below). Skipped on fork PRs |
+| `scan`       | Scans the image for vulnerabilities with Trivy, attests the SBOM |
 
 ## Usage
 
@@ -21,10 +21,9 @@ jobs:
     needs: build-binaries
     permissions:
       contents: read
-      security-events: write
       id-token: write
     with:
-      source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+      repo_sha: ${{ github.event.pull_request.head.sha || github.sha }}
       version_type: "commit"
       build_matrix: >-
         [
@@ -60,7 +59,7 @@ Each entry in the JSON array must include:
 
 | Name                           | Required | Default                                                     | Description                                                                           |
 | ------------------------------ | -------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `source_branch`                | Yes      | —                                                           | Source branch to build from                                                           |
+| `repo_sha`                | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
 | `version_type`                 | Yes      | —                                                           | Versioning strategy: `commit`, `pr`, or `release`                                     |
 | `build_matrix`                 | Yes      | —                                                           | JSON array of matrix entries (see schema above)                                       |
 | `cachix_cache_name`            | No       | —                                                           | Cachix cache name                                                                     |
@@ -83,7 +82,7 @@ Each entry in the JSON array must include:
 | Name                  | Required | Description                                                          |
 | --------------------- | -------- | -------------------------------------------------------------------- |
 | `gcp_service_account` | Yes      | GCP service account with Artifact Registry and GCS write permissions |
-| `cachix_auth_token`   | Yes      | Auth token for Cachix cache                                          |
+| `cachix_auth_token`   | No       | Auth token for Cachix cache                                          |
 | `docker_hub_username` | No       | Docker Hub username (required for release builds)                    |
 | `docker_hub_token`    | No       | Docker Hub token (required for release builds)                       |
 
@@ -118,3 +117,14 @@ and `release-main` / `release-testing` for releases.
 | ---------------------- | -------------------------------- |
 | `docker_build_version` | Docker image version built       |
 | `docker_debug_version` | Docker debug image version built |
+
+## Pull requests from forks
+
+A PR from a fork runs on the plain `pull_request` event: secrets are empty, the `GITHUB_TOKEN` is read-only and there is no OIDC token, so nothing that needs GCP can run. Fork PRs are detected with `github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository`. On a fork PR:
+
+- The image is built, and the archive is uploaded as a run artifact (`docker-image-<architecture>`, 1 day retention) so `scan` and `smoke-test` use the locally built image instead of pulling it from Artifact Registry.
+- `Setup GCP`, the image and debug image publishing, the `manifest` job, the SBOM attestation and the SBOM upload to GCS are skipped.
+- The Trivy scan and the smoke test still run, against the local image. The smoke test command receives the same `SOURCE_IMAGE` reference, which is tagged on the local image; it must not pull it.
+
+Internal PRs, `merge_group`, push and release runs keep publishing as before. Required checks for skipped jobs (`Multi-Arch`) report as skipped.
+

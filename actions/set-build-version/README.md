@@ -115,3 +115,7 @@ Production
 - `publish_artifact_registry`: Whether to publish the artifact in the Google Artifact registry. Enabled when the `version_type` is `pr` or `release` and when it's `commit` and the PR has the label `publish-binaries` attached.
 - `publish_github_release`: Whether to publish the artifact in the GitHub Release. Enabled when the `version_type` is `release`.
 - `deploy_commits`: Whether to deploy on commit builds. Enabled when the label `deploy-commits` is attached to the PR and the `version_type` is `commit`.
+
+## Pull requests from forks
+
+On a PR from a fork (`pull_request` event whose head repository differs from `github.repository`), `publish_artifact_registry` and `deploy_commits` are forced to `false` even if the PR has the `publish-binaries` or `deploy-commits` labels.

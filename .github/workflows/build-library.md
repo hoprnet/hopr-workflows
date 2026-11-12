@@ -13,7 +13,7 @@ jobs:
   build-library:
     uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@build-library-v3
     with:
-      source_branch: ${{ github.ref_name }}
+      repo_sha: ${{ github.sha }}
       version_type: release
       package_name: my-crate
       architecture: x86_64-linux
@@ -42,7 +42,7 @@ with:
 
 | Name                      | Required | Default                       | Description                                                                                                                                                                                         |
 | ------------------------- | -------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `source_branch`           | Yes      | —                             | Source branch to build from                                                                                                                                                                         |
+| `repo_sha`           | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
 | `version_type`            | Yes      | —                             | Versioning strategy: `commit`, `pr`, or `release`. Only `release` publishes to crates.io                                                                                                            |
 | `package_name`            | No       | —                             | Crate name to publish (e.g. `hopr-types`). When empty, defaults to `--workspace`.                                                                                                                   |
 | `architecture`            | Yes      | —                             | Target architecture (e.g. `x86_64-linux`)                                                                                                                                                           |
@@ -60,12 +60,12 @@ with:
 
 | Name                | Required | Description                 |
 | ------------------- | -------- | --------------------------- |
-| `cachix_auth_token` | Yes      | Auth token for Cachix cache |
+| `cachix_auth_token` | No       | Auth token for Cachix cache |
 
 ## Steps
 
 1. **Harden Runner** — applies step-security hardening (no sudo, egress audit)
-2. **Checkout repository** — checks out `source_branch`
+2. **Checkout repository** — checks out `repo_sha`
 3. **Setup Nix** — configures the Nix environment with Cachix
 4. **Build library** _(when `build_command` is set)_ — runs the caller's cacheable build command
 5. **Build dry-run library** _(non-release only)_ — validates the package through the caller's default dev shell; adds `--no-verify` when the cacheable build already ran

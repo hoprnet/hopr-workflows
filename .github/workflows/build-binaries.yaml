@@ -5,9 +5,10 @@ name: Build binary
 on:
   workflow_call:
     inputs:
-      source_branch:
+      repo_sha:
         required: true
         type: string
+        description: "Commit SHA to build from"
       version_type:
         required: true
         type: string
@@ -80,7 +81,7 @@ on:
         description: "Whether to run this job"
     secrets:
       cachix_auth_token:
-        required: true
+        required: false
       gpg_private_key:
         required: false
       gpg_private_key_password:
@@ -90,7 +91,7 @@ on:
       apple_certificate_password:
         required: false
 concurrency:
-  group: ${{ github.repository }}-${{ inputs.source_branch }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.binary }}-build-binary
+  group: ${{ github.repository }}-${{ github.head_ref || github.ref_name }}-${{ github.workflow }}-${{ inputs.architecture }}-${{ inputs.binary }}-build-binary
   cancel-in-progress: true
 permissions:
   contents: read
@@ -114,7 +115,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-          ref: ${{ inputs.source_branch }}
+          ref: ${{ inputs.repo_sha }}
       - name: Setup Nix
         uses: hoprnet/hopr-workflows/actions/setup-nix@8ce24b7561a6f7b46ed3133099b82828506f5f2d # setup-nix-v2.2.1
         with:
@@ -216,14 +217,14 @@ jobs:
           name: ${{ inputs.binary }}-${{ inputs.architecture}}.sha256
           path: ${{ github.workspace }}/artifacts/*-${{ inputs.architecture}}.sha256
       - name: Setup GCP
-        if: needs.build.outputs.publish_artifact_registry == 'true'
+        if: needs.build.outputs.publish_artifact_registry == 'true' && !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
         uses: hoprnet/hopr-workflows/actions/setup-gcp@2ca6e5b55819505e4e304ed3b0ff62da01cc7c0e # setup-gcp-v4.0.3
         with:
           workload_identity_provider: ${{ inputs.gcp_workload_identity_provider }}
           service_account: ${{ inputs.gcp_service_account }}
           install_sdk: "true"
       - name: Publish ${{ inputs.binary }}-${{ inputs.architecture }} into Google Artifact registry
-        if: needs.build.outputs.publish_artifact_registry == 'true'
+        if: needs.build.outputs.publish_artifact_registry == 'true' && !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
         uses: hoprnet/hopr-workflows/actions/upload-artifact-registry@d6e014a4cfa23290de4980d530ba24329f6bcc66 # upload-artifact-registry-v2.0.1
         with:
           source: ${{ github.workspace }}/artifacts
