@@ -4,12 +4,12 @@ Builds platform-specific Docker images using Nix and creates a multi-architectur
 
 ## Jobs
 
-| Job          | Description                                                                          |
-| ------------ | ------------------------------------------------------------------------------------ |
-| `build`      | Matrix build: one job per entry in `build_matrix`                                    |
-| `smoke-test` | Runs a smoke-test command against the built image (optional)                         |
+| Job          | Description                                                                                              |
+| ------------ | -------------------------------------------------------------------------------------------------------- |
+| `build`      | Matrix build: one job per entry in `build_matrix`                                                        |
+| `smoke-test` | Runs a smoke-test command against the built image (optional)                                             |
 | `manifest`   | Creates and pushes the multi-arch manifest (incl. floating release tags, see below). Skipped on fork PRs |
-| `scan`       | Scans the image for vulnerabilities with Trivy, attests the SBOM |
+| `scan`       | Scans the image for vulnerabilities with Trivy, attests the SBOM                                         |
 
 ## Usage
 
@@ -59,7 +59,7 @@ Each entry in the JSON array must include:
 
 | Name                           | Required | Default                                                     | Description                                                                           |
 | ------------------------------ | -------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `repo_sha`                | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
+| `repo_sha`                     | Yes      | —                                                           | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`)    |
 | `version_type`                 | Yes      | —                                                           | Versioning strategy: `commit`, `pr`, or `release`                                     |
 | `build_matrix`                 | Yes      | —                                                           | JSON array of matrix entries (see schema above)                                       |
 | `cachix_cache_name`            | No       | —                                                           | Cachix cache name                                                                     |
@@ -127,4 +127,3 @@ A PR from a fork runs on the plain `pull_request` event: secrets are empty, the 
 - The Trivy scan and the smoke test still run, against the local image. The smoke test command receives the same `SOURCE_IMAGE` reference, which is tagged on the local image; it must not pull it.
 
 Internal PRs, `merge_group`, push and release runs keep publishing as before. Required checks for skipped jobs (`Multi-Arch`) report as skipped.
-

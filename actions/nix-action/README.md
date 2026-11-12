@@ -19,7 +19,7 @@ steps:
 | Input                     | Required | Default                       | Description                                                                           |
 | ------------------------- | -------- | ----------------------------- | ------------------------------------------------------------------------------------- |
 | `command`                 | Yes      | —                             | Shell command(s) to execute (supports multi-line)                                     |
-| `repo_sha`           | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
+| `repo_sha`                | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`)    |
 | `cachix_cache_name`       | No       | `<repository name>`           | Cachix cache name. Defaults to the caller repository name                             |
 | `cachix_extra_pull_names` | No       | —                             | Comma-separated list of additional Cachix caches to pull (substitute) from, read-only |
 | `cachix_auth_token`       | No       | `""`                          | Cachix authentication token (passed to setup-nix)                                     |

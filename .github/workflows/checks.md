@@ -21,7 +21,7 @@ jobs:
 
 | Name                      | Required | Default                                                      | Description                                                                           |
 | ------------------------- | -------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| `repo_sha`           | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
+| `repo_sha`                | Yes      | —                                                            | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`)    |
 | `cachix_cache_name`       | No       | `<repository name>`                                          | Cachix cache name.                                                                    |
 | `cachix_extra_pull_names` | No       | —                                                            | Comma-separated list of additional Cachix caches to pull (substitute) from, read-only |
 | `pre_commit`              | No       | `true`                                                       | Enable pre-commit check                                                               |

@@ -37,18 +37,18 @@ jobs:
 
 ## Inputs
 
-| Name              | Required | Default                       | Description                              |
-| ----------------- | -------- | ----------------------------- | ---------------------------------------- |
-| `repo_sha`   | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
-| `runner`          | Yes      | —                             | Runner label for both jobs               |
-| `bencher_project` | Yes      | —                             | Bencher.dev project name                 |
-| `should_build`    | Yes      | —                             | Whether to build the benchmarks          |
-| `should_run`      | Yes      | —                             | Whether to run benchmarks after building |
-| `build_command`   | Yes      | —                             | Command to build the benchmarks          |
-| `run_command`     | Yes      | —                             | Command to run the benchmarks            |
-| `nix_path`        | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use                          |
-| `zulip_stream`    | No       | `HOPRd`                       | Zulip stream for notifications           |
-| `zulip_topic`     | No       | `Benchmark regressions`       | Zulip topic for notifications            |
+| Name              | Required | Default                       | Description                                                                        |
+| ----------------- | -------- | ----------------------------- | ---------------------------------------------------------------------------------- |
+| `repo_sha`        | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
+| `runner`          | Yes      | —                             | Runner label for both jobs                                                         |
+| `bencher_project` | Yes      | —                             | Bencher.dev project name                                                           |
+| `should_build`    | Yes      | —                             | Whether to build the benchmarks                                                    |
+| `should_run`      | Yes      | —                             | Whether to run benchmarks after building                                           |
+| `build_command`   | Yes      | —                             | Command to build the benchmarks                                                    |
+| `run_command`     | Yes      | —                             | Command to run the benchmarks                                                      |
+| `nix_path`        | No       | `nixpkgs=channel:nixos-26.05` | Nix path to use                                                                    |
+| `zulip_stream`    | No       | `HOPRd`                       | Zulip stream for notifications                                                     |
+| `zulip_topic`     | No       | `Benchmark regressions`       | Zulip topic for notifications                                                      |
 
 ## Secrets
 

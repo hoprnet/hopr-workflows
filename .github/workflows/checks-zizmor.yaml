@@ -61,10 +61,10 @@ jobs:
           cachix_auth_token: ${{ secrets.cachix_auth_token }}
           command: ${{ inputs.zizmor_command }}
           nix_path: ${{ inputs.nix_path }}
-      # Fork PRs cannot upload to the Security tab. Keep the findings visible without blocking:
-      # pre-existing findings must not fail the PR, the Security tab check runs on merge queue and push.
-
       - name: Upload SARIF file
+        # Fork PRs cannot upload to the Security tab. Keep the findings visible without blocking:
+        # pre-existing findings must not fail the PR, the Security tab check runs on merge queue and push.
+
         if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
         uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
         with:

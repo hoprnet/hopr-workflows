@@ -34,7 +34,7 @@ jobs:
 
 | Name                      | Required | Default                       | Description                                                                           |
 | ------------------------- | -------- | ----------------------------- | ------------------------------------------------------------------------------------- |
-| `repo_sha`           | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`) |
+| `repo_sha`                | Yes      | —                             | Commit SHA to check out (use `github.event.pull_request.head.sha \|\| github.sha`)    |
 | `version_type`            | Yes      | —                             | Versioning strategy: `commit`, `pr`, or `release`                                     |
 | `architecture`            | Yes      | —                             | Target architecture (e.g. `x86_64-linux`, `aarch64-darwin`)                           |
 | `cachix_cache_name`       | No       | —                             | Cachix cache name                                                                     |

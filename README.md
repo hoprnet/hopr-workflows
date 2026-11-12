@@ -61,4 +61,3 @@ tags are never attached to GitHub releases so they stay movable.
 ## Pull requests from forks
 
 Reusable workflows are safe to call for PRs from forks. Those runs use the plain `pull_request` event, so secrets are empty, the `GITHUB_TOKEN` is read-only and there is no OIDC token. Steps that need secrets or GCP (registry publishing, signing, SBOM attestation, Bencher, SARIF upload, Codecov) are skipped for fork PRs and keep running for internal PRs, the merge queue (`merge_group`), push and release runs. The `cachix_auth_token` secret is optional in every workflow. Approval of fork runs is controlled by the GitHub setting "Require approval for all external contributors".
-
