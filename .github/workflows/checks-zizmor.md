@@ -37,4 +37,4 @@ jobs:
 
 ## Pull requests from forks
 
-The analysis runs, but the SARIF upload to the Security tab (needs `security-events: write`) is skipped because the token is read-only. Findings do not fail the job: the finding count is written to the run summary and `results.sarif` is kept as a run artifact (`zizmor-sarif`). The Security tab check runs on merge queue and push.
+The analysis runs, but the SARIF upload to the Security tab (needs `security-events: write`) is skipped because the token is read-only. Findings fail the job: the finding count is written to the run summary and `results.sarif` is kept as a run artifact (`zizmor-sarif`). The Security tab check runs on merge queue and push.
