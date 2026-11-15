@@ -50,7 +50,7 @@ jobs:
       security-events: write
     steps:
       - name: Run zizmor
-        uses: hoprnet/hopr-workflows/actions/nix-action@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # nix-action (feat/fork-pr-ci-support)
+        uses: hoprnet/hopr-workflows/actions/nix-action@43c833e72dffe4f2f3be60193733e5657f8aa0d7 # nix-action-v2.0.0
         env:
           GH_TOKEN: ${{ github.token }}
           NIX_CONFIG: "access-tokens = github.com=${{ github.token }}"

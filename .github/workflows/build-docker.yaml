@@ -165,7 +165,7 @@ jobs:
           nix_path: ${{ inputs.nix_path }}
       - name: Updates build version
         id: version
-        uses: hoprnet/hopr-workflows/actions/set-build-version@1bf79c9e93a016d5913ab57abefa9bff5f76e010 # set-build-version (feat/fork-pr-ci-support)
+        uses: hoprnet/hopr-workflows/actions/set-build-version@43c833e72dffe4f2f3be60193733e5657f8aa0d7 # set-build-version-v3.0.0
         with:
           file: "${{ inputs.build_file }}"
           version_type: "${{ inputs.version_type }}"
@@ -334,14 +334,14 @@ jobs:
           login_artifact_registry: 'true'
           install_sdk: 'false'
       - name: Create multi-arch docker manifest - ${{ needs.build.outputs.docker_build_version }}
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_build_version }}
       - name: Create multi-arch docker manifest - major ${{ needs.build.outputs.major_version }}
         if: needs.build.outputs.major_version != ''
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
@@ -349,7 +349,7 @@ jobs:
           source_version: ${{ needs.build.outputs.docker_build_version }}
       - name: Create multi-arch docker manifest - major.minor ${{ needs.build.outputs.minor_version }}
         if: needs.build.outputs.minor_version != ''
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
@@ -357,42 +357,42 @@ jobs:
           source_version: ${{ needs.build.outputs.docker_build_version }}
       - name: Create debug multi-arch docker manifest - ${{ needs.build.outputs.docker_debug_version }}
         if: needs.build.outputs.docker_debug_version != ''
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_debug_version }}
       - name: Create multi-arch docker manifest - latest
         if: inputs.version_type == 'pr' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest
       - name: Create multi-arch docker manifest - latest-main
         if: inputs.version_type == 'pr' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest-main
       - name: Create multi-arch docker manifest - latest-testing
         if: inputs.version_type == 'pr' && startsWith(github.event.pull_request.base.ref || github.ref_name, 'release/')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: latest-testing
       - name: Create multi-arch docker manifest - release-main
         if: inputs.version_type == 'release' && (github.ref_name == 'main' || github.ref_name == 'master')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
           version: release-main
       - name: Create multi-arch docker manifest - release-testing
         if: inputs.version_type == 'release' && startsWith(github.ref_name, 'release/')
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_gcp_registry }}
           image: ${{ inputs.docker_image_name }}
@@ -417,14 +417,14 @@ jobs:
           password: ${{ secrets.docker_hub_token }}
       - name: Create multi-arch docker manifest - Docker Hub - ${{ needs.build.outputs.docker_build_version }}
         if: steps.docker_hub.outputs.publish_docker_hub == 'true'
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_hub_registry }}
           image: ${{ inputs.docker_image_name }}
           version: ${{ needs.build.outputs.docker_build_version }}
       - name: Create multi-arch docker manifest - Docker Hub - major ${{ needs.build.outputs.major_version }}
         if: steps.docker_hub.outputs.publish_docker_hub == 'true' && needs.build.outputs.major_version != ''
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_hub_registry }}
           image: ${{ inputs.docker_image_name }}
@@ -432,7 +432,7 @@ jobs:
           source_version: ${{ needs.build.outputs.docker_build_version }}
       - name: Create multi-arch docker manifest - Docker Hub - major.minor ${{ needs.build.outputs.minor_version }}
         if: steps.docker_hub.outputs.publish_docker_hub == 'true' && needs.build.outputs.minor_version != ''
-        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@ff46635ff5da2d33f0bbedf32a7030dc2fe1895a # source_version support
+        uses: hoprnet/hopr-workflows/actions/multi-arch-manifest@1ba787cb0f066cf77ca6978121ef254402448c75 # multi-arch-manifest-v1.0.1
         with:
           registry: ${{ inputs.docker_hub_registry }}
           image: ${{ inputs.docker_image_name }}
