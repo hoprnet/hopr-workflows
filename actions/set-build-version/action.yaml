@@ -144,7 +144,8 @@ runs:
             major_version="${release_version%%.*}"
             minor_version="${release_version%.*}"
           fi
-          if [[ $current_version == *"-rc."* ]]; then
+          version_without_build="${current_version%%+*}"
+          if [[ $version_without_build == *-* ]]; then
             prerelease=true
           fi
         else
@@ -220,7 +221,9 @@ runs:
       run: |
         if [[ "${FILE}" =~ .*\.toml$ ]]; then
           echo "Updating version in ${FILE} to ${BUILD_VERSION}"
-          sed -i.bak -E "s/(^version = \")([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?(\+.*)?(\")/\1${BUILD_VERSION}\5/" ${FILE}
+          # Spec prereleases: -(alpha|beta|rc).N with optional snapshot timestamp, or -0.<timestamp>
+          prerelease_pattern='-((alpha|beta|rc)\.(0|[1-9][0-9]*)(\.[0-9]+)?|0\.[0-9]+)'
+          sed -i.bak -E "s/(^version = \")[0-9]+\.[0-9]+\.[0-9]+(${prerelease_pattern})?(\+.*)?\"/\1${BUILD_VERSION}\"/" ${FILE}
           rm "${FILE}.bak"
           if [[ "${FILE}" =~ .*Cargo\.toml$ ]]; then
             echo "Regenerating lock file"
