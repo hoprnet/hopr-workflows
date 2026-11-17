@@ -36,8 +36,8 @@ runs:
         fi
         echo "current_version=${current_version}" | tee -a "$GITHUB_OUTPUT"
         # Split pre-release if any
-        IFS='-'
-        read -a current_version_splitted <<<"${current_version}"
+        # Scoped to read: a global IFS='-' word-splits ${FILE} paths containing a dash
+        IFS='-' read -r -a current_version_splitted <<<"${current_version}"
 
         current_version_without_rc="${current_version_splitted[0]}"
         if [ "${#current_version_splitted[*]}" = "2" ]; then
@@ -58,10 +58,12 @@ runs:
                 major_version=$((major_version+1))
                 minor_version=0
                 patch_version=0
+                unset release_candidate_number
                 ;;
             minor)
                 minor_version=$((minor_version+1))
                 patch_version=0
+                unset release_candidate_number
                 ;;
             patch)
                 if [ -n "$release_candidate_number" ]; then
