@@ -105,7 +105,7 @@ Production
 - `release_version`: Release version. Example: `1.2.3`.
 - `major_version`: Floating major version for a `release` with a clean `X.Y.Z` version. Example: `5` for `5.0.1`. Empty for commit/PR builds or versions with any suffix.
 - `minor_version`: Floating major.minor version under the same conditions. Example: `5.0` for `5.0.1`. These registry-independent outputs can also be used by binary and library workflows.
-- `prerelease`: Whether the version is a prerelease: `true` when the `version_type` is `release` and `current_version` contains `-rc.`.
+- `prerelease`: Whether the version is a prerelease: `true` when the `version_type` is `release` and `current_version` has a prerelease part (e.g. `-alpha.1`, `-beta.2`, `-rc.3`, `-0.20261117010203`).
 - `build_version`: Contains the value of output `commit_version`, `pr_version` or `release_version` depending on the `version_type` provided.
 - `docker_build_version`: Docker compatible build version. The character `+` is replaced by `-`. Platform agnostic tag. Example: `1.2.3-commit.9a4f81a`.
 - `docker_debug_version`: Docker compatible debug version. The character `+` is replaced by `-`. Platform agnostic tag. Example: `1.2.3-debug.9a4f81a`. Set when the label `build-flavor-debug` is attached to the PR and the `version_type` is `commit`.
