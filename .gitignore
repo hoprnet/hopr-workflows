@@ -8,3 +8,6 @@ node_modules/
 # pytest / python bytecode
 __pycache__/
 .pytest_cache/
+
+# nix build output
+/result
