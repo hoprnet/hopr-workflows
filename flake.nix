@@ -122,6 +122,23 @@
                 touch $out
               '';
 
+          checks.bump-version =
+            pkgs.runCommand "bump-version-test"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.jq
+                  pythonEnv
+                ];
+              }
+              ''
+                cp -r ${./actions/bump-version}/. action
+                chmod -R u+w action
+                export PYTHONDONTWRITEBYTECODE=1
+                python -m pytest -q action/test_bump_version.py
+                touch $out
+              '';
+
           checks.set-build-version =
             pkgs.runCommand "set-build-version-test"
               {
