@@ -57,7 +57,11 @@ def test_bump_version(tmp_path, version, release_type, bumped):
         # Standalone crate at the repository root
         ("Cargo.toml", "Cargo.lock", "Cargo.toml Cargo.lock"),
         # A nested crate with its own lock file keeps it
-        ("tools/x/Cargo.toml", "tools/x/Cargo.lock", "tools/x/Cargo.toml tools/x/Cargo.lock"),
+        (
+            "tools/x/Cargo.toml",
+            "tools/x/Cargo.lock",
+            "tools/x/Cargo.toml tools/x/Cargo.lock",
+        ),
         # No lock file anywhere: only the manifest is committed
         ("hoprd/Cargo.toml", None, "hoprd/Cargo.toml"),
     ],
@@ -82,6 +86,8 @@ def test_commits_cargo_lock_file(tmp_path, manifest, lock, committed):
         "GITHUB_OUTPUT": str(output),
     }
     script = step_script("Bump version")
-    subprocess.run(["bash", "-eo", "pipefail", "-c", script], env=env, cwd=repo, check=True)
+    subprocess.run(
+        ["bash", "-eo", "pipefail", "-c", script], env=env, cwd=repo, check=True
+    )
     outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
     assert outputs["commit_files"] == committed
