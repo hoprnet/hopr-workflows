@@ -112,6 +112,16 @@ runs:
         fi
         echo "bump_version=${bump_version}" | tee -a "$GITHUB_OUTPUT"
         lock_file=$(echo "${FILE}" | sed -E 's/\.(toml|json)$/.lock/')
+        if [[ "${FILE}" =~ .*Cargo\.toml$ ]]; then
+          # A workspace member has no Cargo.lock of its own: cargo update writes the
+          # workspace's lock file, in the nearest parent directory that has one
+          lock_dir=$(dirname "${FILE}")
+          while [[ ! -f "${lock_dir}/Cargo.lock" && "${lock_dir}" != "." && "${lock_dir}" != "/" ]]; do
+            lock_dir=$(dirname "${lock_dir}")
+          done
+          lock_file="${lock_dir}/Cargo.lock"
+          lock_file="${lock_file#./}"
+        fi
         if [[ -f "$lock_file" ]]; then
           echo "commit_files=${FILE} ${lock_file}" | tee -a "$GITHUB_OUTPUT"
         else
