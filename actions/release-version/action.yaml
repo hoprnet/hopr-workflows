@@ -205,7 +205,7 @@ runs:
       id: bump
       if: inputs.bump_version == 'true'
       continue-on-error: ${{ inputs.continue_on_bump_version == 'true' }}
-      uses: hoprnet/hopr-workflows/actions/bump-version@e76de35dba2b96a224bd7cd39b58441802b40057 # bump-version-v2.1.4
+      uses: hoprnet/hopr-workflows/actions/bump-version@305b3bb5b15a7f764e9178a9ae7ceda91ea08f02 # bump-version-v2.1.5
       with:
         file: ${{ inputs.file }}
         release_type: ${{ inputs.release_type }}
