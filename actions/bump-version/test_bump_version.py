@@ -47,3 +47,41 @@ def test_bump_version(tmp_path, version, release_type, bumped):
     assert outputs["current_version"] == version
     assert outputs["bump_version"] == bumped
     assert version_file.read_text() == f'[package]\nversion = "{bumped}"\n'
+
+
+@pytest.mark.parametrize(
+    "manifest, lock, committed",
+    [
+        # Workspace member: the lock file sits at the workspace root
+        ("hoprd/Cargo.toml", "Cargo.lock", "hoprd/Cargo.toml Cargo.lock"),
+        # Standalone crate at the repository root
+        ("Cargo.toml", "Cargo.lock", "Cargo.toml Cargo.lock"),
+        # A nested crate with its own lock file keeps it
+        ("tools/x/Cargo.toml", "tools/x/Cargo.lock", "tools/x/Cargo.toml tools/x/Cargo.lock"),
+        # No lock file anywhere: only the manifest is committed
+        ("hoprd/Cargo.toml", None, "hoprd/Cargo.toml"),
+    ],
+)
+def test_commits_cargo_lock_file(tmp_path, manifest, lock, committed):
+    repo = tmp_path / "repo"
+    (repo / manifest).parent.mkdir(parents=True, exist_ok=True)
+    (repo / manifest).write_text('[package]\nversion = "1.0.0"\n')
+    if lock:
+        (repo / lock).write_text("")
+    # The step regenerates the lock file inside `nix develop`; a no-op stub skips that
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "nix").write_text("#!/bin/sh\nexit 0\n")
+    (bin_dir / "nix").chmod(0o755)
+    output = tmp_path / "output"
+    env = {
+        **os.environ,
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "FILE": manifest,
+        "RELEASE_TYPE": "patch",
+        "GITHUB_OUTPUT": str(output),
+    }
+    script = step_script("Bump version")
+    subprocess.run(["bash", "-eo", "pipefail", "-c", script], env=env, cwd=repo, check=True)
+    outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
+    assert outputs["commit_files"] == committed
