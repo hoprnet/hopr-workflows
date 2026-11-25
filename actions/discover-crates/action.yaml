@@ -1,0 +1,33 @@
+name: Discover crates
+description: List the published workspace crates that still need a GitHub release and a version bump
+inputs:
+  package_name:
+    description: Limit the result to this crate. Empty means every publishable workspace crate.
+    required: false
+    default: ''
+  github_token:
+    description: Token used to look up release tags
+    required: false
+    default: ${{ github.token }}
+outputs:
+  releases:
+    description: JSON list of {name, version, manifest, tag_prefix} for published crates without a GitHub release
+    value: ${{ steps.discover.outputs.releases }}
+  bumps:
+    description: JSON list of crate names that are published and still at their published version
+    value: ${{ steps.discover.outputs.bumps }}
+runs:
+  using: composite
+  steps:
+    - name: Read workspace metadata
+      shell: bash
+      run: nix develop --command bash -c 'cargo metadata --no-deps --format-version 1 > "$RUNNER_TEMP/metadata.json"'
+    - name: Discover crates
+      id: discover
+      shell: bash
+      env:
+        METADATA_FILE: ${{ runner.temp }}/metadata.json
+        REPOSITORY: ${{ github.repository }}
+        PACKAGE_NAME: ${{ inputs.package_name }}
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: bash "${{ github.action_path }}/discover-crates.sh"
